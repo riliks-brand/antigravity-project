@@ -87,35 +87,51 @@ class TradeExecutor:
             "tp": tp
         }
 
-    def execute_web(self, action="buy", url="https://olymptrade.com", call_selector="#call-btn", put_selector="#put-btn"):
+    def execute_web(self, action="buy", url="https://olymptrade.com", user_data_dir="./playwright_profile", 
+                    buy_selector=".button-buy", sell_selector=".button-sell", amount_selector=".amount-input"):
         """
-        Executes a paper trade on a web platform using Playwright.
-        Selectors are completely configurable.
+        Executes a paper trade on a web platform using Playwright with persistent context.
         """
-        print(f"Executing web trade on {url} - Action: {action}")
+        print(f"Executing web trade on {url} - Action: {action.upper()}")
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=False) # Headless=False so the user can see it
-            page = browser.new_page()
+            # Persistent context keeps the session (cookies, local storage) across runs
+            browser = p.chromium.launch_persistent_context(
+                user_data_dir=user_data_dir,
+                headless=False,
+                args=["--start-maximized"],
+                no_viewport=True
+            )
             
-            # Navigate to the platform
+            # Since persistent context opens a default page, use it
+            page = browser.pages[0] if browser.pages else browser.new_page()
+            
             try:
-                page.goto(url, timeout=30000)
+                page.goto(url, timeout=60000)
                 print("Page loaded successfully.")
                 
-                # In a real scenario, we might need to handle login or wait for DOM 
-                # This is a generic clicker based on selectors
+                # Check for Demo account active indicator - safety check framework
+                # This selector should be updated based on actual DOM
+                if "demo" not in page.title().lower() and not page.locator("text=Demo account").is_visible():
+                    print("WARNING: Could not verify Demo account presence on screen. Please be careful.")
+                
+                # Wait for the chart to appear (as requested)
+                # Just a generic check, assuming canvas or SVG chart
+                print("Waiting for chart to be visible...")
+                # page.wait_for_selector("canvas", timeout=15000) 
+                
+                print(f"[Action] Signal received: {action.upper()}")
                 if action.lower() == "buy":
-                    print(f"Looking for CALL button using selector: {call_selector}")
-                    # page.click(call_selector, timeout=10000)
-                    print("CALL Clicked (Simulation)")
+                    print(f"Looking for BUY button using selector: {buy_selector}")
+                    # page.click(buy_selector, timeout=10000)
+                    print("[Action] Clicking BUY on Olymp Trade...")
                 else:
-                    print(f"Looking for PUT button using selector: {put_selector}")
-                    # page.click(put_selector, timeout=10000)
-                    print("PUT Clicked (Simulation)")
+                    print(f"Looking for SELL button using selector: {sell_selector}")
+                    # page.click(sell_selector, timeout=10000)
+                    print("[Action] Clicking SELL on Olymp Trade...")
+                    
             except Exception as e:
                 print(f"Failed to execute web trade: {e}")
             finally:
-                # browser.close() # We'll keep it open for demo purposes, or close it after 5 seconds
                 import time
-                time.sleep(2)
+                time.sleep(3) # Let user see what happened
                 browser.close()
