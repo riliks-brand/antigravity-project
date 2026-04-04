@@ -10,11 +10,12 @@ class Config:
     # REPLACE WITH YOUR ACTUAL DEMO CREDENTIALS
     LOGIN = 5048877064
     PASSWORD = "@nRtKeT3"
-    SERVER = "YourBroker-Demo"
+    SERVER = "MetaQuotes-Demo"
     
     # -------------------------------------
     # Trading Data Settings
     # -------------------------------------
+    ATR_THRESHOLD = 0.0002 # Filter for low liquidity periods
     SYMBOL = "EURUSD"
     TIMEFRAME = mt5.TIMEFRAME_M1
     DATA_POINTS = 50000  # Number of candles to fetch

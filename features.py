@@ -79,7 +79,22 @@ def feature_engineering_pipeline(df: pd.DataFrame) -> pd.DataFrame:
     
     df = add_technical_indicators(df)
     df = add_price_action_features(df)
+    
+    # Add Time-based features
+    if pd.api.types.is_datetime64_any_dtype(df.index):
+        df['hour'] = df.index.hour
+        df['day_of_week'] = df.index.dayofweek
+    else:
+        # Fallback if index isn't datetime
+        df['hour'] = 0
+        df['day_of_week'] = 0
+        
     df = generate_target_column(df)
+    
+    # Apply ATR Liquidity Filter
+    initial_len = len(df)
+    df = df[df['ATR'] >= Config.ATR_THRESHOLD]
+    print(f"Dropped {initial_len - len(df)} rows due to ATR liquidity filter (< {Config.ATR_THRESHOLD}).")
     
     # After generating features and the target (which shifts by lookahead),
     # there will be NaN values at the Beginning (from indicators) and at the End (from target shift).

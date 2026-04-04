@@ -1,5 +1,6 @@
 from data_loader import init_mt5, fetch_data
 from features import feature_engineering_pipeline
+from executor import TradeExecutor
 
 def main():
     if not init_mt5():
@@ -15,27 +16,30 @@ def main():
     if raw_df is None or raw_df.empty:
         return
         
-    print("Raw Data sample:")
-    print(raw_df[['open', 'high', 'low', 'close', 'tick_volume']].head())
-
     # Apply Feature Engineering
     processed_df = feature_engineering_pipeline(raw_df)
     
     print("\n" + "="*50)
     print("PROCESSED DATA: HEAD")
     print("="*50)
-    columns_to_show = ['open', 'close', 'RSI', 'upper_shadow_ratio', 'lower_shadow_ratio', 'body_direction', 'Target']
-    print(processed_df[columns_to_show].head(10))
-    
-    print("\n" + "="*50)
-    print("PROCESSED DATA: TAIL")
-    print("="*50)
-    print(processed_df[columns_to_show].tail(10))
+    # Including new features hour, day_of_week, and ATR
+    columns_to_show = ['open', 'close', 'RSI', 'ATR', 'hour', 'day_of_week', 'Target']
+    print(processed_df[[c for c in columns_to_show if c in processed_df.columns]].head(10))
 
     # Train LSTM
     from lstm_model import prepare_sequential_data, train_and_evaluate
     X_train, X_test, y_train, y_test, scaler = prepare_sequential_data(processed_df)
     model, history, acc = train_and_evaluate(X_train, X_test, y_train, y_test)
     
+    print("\n" + "="*50)
+    print("DEMO EXECUTION (PAPER TRADE MT5)")
+    print("="*50)
+    executor = TradeExecutor()
+    ticket = executor.execute_mt5(action="buy", volume=0.01)
+    if ticket:
+        print(f"Successfully opened trade in MT5. Ticket ID: {ticket}")
+    else:
+        print("Failed to open trade in MT5.")
+
 if __name__ == "__main__":
     main()
