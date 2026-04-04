@@ -16,7 +16,8 @@ class Config:
     # Trading Data Settings
     # -------------------------------------
     ATR_THRESHOLD = 0.0002 # Filter for low liquidity periods
-    SYMBOL = "EURUSD"
+    # Using BTCUSD because Forex is closed on weekends!
+    SYMBOL = "BTCUSD"
     TIMEFRAME = mt5.TIMEFRAME_M1
     DATA_POINTS = 50000  # Number of candles to fetch
     

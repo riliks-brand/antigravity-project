@@ -24,13 +24,22 @@ def fetch_data():
     rates = mt5.copy_rates_from_pos(Config.SYMBOL, Config.TIMEFRAME, 0, Config.DATA_POINTS)
     if rates is None or len(rates) == 0:
         print(f"Failed to fetch rates from MT5 for {Config.SYMBOL}, error code = {mt5.last_error()}")
-        return None
-        
-    df_mt5 = pd.DataFrame(rates)
-    df_mt5['time'] = pd.to_datetime(df_mt5['time'], unit='s')
-    df_mt5.set_index('time', inplace=True)
+        print("Falling back to yfinance for BTC-USD...")
+        btc_ticker = yf.Ticker("BTC-USD")
+        # 1m max allowed is 7 days => ~10,080 rows
+        df_mt5 = btc_ticker.history(period="7d", interval="1m")
+        if df_mt5.empty:
+            print("Fallback failed. No data.")
+            return None
+        df_mt5.index = df_mt5.index.tz_localize(None)
+        # Rename Open, High, Low, Close, Volume to lowercase to match MT5 format
+        df_mt5.rename(columns={'Open': 'open', 'High': 'high', 'Low': 'low', 'Close': 'close', 'Volume': 'real_volume'}, inplace=True)
+    else:
+        df_mt5 = pd.DataFrame(rates)
+        df_mt5['time'] = pd.to_datetime(df_mt5['time'], unit='s')
+        df_mt5.set_index('time', inplace=True)
     
-    print(f"Successfully fetched {len(df_mt5)} rows from MT5.")
+    print(f"Successfully fetched {len(df_mt5)} rows for primary asset.")
     
     # 2. Fetch DXY from yfinance
     print(f"Fetching DXY Live Data via yfinance ({Config.DXY_TICKER})...")

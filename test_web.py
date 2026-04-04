@@ -15,8 +15,10 @@ def test_login_and_click():
     with sync_playwright() as p:
         browser = p.chromium.launch_persistent_context(
             user_data_dir="./playwright_profile",
+            channel="msedge",
             headless=False,
             args=["--start-maximized", "--disable-blink-features=AutomationControlled"],
+            ignore_default_args=["--enable-automation"],
             no_viewport=True
         )
         

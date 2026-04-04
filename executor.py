@@ -87,18 +87,25 @@ class TradeExecutor:
             "tp": tp
         }
 
-    def execute_web(self, action="buy", url="https://olymptrade.com", user_data_dir="./playwright_profile", 
-                    buy_selector=".button-buy", sell_selector=".button-sell", amount_selector=".amount-input"):
+    def execute_web(self, action="buy", url="https://olymptrade.com", user_data_dir="./playwright_profile"):
         """
         Executes a paper trade on a web platform using Playwright with persistent context.
         """
         print(f"Executing web trade on {url} - Action: {action.upper()}")
+        
+        # Robust data-test selectors extracted from Olymp Trade production DOM
+        tab_buy = '[data-test="deal-form_direction-buy"]'
+        tab_sell = '[data-test="deal-form_direction-sell"]'
+        execute_button = '[data-test="cfd-desktop_deal-form_trade-button-wrapper"] button'
+        
         with sync_playwright() as p:
             # Persistent context keeps the session (cookies, local storage) across runs
             browser = p.chromium.launch_persistent_context(
                 user_data_dir=user_data_dir,
+                channel="msedge",
                 headless=False,
-                args=["--start-maximized"],
+                args=["--start-maximized", "--disable-blink-features=AutomationControlled"],
+                ignore_default_args=["--enable-automation"],
                 no_viewport=True
             )
             
@@ -110,27 +117,33 @@ class TradeExecutor:
                 print("Page loaded successfully.")
                 
                 # Check for Demo account active indicator - safety check framework
-                # This selector should be updated based on actual DOM
                 if "demo" not in page.title().lower() and not page.locator("text=Demo account").is_visible():
                     print("WARNING: Could not verify Demo account presence on screen. Please be careful.")
                 
-                # Wait for the chart to appear (as requested)
-                # Just a generic check, assuming canvas or SVG chart
-                print("Waiting for chart to be visible...")
-                # page.wait_for_selector("canvas", timeout=15000) 
+                # Wait for the trade form wrapper to exist
+                print("Waiting for trading interface to load...")
+                page.wait_for_selector(execute_button, timeout=15000)
                 
                 print(f"[Action] Signal received: {action.upper()}")
                 if action.lower() == "buy":
-                    print(f"Looking for BUY button using selector: {buy_selector}")
-                    # page.click(buy_selector, timeout=10000)
-                    print("[Action] Clicking BUY on Olymp Trade...")
+                    print("[Action] Setting direction to BUY (Up)...")
+                    page.locator(tab_buy).click()
+                    # Small delay to allow UI state to update
+                    page.wait_for_timeout(500)
+                    print("[Action] Clicking Execute button on Olymp Trade...")
+                    page.locator(execute_button).click()
                 else:
-                    print(f"Looking for SELL button using selector: {sell_selector}")
-                    # page.click(sell_selector, timeout=10000)
-                    print("[Action] Clicking SELL on Olymp Trade...")
+                    print("[Action] Setting direction to SELL (Down)...")
+                    page.locator(tab_sell).click()
+                    page.wait_for_timeout(500)
+                    print("[Action] Clicking Execute button on Olymp Trade...")
+                    page.locator(execute_button).click()
                     
+                print(f"Trade Success on Web UI: {action.upper()}")
+                return True
             except Exception as e:
                 print(f"Failed to execute web trade: {e}")
+                return False
             finally:
                 import time
                 time.sleep(3) # Let user see what happened

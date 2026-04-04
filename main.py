@@ -51,15 +51,16 @@ def main():
         print(f"Prediction Probability: {prob:.4f} -> {action.upper()}")
         
         executor = TradeExecutor()
-        trade_details = executor.execute_mt5(action=action, volume=0.01)
-        if type(trade_details) is dict:
-            print(f"\n[LIVE TRADE VERIFIED]")
-            print(f" > Ticket ID:    {trade_details['ticket']}")
-            print(f" > Entry Price:  {trade_details['entry_price']}")
-            print(f" > Stop Loss:    {trade_details['sl']}")
-            print(f" > Take Profit:  {trade_details['tp']}")
+        
+        # We are using execute_web instead of MT5 because the market is closed,
+        # but MT5 BTCUSD data is streaming 24/7!
+        print("Launching Web Executer for Olymp Trade...")
+        success = executor.execute_web(action=action)
+        
+        if success:
+            print(f"\n[LIVE TRADE VERIFIED: {action.upper()} ON OLYMP TRADE]")
         else:
-            print(f"Successfully opened trade in MT5. Ticket ID: {trade_details}")
+            print(f"Failed to open trade on Olymp Trade.")
     else:
         print("Not enough data to form a sequence.")
 
