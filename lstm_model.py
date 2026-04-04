@@ -10,12 +10,17 @@ import os
 
 def prepare_sequential_data(df, sequence_length=Config.SEQUENCE_LENGTH):
     print(f"Preparing sequential data with lookback of {sequence_length} candles...")
-    target = df['Target'].values
-    features = df.drop(['Target'], axis=1).values
     
     # Scale features using RobustScaler (immune to outliers like long candle shadows)
     scaler = RobustScaler()
-    features_scaled = scaler.fit_transform(features)
+    scaler.fit(df.drop(['Target'], axis=1).values)
+    
+    # Drop rows where Target is NaN so we have clean training data
+    df_train = df.dropna(subset=['Target'])
+    target = df_train['Target'].values
+    features = df_train.drop(['Target'], axis=1).values
+    
+    features_scaled = scaler.transform(features)
     
     X, y = [], []
     for i in range(len(features_scaled) - sequence_length):

@@ -27,4 +27,7 @@ class Config:
     PREDICT_LOOKAHEAD = 5  
     
     # LSTM Sequence parameters
-    SEQUENCE_LENGTH = 60 # Look back 60 candles
+    SEQUENCE_LENGTH = 120 # Look back 120 candles
+    
+    # DXY Feature
+    DXY_TICKER = "DX-Y.NYB"

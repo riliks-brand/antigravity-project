@@ -98,9 +98,9 @@ def feature_engineering_pipeline(df: pd.DataFrame) -> pd.DataFrame:
     
     # After generating features and the target (which shifts by lookahead),
     # there will be NaN values at the Beginning (from indicators) and at the End (from target shift).
-    # We must drop these NaN rows to have clean data for the model.
     print(f"Data shape before dropping NaNs: {df.shape}")
-    df.dropna(inplace=True)
-    print(f"Data shape after dropping NaNs: {df.shape}")
+    subset_cols = [c for c in df.columns if c != 'Target']
+    df.dropna(subset=subset_cols, inplace=True)
+    print(f"Data shape after dropping feature NaNs: {df.shape}")
     
     return df

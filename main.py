@@ -32,14 +32,36 @@ def main():
     model, history, acc = train_and_evaluate(X_train, X_test, y_train, y_test)
     
     print("\n" + "="*50)
-    print("DEMO EXECUTION (PAPER TRADE MT5)")
+    print("LIVE PREDICTION & EXECUTION")
     print("="*50)
-    executor = TradeExecutor()
-    ticket = executor.execute_mt5(action="buy", volume=0.01)
-    if ticket:
-        print(f"Successfully opened trade in MT5. Ticket ID: {ticket}")
+    
+    import numpy as np
+    from config import Config
+    
+    latest_features = processed_df.drop(['Target'], axis=1).values
+    latest_features_scaled = scaler.transform(latest_features)
+    
+    if len(latest_features_scaled) >= Config.SEQUENCE_LENGTH:
+        X_live = latest_features_scaled[-Config.SEQUENCE_LENGTH:]
+        X_live = np.array([X_live])
+        
+        prob = model.predict(X_live)[0][0]
+        action = "buy" if prob > 0.5 else "sell"
+        
+        print(f"Prediction Probability: {prob:.4f} -> {action.upper()}")
+        
+        executor = TradeExecutor()
+        trade_details = executor.execute_mt5(action=action, volume=0.01)
+        if type(trade_details) is dict:
+            print(f"\n[LIVE TRADE VERIFIED]")
+            print(f" > Ticket ID:    {trade_details['ticket']}")
+            print(f" > Entry Price:  {trade_details['entry_price']}")
+            print(f" > Stop Loss:    {trade_details['sl']}")
+            print(f" > Take Profit:  {trade_details['tp']}")
+        else:
+            print(f"Successfully opened trade in MT5. Ticket ID: {trade_details}")
     else:
-        print("Failed to open trade in MT5.")
+        print("Not enough data to form a sequence.")
 
 if __name__ == "__main__":
     main()

@@ -32,16 +32,17 @@ class TradeExecutor:
             return None
             
         point = symbol_info.point
+        digits = symbol_info.digits
         if action.lower() == "buy":
             order_type = mt5.ORDER_TYPE_BUY
             price = mt5.symbol_info_tick(symbol).ask
-            sl = price - 100 * point
-            tp = price + 100 * point
+            sl = round(price - 200 * point, digits)
+            tp = round(price + 200 * point, digits)
         else:
             order_type = mt5.ORDER_TYPE_SELL
             price = mt5.symbol_info_tick(symbol).bid
-            sl = price + 100 * point
-            tp = price - 100 * point
+            sl = round(price + 200 * point, digits)
+            tp = round(price - 200 * point, digits)
 
         request = {
             "action": mt5.TRADE_ACTION_DEAL,
@@ -79,7 +80,12 @@ class TradeExecutor:
                 
         print(f"Trade Success! Ticket ID: {result.order}")
         mt5.shutdown()
-        return result.order
+        return {
+            "ticket": result.order,
+            "entry_price": price,
+            "sl": sl,
+            "tp": tp
+        }
 
     def execute_web(self, action="buy", url="https://olymptrade.com", call_selector="#call-btn", put_selector="#put-btn"):
         """
