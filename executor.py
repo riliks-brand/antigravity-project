@@ -89,18 +89,15 @@ class TradeExecutor:
 
     def execute_web(self, action="buy", url="https://olymptrade.com/platform", user_data_dir=None):
         """
-        Executes a paper trade on a web platform using Playwright connected natively over CDP to defeat Cloudflare.
+        Executes a paper trade on Olymp Trade via native CDP connection.
+        Uses domcontentloaded for speed, aggressive JS button finding, and 3-attempt retry logic.
         """
         import os
         import time
+        import datetime
         import subprocess
         
         print(f"Executing web trade on {url} - Action: {action.upper()}")
-        
-        # Robust data-test selectors extracted from Olymp Trade production DOM
-        tab_buy = '[data-test="deal-form_direction-buy"]'
-        tab_sell = '[data-test="deal-form_direction-sell"]'
-        execute_button = '[data-test="cfd-desktop_deal-form_trade-button-wrapper"] button'
         
         browser_exe = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
         if not os.path.exists(browser_exe):
@@ -119,56 +116,119 @@ class TradeExecutor:
             except:
                 pass
         
+        time.sleep(1) # Give OS time to release port
+        
         # Native Browser Launch
         proc = subprocess.Popen([
             browser_exe,
-            "--remote-debugging-port=9225", # Use 9225 to guarantee freshness
+            "--remote-debugging-port=9225",
             f"--user-data-dir={profile_path}",
             url
         ])
         
-        time.sleep(5) # Let real browser load and negotiate CF
+        time.sleep(4) # Let real browser open and pass Cloudflare
         
         with sync_playwright() as p:
             try:
                 browser = p.chromium.connect_over_cdp("http://localhost:9225")
                 page = browser.contexts[0].pages[0]
                 
-                # Check for Demo account active indicator - safety check framework
-                if "demo" not in page.title().lower() and not page.locator("text=Demo account").is_visible():
-                    print("WARNING: Could not verify Demo account presence on screen. Please be careful.")
+                # Skip full load — domcontentloaded is enough for buttons
+                try:
+                    page.wait_for_load_state("domcontentloaded", timeout=10000)
+                except:
+                    pass # Don't block if already loaded
                 
-                # Wait for the trade form wrapper to exist
-                print("Waiting for trading interface to load (up to 30s)...")
-                # Wait for either the UP or Down buttons which always exist in all modes
-                page.wait_for_selector('button[data-test="deal-form_create-deal_up-button"], button[data-test="deal-form_create-deal_down-button"], .deal-form_create-deal_up-button, .deal-form_create-deal_down-button', timeout=30000, state="attached")
+                # Check for Demo account
+                try:
+                    if "demo" not in page.title().lower() and not page.locator("text=Demo account").is_visible():
+                        print("WARNING: Could not verify Demo account. Please be careful.")
+                except:
+                    print("WARNING: Could not read page title (page still loading). Proceeding.")
                 
-                print(f"[Action] Signal received: {action.upper()}")
-                
-                import datetime
-                if action.lower() == "buy":
-                    try:
-                        page.locator(tab_buy).evaluate("el => el.click()")
-                        page.wait_for_timeout(500)
-                    except:
-                        pass # Fixed Time mode doesn't have direction tabs
-                    print("[Action] Clicking Execute BUY/UP button on Olymp Trade...")
-                    up_buttons = page.locator('button[data-test="deal-form_create-deal_up-button"], .deal-form_create-deal_up-button')
-                    up_buttons.first.evaluate("el => el.click()")
-                    print(f"[JS Execution] Timestamp: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}")
-                else:
-                    try:
-                        page.locator(tab_sell).evaluate("el => el.click()")
-                        page.wait_for_timeout(500)
-                    except:
-                        pass
-                    print("[Action] Clicking Execute SELL/DOWN button on Olymp Trade...")
-                    sell_buttons = page.locator('button[data-test="deal-form_create-deal_down-button"], .deal-form_create-deal_down-button, button[data-test="cfd-desktop_deal-form_trade-button-wrapper"]')
-                    sell_buttons.first.evaluate("el => el.click()")
-                    print(f"[JS Execution] Timestamp: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}")
+                # ===== AGGRESSIVE RETRY LOGIC (3 Attempts) =====
+                MAX_RETRIES = 3
+                for attempt in range(1, MAX_RETRIES + 1):
+                    print(f"[Attempt {attempt}/{MAX_RETRIES}] Searching for trade buttons...")
                     
-                print(f"Trade Success on Web UI: {action.upper()}")
-                return True, "Success"
+                    # Try to find the button using raw JavaScript — bypasses ALL selector issues
+                    found = page.evaluate("""() => {
+                        // Strategy 1: Find by data-test attributes
+                        let upBtn = document.querySelector('[data-test="deal-form_create-deal_up-button"]');
+                        let downBtn = document.querySelector('[data-test="deal-form_create-deal_down-button"]');
+                        if (upBtn && downBtn) return 'data-test';
+                        
+                        // Strategy 2: Find by visible text content "Up" / "Down" inside buttons
+                        const allBtns = document.querySelectorAll('button');
+                        for (const btn of allBtns) {
+                            const txt = btn.textContent.trim().toLowerCase();
+                            if (txt === 'up' || txt === 'down') return 'text-match';
+                        }
+                        
+                        // Strategy 3: Find by button classes containing 'up' or 'down'
+                        const upClass = document.querySelector('[class*="up-button"], [class*="call"], [class*="green"]');
+                        const downClass = document.querySelector('[class*="down-button"], [class*="put"], [class*="red"]');
+                        if (upClass || downClass) return 'class-match';
+                        
+                        return null;
+                    }""")
+                    
+                    if found:
+                        print(f"[Attempt {attempt}] Buttons found via strategy: {found}")
+                        break
+                    else:
+                        print(f"[Attempt {attempt}] Buttons NOT found. ", end="")
+                        if attempt < MAX_RETRIES:
+                            print("Refreshing page and retrying in 3s...")
+                            page.reload(wait_until="domcontentloaded", timeout=15000)
+                            time.sleep(3)
+                        else:
+                            print("All retries exhausted.")
+                            raise Exception(f"Could not find trade buttons after {MAX_RETRIES} attempts")
+                
+                # ===== EXECUTE THE CLICK =====
+                sig_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+                print(f"[Signal] {sig_time} -> {action.upper()}")
+                
+                if action.lower() == "buy":
+                    print("[Action] Clicking UP/BUY button...")
+                    clicked = page.evaluate("""() => {
+                        // Priority 1: data-test
+                        let btn = document.querySelector('[data-test="deal-form_create-deal_up-button"]');
+                        if (btn) { btn.click(); return 'data-test-up'; }
+                        // Priority 2: text match
+                        for (const b of document.querySelectorAll('button')) {
+                            if (b.textContent.trim().toLowerCase() === 'up') { b.click(); return 'text-up'; }
+                        }
+                        // Priority 3: class match
+                        btn = document.querySelector('[class*="up-button"], [class*="call"]');
+                        if (btn) { btn.click(); return 'class-up'; }
+                        return null;
+                    }""")
+                else:
+                    print("[Action] Clicking DOWN/SELL button...")
+                    clicked = page.evaluate("""() => {
+                        let btn = document.querySelector('[data-test="deal-form_create-deal_down-button"]');
+                        if (btn) { btn.click(); return 'data-test-down'; }
+                        for (const b of document.querySelectorAll('button')) {
+                            if (b.textContent.trim().toLowerCase() === 'down') { b.click(); return 'text-down'; }
+                        }
+                        btn = document.querySelector('[class*="down-button"], [class*="put"]');
+                        if (btn) { btn.click(); return 'class-down'; }
+                        return null;
+                    }""")
+                
+                exec_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+                
+                if clicked:
+                    print(f"[JS Execution] Click confirmed via: {clicked} at {exec_time}")
+                    print(f"Trade Success on Web UI: {action.upper()}")
+                    return True, f"Success via {clicked}"
+                else:
+                    page.screenshot(path="error_screenshot.png")
+                    print("--> ALERT: JS click returned null. Screenshot saved.")
+                    return False, "JS click returned null - button not found in DOM"
+                    
             except Exception as e:
                 error_msg = str(e).split('\n')[0]
                 print(f"Failed to execute web trade: {error_msg}")
@@ -179,5 +239,5 @@ class TradeExecutor:
                     pass
                 return False, error_msg
             finally:
-                time.sleep(2) # Let user see what happened
-                proc.terminate() # Close Native Browser
+                time.sleep(2)
+                proc.terminate()
