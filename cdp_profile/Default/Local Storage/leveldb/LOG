@@ -1,5 +1,5 @@
-2026/04/04-22:18:03.695 2ce8 Reusing MANIFEST D:\Candlestick_Detection\cdp_profile\Default\Local Storage\leveldb/MANIFEST-000001
-2026/04/04-22:18:03.703 2ce8 Recovering log #6
-2026/04/04-22:18:03.704 2ce8 Level-0 table #9: started
-2026/04/04-22:18:03.750 2ce8 Level-0 table #9: 28520 bytes OK
-2026/04/04-22:18:03.789 2ce8 Delete type=0 #6
+2026/04/04-22:23:22.107 718 Reusing MANIFEST D:\Candlestick_Detection\cdp_profile\Default\Local Storage\leveldb/MANIFEST-000001
+2026/04/04-22:23:22.116 718 Recovering log #10
+2026/04/04-22:23:22.117 718 Level-0 table #12: started
+2026/04/04-22:23:22.236 718 Level-0 table #12: 27906 bytes OK
+2026/04/04-22:23:22.289 718 Delete type=0 #10

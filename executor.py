@@ -144,6 +144,8 @@ class TradeExecutor:
                 page.wait_for_selector('[data-test="deal-form_create-deal_up-button"], [data-test="deal-form_create-deal_down-button"]', timeout=30000, state="attached")
                 
                 print(f"[Action] Signal received: {action.upper()}")
+                
+                import datetime
                 if action.lower() == "buy":
                     try:
                         page.locator(tab_buy).evaluate("el => el.click()")
@@ -152,6 +154,7 @@ class TradeExecutor:
                         pass # Fixed Time mode doesn't have direction tabs
                     print("[Action] Clicking Execute BUY/UP button on Olymp Trade...")
                     page.locator('[data-test="deal-form_create-deal_up-button"]').evaluate("el => el.click()")
+                    print(f"[JS Execution] Timestamp: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}")
                 else:
                     try:
                         page.locator(tab_sell).evaluate("el => el.click()")
@@ -161,17 +164,19 @@ class TradeExecutor:
                     print("[Action] Clicking Execute SELL/DOWN button on Olymp Trade...")
                     sell_buttons = page.locator('[data-test="deal-form_create-deal_down-button"], [data-test="cfd-desktop_deal-form_trade-button-wrapper"] button')
                     sell_buttons.first.evaluate("el => el.click()")
+                    print(f"[JS Execution] Timestamp: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}")
                     
                 print(f"Trade Success on Web UI: {action.upper()}")
-                return True
+                return True, "Success"
             except Exception as e:
-                print(f"Failed to execute web trade: {e}")
+                error_msg = str(e).split('\n')[0]
+                print(f"Failed to execute web trade: {error_msg}")
                 try:
                     page.screenshot(path="error_screenshot.png")
-                    print("Saved debug screenshot to error_screenshot.png")
+                    print("--> ALERT: Saved debug screenshot to error_screenshot.png")
                 except:
                     pass
-                return False
+                return False, error_msg
             finally:
-                time.sleep(3) # Let user see what happened
+                time.sleep(2) # Let user see what happened
                 proc.terminate() # Close Native Browser
