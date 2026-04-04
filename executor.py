@@ -140,8 +140,8 @@ class TradeExecutor:
                 
                 # Wait for the trade form wrapper to exist
                 print("Waiting for trading interface to load (up to 30s)...")
-                # Wait for either the UP or Down buttons which always exist in all modes, state=attached ignores overlays
-                page.wait_for_selector('[data-test="deal-form_create-deal_up-button"], [data-test="deal-form_create-deal_down-button"]', timeout=30000, state="attached")
+                # Wait for either the UP or Down buttons which always exist in all modes
+                page.wait_for_selector('button[data-test="deal-form_create-deal_up-button"], button[data-test="deal-form_create-deal_down-button"], .deal-form_create-deal_up-button, .deal-form_create-deal_down-button', timeout=30000, state="attached")
                 
                 print(f"[Action] Signal received: {action.upper()}")
                 
@@ -153,7 +153,8 @@ class TradeExecutor:
                     except:
                         pass # Fixed Time mode doesn't have direction tabs
                     print("[Action] Clicking Execute BUY/UP button on Olymp Trade...")
-                    page.locator('[data-test="deal-form_create-deal_up-button"]').evaluate("el => el.click()")
+                    up_buttons = page.locator('button[data-test="deal-form_create-deal_up-button"], .deal-form_create-deal_up-button')
+                    up_buttons.first.evaluate("el => el.click()")
                     print(f"[JS Execution] Timestamp: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}")
                 else:
                     try:
@@ -162,7 +163,7 @@ class TradeExecutor:
                     except:
                         pass
                     print("[Action] Clicking Execute SELL/DOWN button on Olymp Trade...")
-                    sell_buttons = page.locator('[data-test="deal-form_create-deal_down-button"], [data-test="cfd-desktop_deal-form_trade-button-wrapper"] button')
+                    sell_buttons = page.locator('button[data-test="deal-form_create-deal_down-button"], .deal-form_create-deal_down-button, button[data-test="cfd-desktop_deal-form_trade-button-wrapper"]')
                     sell_buttons.first.evaluate("el => el.click()")
                     print(f"[JS Execution] Timestamp: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}")
                     

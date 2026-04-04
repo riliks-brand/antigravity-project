@@ -1,3 +1,5 @@
+import numpy as np
+from config import Config
 from data_loader import init_mt5, fetch_data
 from features import feature_engineering_pipeline
 from executor import TradeExecutor
