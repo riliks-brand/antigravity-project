@@ -87,10 +87,14 @@ class TradeExecutor:
             "tp": tp
         }
 
-    def execute_web(self, action="buy", url="https://olymptrade.com", user_data_dir="./playwright_profile"):
+    def execute_web(self, action="buy", url="https://olymptrade.com", user_data_dir=None):
         """
-        Executes a paper trade on a web platform using Playwright with persistent context.
+        Executes a paper trade on a web platform using Playwright connected natively over CDP to defeat Cloudflare.
         """
+        import os
+        import time
+        import subprocess
+        
         print(f"Executing web trade on {url} - Action: {action.upper()}")
         
         # Robust data-test selectors extracted from Olymp Trade production DOM
@@ -98,23 +102,28 @@ class TradeExecutor:
         tab_sell = '[data-test="deal-form_direction-sell"]'
         execute_button = '[data-test="cfd-desktop_deal-form_trade-button-wrapper"] button'
         
+        browser_exe = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+        if not os.path.exists(browser_exe):
+            browser_exe = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+            if not os.path.exists(browser_exe):
+                browser_exe = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+                
+        profile_path = os.path.abspath("./cdp_profile")
+        
+        # Native Browser Launch
+        proc = subprocess.Popen([
+            browser_exe,
+            "--remote-debugging-port=9223", # Diff port than test_web to avoid conflict if both run
+            f"--user-data-dir={profile_path}",
+            url
+        ])
+        
+        time.sleep(4) # Let real browser load and negotiate CF
+        
         with sync_playwright() as p:
-            # Persistent context keeps the session (cookies, local storage) across runs
-            browser = p.chromium.launch_persistent_context(
-                user_data_dir=user_data_dir,
-                channel="msedge",
-                headless=False,
-                args=["--start-maximized", "--disable-blink-features=AutomationControlled"],
-                ignore_default_args=["--enable-automation"],
-                no_viewport=True
-            )
-            
-            # Since persistent context opens a default page, use it
-            page = browser.pages[0] if browser.pages else browser.new_page()
-            
             try:
-                page.goto(url, timeout=60000)
-                print("Page loaded successfully.")
+                browser = p.chromium.connect_over_cdp("http://localhost:9223")
+                page = browser.contexts[0].pages[0]
                 
                 # Check for Demo account active indicator - safety check framework
                 if "demo" not in page.title().lower() and not page.locator("text=Demo account").is_visible():
@@ -145,6 +154,5 @@ class TradeExecutor:
                 print(f"Failed to execute web trade: {e}")
                 return False
             finally:
-                import time
                 time.sleep(3) # Let user see what happened
-                browser.close()
+                proc.terminate() # Close Native Browser
