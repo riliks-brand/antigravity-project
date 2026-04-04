@@ -1,59 +1,41 @@
-import MetaTrader5 as mt5
 import pandas as pd
-from datetime import datetime
+import yfinance as yf
 from config import Config
 
 def init_mt5():
     """
-    Initializes MT5, logs in, and returns True if successful.
+    Mock initialization for MT5 since we switched to yfinance
     """
-    if not mt5.initialize():
-        print("initialize() failed, error code =", mt5.last_error())
-        return False
-        
-    # Attempt to log in to the demo account
-    # Note: If no params passed to login(), it uses the last logged in account
-    # For automated scripts, it's safer to pass credentials if provided in config
-    if hasattr(Config, 'LOGIN') and Config.LOGIN:
-        authorized = mt5.login(login=Config.LOGIN, password=Config.PASSWORD, server=Config.SERVER)
-        if not authorized:
-            print(f"Failed to connect at account #{Config.LOGIN}, error code:", mt5.last_error())
-            return False
-        print(f"Successfully connected to account #{Config.LOGIN}")
-    else:
-        print("Connected to MT5 using default active account.")
-        
+    print("Using yfinance instead of MT5 for testing.")
     return True
 
 def fetch_data():
     """
-    Fetches the last N candles for the configured symbol and timeframe.
+    Fetches the 5m candles for EURUSD using yfinance.
     Returns a Pandas DataFrame.
     """
-    print(f"Fetching {Config.DATA_POINTS} candles for {Config.SYMBOL}...")
+    print(f"Fetching data for EURUSD via yfinance...")
     
-    # Check if symbol is available
-    if not mt5.symbol_select(Config.SYMBOL, True):
-        print(f"Failed to select {Config.SYMBOL}")
-        return None
-
-    # Request historical data from the current time backwards
-    rates = mt5.copy_rates_from_pos(Config.SYMBOL, Config.TIMEFRAME, 0, Config.DATA_POINTS)
+    # EURUSD ticker in yfinance is EURUSD=X
+    # 5m interval is supported up to 60 days
+    ticker = yf.Ticker("EURUSD=X")
+    df = ticker.history(period="1mo", interval="5m")
     
-    if rates is None or len(rates) == 0:
-        print("Failed to fetch rates, error code =", mt5.last_error())
+    if df is None or df.empty:
+        print("Failed to fetch rates from yfinance.")
         return None
         
-    # Convert to pandas DataFrame
-    df = pd.DataFrame(rates)
+    # yfinance returns column names capitalized (Open, High, Low, Close, Volume)
+    # We rename them to lowercase to match our existing code
+    df.rename(columns={
+        'Open': 'open',
+        'High': 'high',
+        'Low': 'low',
+        'Close': 'close',
+        'Volume': 'tick_volume'
+    }, inplace=True)
     
-    # MT5 returns time in seconds, convert to datetime
-    df['time'] = pd.to_datetime(df['time'], unit='s')
-    
-    # Set time as index
-    df.set_index('time', inplace=True)
-    
-    print(f"Successfully fetched {len(df)} rows.")
+    print(f"Successfully fetched {len(df)} rows from yfinance.")
     return df
 
 if __name__ == "__main__":
@@ -61,4 +43,4 @@ if __name__ == "__main__":
         df = fetch_data()
         if df is not None:
             print(df.head())
-        mt5.shutdown()
+

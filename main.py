@@ -1,16 +1,18 @@
 from data_loader import init_mt5, fetch_data
 from features import feature_engineering_pipeline
-import MetaTrader5 as mt5
 
 def main():
     if not init_mt5():
-        print("Failed to initialize MT5. Make sure the terminal is running.")
+        print("Failed initialization.")
         return
+
+    import pandas as pd
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.width', 1000)
 
     # Fetch raw data
     raw_df = fetch_data()
     if raw_df is None or raw_df.empty:
-        mt5.shutdown()
         return
         
     print("Raw Data sample:")
@@ -19,14 +21,21 @@ def main():
     # Apply Feature Engineering
     processed_df = feature_engineering_pipeline(raw_df)
     
-    print("\nProcessed Data with Features:")
-    print(processed_df.head())
+    print("\n" + "="*50)
+    print("PROCESSED DATA: HEAD")
+    print("="*50)
+    columns_to_show = ['open', 'close', 'RSI', 'upper_shadow_ratio', 'lower_shadow_ratio', 'body_direction', 'Target']
+    print(processed_df[columns_to_show].head(10))
     
-    # Check the columns and target
-    print("\nColumns:", processed_df.columns.tolist())
-    print("Target distribution:", processed_df['Target'].value_counts())
+    print("\n" + "="*50)
+    print("PROCESSED DATA: TAIL")
+    print("="*50)
+    print(processed_df[columns_to_show].tail(10))
 
-    mt5.shutdown()
-
+    # Train LSTM
+    from lstm_model import prepare_sequential_data, train_and_evaluate
+    X_train, X_test, y_train, y_test, scaler = prepare_sequential_data(processed_df)
+    model, history, acc = train_and_evaluate(X_train, X_test, y_train, y_test)
+    
 if __name__ == "__main__":
     main()
