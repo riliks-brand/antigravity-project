@@ -87,7 +87,7 @@ class TradeExecutor:
             "tp": tp
         }
 
-    def execute_web(self, action="buy", url="https://olymptrade.com", user_data_dir=None):
+    def execute_web(self, action="buy", url="https://olymptrade.com/platform", user_data_dir=None):
         """
         Executes a paper trade on a web platform using Playwright connected natively over CDP to defeat Cloudflare.
         """
@@ -110,19 +110,28 @@ class TradeExecutor:
                 
         profile_path = os.path.abspath("./cdp_profile")
         
+        # Close any lingering process that might block the debug port
+        import psutil
+        for p_proc in psutil.process_iter(['name', 'cmdline']):
+            try:
+                if p_proc.info['cmdline'] and profile_path in " ".join(p_proc.info['cmdline']):
+                    p_proc.kill()
+            except:
+                pass
+        
         # Native Browser Launch
         proc = subprocess.Popen([
             browser_exe,
-            "--remote-debugging-port=9223", # Diff port than test_web to avoid conflict if both run
+            "--remote-debugging-port=9225", # Use 9225 to guarantee freshness
             f"--user-data-dir={profile_path}",
             url
         ])
         
-        time.sleep(4) # Let real browser load and negotiate CF
+        time.sleep(5) # Let real browser load and negotiate CF
         
         with sync_playwright() as p:
             try:
-                browser = p.chromium.connect_over_cdp("http://localhost:9223")
+                browser = p.chromium.connect_over_cdp("http://localhost:9225")
                 page = browser.contexts[0].pages[0]
                 
                 # Check for Demo account active indicator - safety check framework
@@ -130,28 +139,38 @@ class TradeExecutor:
                     print("WARNING: Could not verify Demo account presence on screen. Please be careful.")
                 
                 # Wait for the trade form wrapper to exist
-                print("Waiting for trading interface to load...")
-                page.wait_for_selector(execute_button, timeout=15000)
+                print("Waiting for trading interface to load (up to 30s)...")
+                # Wait for either the UP or Down buttons which always exist in all modes, state=attached ignores overlays
+                page.wait_for_selector('[data-test="deal-form_create-deal_up-button"], [data-test="deal-form_create-deal_down-button"]', timeout=30000, state="attached")
                 
                 print(f"[Action] Signal received: {action.upper()}")
                 if action.lower() == "buy":
-                    print("[Action] Setting direction to BUY (Up)...")
-                    page.locator(tab_buy).click()
-                    # Small delay to allow UI state to update
-                    page.wait_for_timeout(500)
-                    print("[Action] Clicking Execute button on Olymp Trade...")
-                    page.locator(execute_button).click()
+                    try:
+                        page.locator(tab_buy).evaluate("el => el.click()")
+                        page.wait_for_timeout(500)
+                    except:
+                        pass # Fixed Time mode doesn't have direction tabs
+                    print("[Action] Clicking Execute BUY/UP button on Olymp Trade...")
+                    page.locator('[data-test="deal-form_create-deal_up-button"]').evaluate("el => el.click()")
                 else:
-                    print("[Action] Setting direction to SELL (Down)...")
-                    page.locator(tab_sell).click()
-                    page.wait_for_timeout(500)
-                    print("[Action] Clicking Execute button on Olymp Trade...")
-                    page.locator(execute_button).click()
+                    try:
+                        page.locator(tab_sell).evaluate("el => el.click()")
+                        page.wait_for_timeout(500)
+                    except:
+                        pass
+                    print("[Action] Clicking Execute SELL/DOWN button on Olymp Trade...")
+                    sell_buttons = page.locator('[data-test="deal-form_create-deal_down-button"], [data-test="cfd-desktop_deal-form_trade-button-wrapper"] button')
+                    sell_buttons.first.evaluate("el => el.click()")
                     
                 print(f"Trade Success on Web UI: {action.upper()}")
                 return True
             except Exception as e:
                 print(f"Failed to execute web trade: {e}")
+                try:
+                    page.screenshot(path="error_screenshot.png")
+                    print("Saved debug screenshot to error_screenshot.png")
+                except:
+                    pass
                 return False
             finally:
                 time.sleep(3) # Let user see what happened
