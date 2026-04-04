@@ -87,17 +87,15 @@ class TradeExecutor:
             "tp": tp
         }
 
-    def execute_web(self, action="buy", url="https://olymptrade.com/platform", user_data_dir=None):
+    def warm_up_browser(self, url="https://olymptrade.com/platform"):
         """
-        Executes a paper trade on Olymp Trade via native CDP connection.
-        Uses domcontentloaded for speed, aggressive JS button finding, and 3-attempt retry logic.
+        Opens the browser early (Warm-up Phase) so Cloudflare passes before the candle closes.
+        Returns (proc, playwright_instance, browser, page) to be reused by execute_web.
         """
         import os
         import time
-        import datetime
         import subprocess
-        
-        print(f"Executing web trade on {url} - Action: {action.upper()}")
+        import psutil
         
         browser_exe = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
         if not os.path.exists(browser_exe):
@@ -107,8 +105,7 @@ class TradeExecutor:
                 
         profile_path = os.path.abspath("./cdp_profile")
         
-        # Close any lingering process that might block the debug port
-        import psutil
+        # Kill any lingering browser using our profile
         for p_proc in psutil.process_iter(['name', 'cmdline']):
             try:
                 if p_proc.info['cmdline'] and profile_path in " ".join(p_proc.info['cmdline']):
@@ -116,9 +113,9 @@ class TradeExecutor:
             except:
                 pass
         
-        time.sleep(1) # Give OS time to release port
+        time.sleep(1)
         
-        # Native Browser Launch
+        print("[Warm-up] Launching native browser for Cloudflare negotiation...")
         proc = subprocess.Popen([
             browser_exe,
             "--remote-debugging-port=9225",
@@ -126,118 +123,244 @@ class TradeExecutor:
             url
         ])
         
-        time.sleep(4) # Let real browser open and pass Cloudflare
+        time.sleep(5)  # Let Cloudflare pass
         
-        with sync_playwright() as p:
+        p = sync_playwright().start()
+        browser = p.chromium.connect_over_cdp("http://localhost:9225")
+        page = browser.contexts[0].pages[0]
+        
+        # Wait for DOM content only (speed)
+        try:
+            page.wait_for_load_state("domcontentloaded", timeout=15000)
+        except:
+            pass
+        
+        print("[Warm-up] Browser is warm. Cloudflare negotiation complete. Standing by.")
+        return proc, p, browser, page
+
+    def execute_web(self, action="buy", url="https://olymptrade.com/platform", 
+                    warm_session=None):
+        """
+        Executes a Fixed Time trade on Olymp Trade.
+        
+        Args:
+            action: 'buy' or 'sell'
+            url: Platform URL
+            warm_session: Optional tuple (proc, playwright, browser, page) from warm_up_browser()
+                         If None, will cold-start the browser.
+        """
+        import os
+        import time
+        import datetime
+        import subprocess
+        
+        print(f"Executing web trade on {url} - Action: {action.upper()}")
+        
+        # ===== SESSION SETUP =====
+        cold_start = warm_session is None
+        
+        if cold_start:
+            print("[Cold Start] No warm session provided. Opening browser now...")
+            proc, p, browser, page = self.warm_up_browser(url)
+        else:
+            proc, p, browser, page = warm_session
+            print("[Warm Session] Using pre-warmed browser. Skipping Cloudflare wait.")
+        
+        try:
+            # Check for Demo account
             try:
-                browser = p.chromium.connect_over_cdp("http://localhost:9225")
-                page = browser.contexts[0].pages[0]
-                
-                # Skip full load — domcontentloaded is enough for buttons
-                try:
-                    page.wait_for_load_state("domcontentloaded", timeout=10000)
-                except:
-                    pass # Don't block if already loaded
-                
-                # Check for Demo account
-                try:
-                    if "demo" not in page.title().lower() and not page.locator("text=Demo account").is_visible():
-                        print("WARNING: Could not verify Demo account. Please be careful.")
-                except:
-                    print("WARNING: Could not read page title (page still loading). Proceeding.")
-                
-                # ===== AGGRESSIVE RETRY LOGIC (3 Attempts) =====
-                MAX_RETRIES = 3
-                for attempt in range(1, MAX_RETRIES + 1):
-                    print(f"[Attempt {attempt}/{MAX_RETRIES}] Searching for trade buttons...")
-                    
-                    # Try to find the button using raw JavaScript — bypasses ALL selector issues
-                    found = page.evaluate("""() => {
-                        // Strategy 1: Find by data-test attributes
-                        let upBtn = document.querySelector('[data-test="deal-form_create-deal_up-button"]');
-                        let downBtn = document.querySelector('[data-test="deal-form_create-deal_down-button"]');
-                        if (upBtn && downBtn) return 'data-test';
-                        
-                        // Strategy 2: Find by visible text content "Up" / "Down" inside buttons
-                        const allBtns = document.querySelectorAll('button');
-                        for (const btn of allBtns) {
-                            const txt = btn.textContent.trim().toLowerCase();
-                            if (txt === 'up' || txt === 'down') return 'text-match';
+                if "demo" not in page.title().lower() and not page.locator("text=Demo account").is_visible():
+                    print("WARNING: Could not verify Demo account. Please be careful.")
+            except:
+                print("WARNING: Could not read page title. Proceeding.")
+            
+            # ===== STEP 1: SET DURATION TO 5 MINUTES =====
+            print("[Duration] Setting trade duration to 5 minutes...")
+            duration_set = page.evaluate("""() => {
+                // Strategy 1: Click on Duration area and look for 5m option
+                const durationBtns = document.querySelectorAll('button, [role="button"], div[class*="duration"], div[class*="Duration"]');
+                for (const el of durationBtns) {
+                    const txt = el.textContent.trim().toLowerCase();
+                    if (txt.includes('duration') || txt.includes('min') || txt.includes('1 min')) {
+                        el.click();
+                        return 'duration-area-clicked';
+                    }
+                }
+                return null;
+            }""")
+            
+            if duration_set:
+                time.sleep(1)
+                # Now try to select 5 minutes from the dropdown/picker
+                page.evaluate("""() => {
+                    const options = document.querySelectorAll('button, [role="option"], [role="listbox"] *, div[class*="option"], li');
+                    for (const opt of options) {
+                        const txt = opt.textContent.trim().toLowerCase();
+                        if (txt === '5' || txt === '5 min' || txt === '5m' || txt.includes('5 min')) {
+                            opt.click();
+                            return '5min-selected';
                         }
-                        
-                        // Strategy 3: Find by button classes containing 'up' or 'down'
-                        const upClass = document.querySelector('[class*="up-button"], [class*="call"], [class*="green"]');
-                        const downClass = document.querySelector('[class*="down-button"], [class*="put"], [class*="red"]');
-                        if (upClass || downClass) return 'class-match';
-                        
-                        return null;
-                    }""")
+                    }
+                    // Fallback: try + button to increment from 1 min to 5 min
+                    const plusBtns = document.querySelectorAll('[class*="plus"], [class*="increase"], [data-test*="plus"]');
+                    if (plusBtns.length > 1) {
+                        // Click the duration + button 4 times (1min -> 5min)
+                        const durationPlus = plusBtns[plusBtns.length - 1]; // Usually last + is duration
+                        for (let i = 0; i < 4; i++) durationPlus.click();
+                        return '5min-via-plus';
+                    }
+                    return null;
+                }""")
+                print("[Duration] Duration adjustment attempted.")
+            else:
+                print("[Duration] Could not locate duration control. Using platform default.")
+            
+            # ===== STEP 2: AGGRESSIVE RETRY LOGIC (3 Attempts) =====
+            MAX_RETRIES = 3
+            for attempt in range(1, MAX_RETRIES + 1):
+                print(f"[Attempt {attempt}/{MAX_RETRIES}] Searching for trade buttons...")
+                
+                # Comprehensive JS search — Generic Selectors / Text-based / XPath
+                found = page.evaluate("""() => {
+                    // === Strategy 1: data-test attributes ===
+                    let upBtn = document.querySelector('[data-test*="up-button"], [data-test*="up_button"]');
+                    let downBtn = document.querySelector('[data-test*="down-button"], [data-test*="down_button"]');
+                    if (upBtn && downBtn) return 'data-test';
                     
-                    if found:
-                        print(f"[Attempt {attempt}] Buttons found via strategy: {found}")
-                        break
+                    // === Strategy 2: Text content matching (Buy/Sell/Up/Down/Call/Put) ===
+                    const keywords = ['up', 'down', 'buy', 'sell', 'call', 'put'];
+                    const allBtns = document.querySelectorAll('button, [role="button"]');
+                    let textMatches = 0;
+                    for (const btn of allBtns) {
+                        const txt = btn.textContent.trim().toLowerCase();
+                        if (keywords.some(kw => txt === kw || txt.startsWith(kw + ' ') || txt.endsWith(' ' + kw))) {
+                            textMatches++;
+                        }
+                    }
+                    if (textMatches >= 2) return 'text-match';
+                    
+                    // === Strategy 3: XPath - find buttons by their aria or visual text ===
+                    const xpathUp = document.evaluate(
+                        "//button[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'up') or contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'buy')]",
+                        document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null
+                    ).singleNodeValue;
+                    const xpathDown = document.evaluate(
+                        "//button[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'down') or contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'sell')]",
+                        document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null
+                    ).singleNodeValue;
+                    if (xpathUp || xpathDown) return 'xpath-match';
+                    
+                    // === Strategy 4: Color-based (green/red buttons) ===
+                    for (const btn of allBtns) {
+                        const style = window.getComputedStyle(btn);
+                        const bg = style.backgroundColor;
+                        if (bg.includes('0, 200') || bg.includes('0, 180') || bg.includes('76, 175')) return 'color-green';
+                    }
+                    
+                    return null;
+                }""")
+                
+                if found:
+                    print(f"[Attempt {attempt}] Buttons found via strategy: {found}")
+                    break
+                else:
+                    print(f"[Attempt {attempt}] Buttons NOT found. ", end="")
+                    if attempt < MAX_RETRIES:
+                        print("Refreshing page and retrying in 4s...")
+                        page.reload(wait_until="domcontentloaded", timeout=15000)
+                        time.sleep(4)
                     else:
-                        print(f"[Attempt {attempt}] Buttons NOT found. ", end="")
-                        if attempt < MAX_RETRIES:
-                            print("Refreshing page and retrying in 3s...")
-                            page.reload(wait_until="domcontentloaded", timeout=15000)
-                            time.sleep(3)
-                        else:
-                            print("All retries exhausted.")
-                            raise Exception(f"Could not find trade buttons after {MAX_RETRIES} attempts")
+                        print("All retries exhausted.")
+                        raise Exception(f"Could not find trade buttons after {MAX_RETRIES} attempts")
+            
+            # ===== STEP 3: EXECUTE THE CLICK =====
+            sig_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+            print(f"[Signal] {sig_time} -> {action.upper()}")
+            
+            if action.lower() == "buy":
+                print("[Action] Clicking UP/BUY button...")
+                clicked = page.evaluate("""() => {
+                    // P1: data-test
+                    let btn = document.querySelector('[data-test*="up-button"], [data-test*="up_button"]');
+                    if (btn) { btn.click(); return 'data-test-up'; }
+                    // P2: exact text match (Up, Buy, Call)
+                    for (const b of document.querySelectorAll('button, [role="button"]')) {
+                        const txt = b.textContent.trim().toLowerCase();
+                        if (txt === 'up' || txt === 'buy' || txt === 'call') { b.click(); return 'text-' + txt; }
+                    }
+                    // P3: partial text match
+                    for (const b of document.querySelectorAll('button, [role="button"]')) {
+                        const txt = b.textContent.trim().toLowerCase();
+                        if (txt.includes('up') && !txt.includes('update') && !txt.includes('support')) { b.click(); return 'partial-up'; }
+                    }
+                    // P4: XPath
+                    const x = document.evaluate("//button[contains(translate(., 'UP', 'up'), 'up')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+                    if (x) { x.click(); return 'xpath-up'; }
+                    return null;
+                }""")
+            else:
+                print("[Action] Clicking DOWN/SELL button...")
+                clicked = page.evaluate("""() => {
+                    let btn = document.querySelector('[data-test*="down-button"], [data-test*="down_button"]');
+                    if (btn) { btn.click(); return 'data-test-down'; }
+                    for (const b of document.querySelectorAll('button, [role="button"]')) {
+                        const txt = b.textContent.trim().toLowerCase();
+                        if (txt === 'down' || txt === 'sell' || txt === 'put') { b.click(); return 'text-' + txt; }
+                    }
+                    for (const b of document.querySelectorAll('button, [role="button"]')) {
+                        const txt = b.textContent.trim().toLowerCase();
+                        if (txt.includes('down') && !txt.includes('download')) { b.click(); return 'partial-down'; }
+                    }
+                    const x = document.evaluate("//button[contains(translate(., 'DOWN', 'down'), 'down')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+                    if (x) { x.click(); return 'xpath-down'; }
+                    return null;
+                }""")
+            
+            exec_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+            
+            if clicked:
+                print(f"[JS Execution] Click confirmed via: {clicked} at {exec_time}")
+                print(f"Trade Success on Web UI: {action.upper()}")
                 
-                # ===== EXECUTE THE CLICK =====
-                sig_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-                print(f"[Signal] {sig_time} -> {action.upper()}")
-                
-                if action.lower() == "buy":
-                    print("[Action] Clicking UP/BUY button...")
-                    clicked = page.evaluate("""() => {
-                        // Priority 1: data-test
-                        let btn = document.querySelector('[data-test="deal-form_create-deal_up-button"]');
-                        if (btn) { btn.click(); return 'data-test-up'; }
-                        // Priority 2: text match
-                        for (const b of document.querySelectorAll('button')) {
-                            if (b.textContent.trim().toLowerCase() === 'up') { b.click(); return 'text-up'; }
-                        }
-                        // Priority 3: class match
-                        btn = document.querySelector('[class*="up-button"], [class*="call"]');
-                        if (btn) { btn.click(); return 'class-up'; }
-                        return null;
-                    }""")
-                else:
-                    print("[Action] Clicking DOWN/SELL button...")
-                    clicked = page.evaluate("""() => {
-                        let btn = document.querySelector('[data-test="deal-form_create-deal_down-button"]');
-                        if (btn) { btn.click(); return 'data-test-down'; }
-                        for (const b of document.querySelectorAll('button')) {
-                            if (b.textContent.trim().toLowerCase() === 'down') { b.click(); return 'text-down'; }
-                        }
-                        btn = document.querySelector('[class*="down-button"], [class*="put"]');
-                        if (btn) { btn.click(); return 'class-down'; }
-                        return null;
-                    }""")
-                
-                exec_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-                
-                if clicked:
-                    print(f"[JS Execution] Click confirmed via: {clicked} at {exec_time}")
-                    print(f"Trade Success on Web UI: {action.upper()}")
-                    return True, f"Success via {clicked}"
-                else:
-                    page.screenshot(path="error_screenshot.png")
-                    print("--> ALERT: JS click returned null. Screenshot saved.")
-                    return False, "JS click returned null - button not found in DOM"
-                    
-            except Exception as e:
-                error_msg = str(e).split('\n')[0]
-                print(f"Failed to execute web trade: {error_msg}")
+                # === SUCCESS SCREENSHOT: Capture the open trade ===
+                time.sleep(1.5)  # Let the platform register the trade visually
                 try:
-                    page.screenshot(path="error_screenshot.png")
-                    print("--> ALERT: Saved debug screenshot to error_screenshot.png")
+                    page.screenshot(path="trade_executed.png")
+                    print("[Screenshot] Saved trade confirmation to 'trade_executed.png'")
+                except:
+                    print("[Screenshot] Could not capture trade confirmation.")
+                
+                # === BEEP ALERT: 3 beeps = trade executed ===
+                import winsound
+                for _ in range(3):
+                    winsound.Beep(1000, 200)  # 1000 Hz for 200ms
+                    time.sleep(0.1)
+                
+                return True, f"Success via {clicked}"
+            else:
+                page.screenshot(path="error_screenshot.png")
+                print("--> ALERT: JS click returned null. Screenshot saved.")
+                # === WARNING BEEP: 1 long beep = error ===
+                try:
+                    import winsound
+                    winsound.Beep(400, 800)  # Low tone, long = error
                 except:
                     pass
-                return False, error_msg
-            finally:
-                time.sleep(2)
-                proc.terminate()
+                return False, "JS click returned null - button not found in DOM"
+                
+        except Exception as e:
+            error_msg = str(e).split('\n')[0]
+            print(f"Failed to execute web trade: {error_msg}")
+            try:
+                page.screenshot(path="error_screenshot.png")
+                print("--> ALERT: Saved debug screenshot to error_screenshot.png")
+            except:
+                pass
+            return False, error_msg
+        finally:
+            time.sleep(2)
+            try:
+                p.stop()
+            except:
+                pass
+            proc.terminate()
