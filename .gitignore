@@ -1,0 +1,19 @@
+# General Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Trade Session & Browser Profiles (CRITICAL SECURITY)
+cdp_profile/
+edge_profile/
+playwright_profile/
+auth.json
+error_screenshot.png
+
+# Data & Models
+*.png
+model.h5
+scaler.pkl
+training_curves.png
