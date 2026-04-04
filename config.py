@@ -8,8 +8,8 @@ class Config:
     # MetaTrader 5 Credentials & Connection
     # -------------------------------------
     # REPLACE WITH YOUR ACTUAL DEMO CREDENTIALS
-    LOGIN = 1234567 
-    PASSWORD = "YourPasswordHere"
+    LOGIN = 5048877064
+    PASSWORD = "@nRtKeT3"
     SERVER = "YourBroker-Demo"
     
     # -------------------------------------
