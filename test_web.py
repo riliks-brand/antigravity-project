@@ -10,29 +10,32 @@ AMOUNT_INPUT = ".amount-input"  # Replace with the exact selector for the Amount
 URL = "https://olymptrade.com/platform"
 
 def test_login_and_click():
-    print("Initializing Playwright with Persistent Context...")
+    print("Initializing Playwright with Persistent Context AND Stealth Mode...")
+    from playwright_stealth import stealth_sync
     with sync_playwright() as p:
         browser = p.chromium.launch_persistent_context(
             user_data_dir="./playwright_profile",
             headless=False,
-            args=["--start-maximized"],
+            args=["--start-maximized", "--disable-blink-features=AutomationControlled"],
             no_viewport=True
         )
         
         page = browser.pages[0] if browser.pages else browser.new_page()
+        stealth_sync(page)
+        
         print(f"Navigating to {URL}...")
         page.goto(URL, timeout=60000)
         
         print("\n" + "="*50)
         print("ATTENTION AHMED!")
         print("="*50)
-        print("You have exactly 60 seconds to log in to Olymp Trade.")
+        print("You have exactly 300 seconds (5 minutes) to log in to Olymp Trade.")
         print("Ensure you are on the DEMO account.")
         print("Once the chart loads, find the Selectors using 'Inspect Element'.")
         print("="*50 + "\n")
         
-        # Countdown 60 seconds
-        for i in range(60, 0, -1):
+        # Countdown 300 seconds
+        for i in range(300, 0, -1):
             print(f"\rWaiting... {i} seconds remaining.", end="")
             time.sleep(1)
         print("\n\nTime is up! Proceeding with mocked execution...")
