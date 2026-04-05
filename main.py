@@ -85,18 +85,51 @@ def main():
                     print("[DXY Monitor] WARNING: DXY_Close column not found. Model running without DXY.")
                 
                 prob = model.predict(X_live)[0][0]
-                action = "buy" if prob > 0.5 else "sell"
+                raw_action = "buy" if prob > 0.5 else "sell"
                 
                 sig_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-                print(f"[Prediction Generated] {sig_time} -> Prob: {prob:.4f} -> {action.upper()}")
+                print(f"[Prediction Generated] {sig_time} -> Prob: {prob:.4f} -> {raw_action.upper()}")
                 
-                # 5. Execute with warm session (or cold start)
-                print("Launching Web Executer for Olymp Trade...")
-                success, output_msg = executor.execute_web(
-                    action=action, 
-                    warm_session=warm_session
-                )
-                warm_session = None  # Session consumed, will re-warm next cycle
+                # === BOLLINGER TREND FILTER ===
+                action = raw_action
+                if 'BB_mid' in processed_df.columns:
+                    last_close = processed_df['close'].iloc[-1]
+                    bb_mid = processed_df['BB_mid'].iloc[-1]
+                    bb_high = processed_df['BB_high'].iloc[-1]
+                    bb_low = processed_df['BB_low'].iloc[-1]
+                    print(f"[Bollinger] Close: {last_close:.4f} | BB_mid: {bb_mid:.4f} | BB_high: {bb_high:.4f} | BB_low: {bb_low:.4f}")
+                    
+                    if raw_action == "buy" and last_close < bb_mid:
+                        print(f"[Bollinger FILTER] BUY BLOCKED: Price ({last_close:.4f}) is BELOW BB Middle ({bb_mid:.4f}). Trend is bearish.")
+                        print("[Bollinger FILTER] SKIP: Better to wait for trade-aligned signal.")
+                        action = None
+                    elif raw_action == "sell" and last_close > bb_mid:
+                        print(f"[Bollinger FILTER] SELL BLOCKED: Price ({last_close:.4f}) is ABOVE BB Middle ({bb_mid:.4f}). Trend is bullish.")
+                        print("[Bollinger FILTER] SKIP: Better to wait for trade-aligned signal.")
+                        action = None
+                    else:
+                        print(f"[Bollinger FILTER] PASSED: {action.upper()} confirmed by trend direction.")
+                else:
+                    print("[Bollinger] WARNING: BB_mid not found. Skipping trend filter.")
+                
+                # 5. Execute only if passed filter
+                if action:
+                    print(f"[FINAL DECISION] {action.upper()} (raw: {raw_action.upper()}, prob: {prob:.4f})")
+                    print("Launching Web Executer for Olymp Trade...")
+                    success, output_msg = executor.execute_web(
+                        action=action, 
+                        warm_session=warm_session
+                    )
+                else:
+                    print("[FINAL DECISION] NO TRADE (Filter Blocked)")
+                    # Clean up session
+                    if warm_session:
+                        try:
+                            warm_session[1].stop()
+                            warm_session[0].terminate()
+                        except:
+                            pass
+                warm_session = None  # Session consumed/cleaned, will re-warm next cycle
                 
                 if success:
                     print(f"\n[LIVE TRADE VERIFIED: {action.upper()} ON OLYMP TRADE]")

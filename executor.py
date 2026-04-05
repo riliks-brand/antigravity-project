@@ -115,15 +115,18 @@ class TradeExecutor:
         
         time.sleep(1)
         
-        print("[Warm-up] Launching native browser for Cloudflare negotiation...")
+        # Native Browser Launch (Forcing WebGL/GPU for Olymp Trade Charts)
         proc = subprocess.Popen([
             browser_exe,
             "--remote-debugging-port=9225",
             f"--user-data-dir={profile_path}",
+            "--ignore-gpu-blocklist",
+            "--enable-webgl",
+            "--no-sandbox",
             url
         ])
         
-        time.sleep(5)  # Let Cloudflare pass
+        time.sleep(10)  # Extended wait to ensure WebGL/Canvas loads fully
         
         p = sync_playwright().start()
         browser = p.chromium.connect_over_cdp("http://localhost:9225")
@@ -174,14 +177,14 @@ class TradeExecutor:
             except:
                 print("WARNING: Could not read page title. Proceeding.")
             
-            # ===== STEP 1: SET DURATION TO 5 MINUTES =====
-            print("[Duration] Setting trade duration to 5 minutes...")
+            # ===== STEP 1: SET DURATION TO 2 MINUTES =====
+            print("[Duration] Setting trade duration to 2 minutes...")
             duration_set = page.evaluate("""() => {
-                // Strategy 1: Click on Duration area and look for 5m option
+                // Strategy 1: Click on Duration area and look for duration controller
                 const durationBtns = document.querySelectorAll('button, [role="button"], div[class*="duration"], div[class*="Duration"]');
                 for (const el of durationBtns) {
                     const txt = el.textContent.trim().toLowerCase();
-                    if (txt.includes('duration') || txt.includes('min') || txt.includes('1 min')) {
+                    if (txt.includes('duration') || txt.includes('min') || txt.includes('2 min') || txt.includes('1 min')) {
                         el.click();
                         return 'duration-area-clicked';
                     }
@@ -191,27 +194,29 @@ class TradeExecutor:
             
             if duration_set:
                 time.sleep(1)
-                # Now try to select 5 minutes from the dropdown/picker
+                # Now try to select 2 minutes from the dropdown/picker
                 page.evaluate("""() => {
                     const options = document.querySelectorAll('button, [role="option"], [role="listbox"] *, div[class*="option"], li');
                     for (const opt of options) {
                         const txt = opt.textContent.trim().toLowerCase();
-                        if (txt === '5' || txt === '5 min' || txt === '5m' || txt.includes('5 min')) {
+                        if (txt === '2' || txt === '2 min' || txt === '2m' || txt.includes('2 min')) {
                             opt.click();
-                            return '5min-selected';
+                            // Close the modal by clicking on the background/page body
+                            setTimeout(() => { document.body.click(); }, 100);
+                            return '2min-selected-and-closed';
                         }
                     }
-                    // Fallback: try + button to increment from 1 min to 5 min
+                    // Fallback: try + button to increment (assuming starts at 1 min)
                     const plusBtns = document.querySelectorAll('[class*="plus"], [class*="increase"], [data-test*="plus"]');
                     if (plusBtns.length > 1) {
-                        // Click the duration + button 4 times (1min -> 5min)
-                        const durationPlus = plusBtns[plusBtns.length - 1]; // Usually last + is duration
-                        for (let i = 0; i < 4; i++) durationPlus.click();
-                        return '5min-via-plus';
+                        // Click the duration + button 1 time (1min -> 2min)
+                        const durationPlus = plusBtns[plusBtns.length - 1]; 
+                        durationPlus.click();
+                        return '2min-via-plus';
                     }
                     return null;
                 }""")
-                print("[Duration] Duration adjustment attempted.")
+                print("[Duration] Duration adjustment (2m) attempted and modal close triggered.")
             else:
                 print("[Duration] Could not locate duration control. Using platform default.")
             

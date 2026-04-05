@@ -23,6 +23,12 @@ def add_technical_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df['BB_low'] = bb.bollinger_lband()
     df['BB_mid'] = bb.bollinger_mavg()
     
+    # Bollinger Width (Volatility measure: narrow = squeeze incoming, wide = expansion)
+    df['BB_width'] = (df['BB_high'] - df['BB_low']) / (df['BB_mid'] + 1e-8)
+    
+    # Bollinger Position (Where is price within the bands? 0=at low, 1=at high)
+    df['BB_position'] = (df['close'] - df['BB_low']) / (df['BB_high'] - df['BB_low'] + 1e-8)
+    
     # ATR
     df['ATR'] = AverageTrueRange(high=df["high"], low=df["low"], close=df["close"], window=14).average_true_range()
     
