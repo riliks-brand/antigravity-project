@@ -47,3 +47,20 @@ class Config:
     # The presence of "OTC" in the name triggers DOM scraping mode.
     OTC_CANDLE_INTERVAL = 60     # Aggregate DOM ticks into 60-second candles
     OTC_CDP_PORT = 9225          # Chrome DevTools Protocol port for browser connection
+    
+    # -------------------------------------
+    # Trade Mode Selection
+    # -------------------------------------
+    # "fixed_time" = Up/Down with expiry (original mode)
+    # "forex"      = Buy/Sell with Multiplier + TP/SL (new Forex mode)
+    TRADE_MODE = "forex"
+    
+    # -------------------------------------
+    # Forex Mode Settings
+    # -------------------------------------
+    FOREX_MULTIPLIER = "10"       # Leverage multiplier: "10" or "100"
+    FOREX_DEFAULT_AMOUNT = "10"   # Default investment amount in $
+    FOREX_TP_ATR_MULT = 2.0      # Take Profit = ATR × this multiplier
+    FOREX_SL_ATR_MULT = 1.0      # Stop Loss   = ATR × this multiplier
+    FOREX_MAX_HOLD_SECONDS = 600  # Max hold time before force-close check (10 min)
+    FOREX_POLL_INTERVAL = 5       # Seconds between trade status polls
