@@ -1,4 +1,5 @@
 import numpy as np
+import yfinance as yf
 from config import Config
 from data_loader import init_mt5, fetch_data
 from features import feature_engineering_pipeline
@@ -10,7 +11,7 @@ import os
 import MetaTrader5 as mt5
 import csv
 
-def log_loss(processed_df):
+def log_loss(processed_df, weekend_mode):
     try:
         last_row = processed_df.iloc[-1]
         loss_dict = {
@@ -27,6 +28,7 @@ def log_loss(processed_df):
             if not file_exists:
                 writer.writeheader()
             writer.writerow(loss_dict)
+            
         import shutil
         if not os.path.exists('archive'):
             os.makedirs('archive')
@@ -37,176 +39,191 @@ def log_loss(processed_df):
     except Exception as e:
         print(f"\033[91mFailed to log loss: {e}\033[0m")
 
-def main():
-    if not init_mt5():
-        print("Failed initialization.")
-        return
 
+def main():
     pd.set_option('display.max_columns', None)
     pd.set_option('display.width', 1000)
     
-    print("\n" + "="*50)
-    print("INITIATING LIVE CONTINUOUS TRADING LOOP (5m Candles)")
-    print("="*50)
-    
     executor = TradeExecutor()
     last_trade_minute = -1
+    last_fetch_minute = -1
     warm_session = None
     
+    stale_count = 0
+    last_cycle_close = None
+    
+    print("\n" + "="*50)
+    print("INITIATING LIVE CONTINUOUS TRADING LOOP")
+    print("="*50)
+    
     while True:
-        success = None
         try:
             now = datetime.datetime.now()
-            minutes_to_next = 5 - (now.minute % 5)
-            seconds_to_next = minutes_to_next * 60 - now.second
+            weekend_mode = now.weekday() >= 5
             
-            if seconds_to_next <= 60 and seconds_to_next > 5 and warm_session is None:
-                print(f"\n[WARM-UP] Candle closes in ~{seconds_to_next}s. Pre-opening browser...")
+            if not weekend_mode:
+                if mt5.terminal_info() is None:
+                    init_mt5()
+                    
+            minutes_to_next = 5 - (now.minute % 5)
+            # Correct seconds to next 5 minute candle:
+            seconds_to_next_candle = minutes_to_next * 60 - now.second if minutes_to_next < 5 else 60 - now.second
+
+            # Warm-up phase triggers strictly at roughly T-60s
+            if seconds_to_next_candle <= 60 and seconds_to_next_candle > 5 and warm_session is None:
+                print(f"\n[WARM-UP] Candle closes in ~{seconds_to_next_candle}s. Pre-opening browser...")
                 try:
                     warm_session = executor.warm_up_browser()
                 except Exception as e:
                     print(f"[WARM-UP] Failed: {e}. Will cold-start at execution time.")
                     warm_session = None
-            
-            if now.minute % 5 == 0 and now.minute != last_trade_minute:
-                print("\n" + "="*50)
-                print(f"[SIGNAL EVALUATION] Trigger Time: {now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}")
-                print("="*50)
+                    
+            # 60s Sampling Rate
+            if now.minute != last_fetch_minute:
+                last_fetch_minute = now.minute
                 
-                last_trade_minute = now.minute
-                
-                raw_df = fetch_data()
+                raw_df = fetch_data(weekend_mode=weekend_mode)
                 if raw_df is None or raw_df.empty:
-                    print("Data fetch failed. Initializing MT5 and retrying next cycle...")
-                    init_mt5()
-                    if warm_session:
-                        try:
-                            warm_session[1].stop()
-                            warm_session[0].terminate()
-                        except: pass
-                        warm_session = None
-                    time.sleep(60)
+                    print("\033[91mData fetch failed. Retrying next cycle...\033[0m")
+                    time.sleep(5)
                     continue
                     
                 processed_df = feature_engineering_pipeline(raw_df)
                 
-                from lstm_model import prepare_sequential_data, train_and_evaluate
-                X_train, X_test, y_train, y_test, scaler, train_weights = prepare_sequential_data(processed_df)
-                model, history, acc = train_and_evaluate(X_train, X_test, y_train, y_test, sample_weights=train_weights)
+                # Anti-freeze Check
+                current_close = processed_df['close'].iloc[-1]
+                if last_cycle_close == current_close:
+                    stale_count += 1
+                else:
+                    stale_count = 0
+                    
+                last_cycle_close = current_close
                 
-                latest_features = processed_df.drop(['Target'], axis=1).values
-                latest_features_scaled = scaler.transform(latest_features)
+                if stale_count >= 3:
+                    print(f"\033[91m[Stale Data] Market is flat or frozen for 3 consecutive cycles. Waiting...\033[0m")
+                    time.sleep(5)
+                    continue
+                    
+                print(f"[Loop] Active cache maintained. Current Close: {current_close:.2f} (Stale Count: {stale_count})")
                 
-                if len(latest_features_scaled) >= Config.SEQUENCE_LENGTH:
-                    X_live = latest_features_scaled[-Config.SEQUENCE_LENGTH:]
-                    X_live = np.array([X_live])
+                # Trade Evaluation ONLY on 5m boundary
+                if now.minute % 5 == 0 and now.minute != last_trade_minute:
+                    print("\n" + "="*50)
+                    print(f"[SIGNAL EVALUATION] Trigger Time: {now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}")
+                    print("="*50)
                     
-                    if 'DXY_Close' in processed_df.columns:
-                        last_dxy = processed_df['DXY_Close'].iloc[-1]
-                        print(f"[DXY Monitor] Latest DXY: {last_dxy:.4f}")
+                    last_trade_minute = now.minute
                     
-                    prob = model.predict(X_live)[0][0]
-                    raw_action = "buy" if prob > 0.5 else "sell"
+                    from lstm_model import prepare_sequential_data, train_and_evaluate
+                    X_train, X_test, y_train, y_test, scaler, train_weights = prepare_sequential_data(processed_df)
+                    model, history, acc = train_and_evaluate(X_train, X_test, y_train, y_test, sample_weights=train_weights)
                     
-                    sig_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+                    latest_features = processed_df.drop(['Target'], axis=1).values
+                    latest_features_scaled = scaler.transform(latest_features)
                     
-                    action = raw_action
-                    filter_status = "Skipped"
-                    if 'BB_mid' in processed_df.columns:
-                        last_close = processed_df['close'].iloc[-1]
-                        bb_mid = processed_df['BB_mid'].iloc[-1]
-                        dist_to_mid = last_close - bb_mid
+                    if len(latest_features_scaled) >= Config.SEQUENCE_LENGTH:
+                        X_live = latest_features_scaled[-Config.SEQUENCE_LENGTH:]
+                        X_live = np.array([X_live])
                         
-                        print(f"[Signal] Prob: {prob*100:.2f}% -> {raw_action.upper()} | Distance to BB_mid: {dist_to_mid:.4f}")
+                        prob = model.predict(X_live)[0][0]
+                        raw_action = "buy" if prob > 0.5 else "sell"
                         
-                        if raw_action == "buy" and last_close < bb_mid:
-                            filter_status = "BLOCKED (Bearish Trend)"
-                            action = None
-                        elif raw_action == "sell" and last_close > bb_mid:
-                            filter_status = "BLOCKED (Bullish Trend)"
-                            action = None
-                        else:
-                            filter_status = "PASSED"
-                    else:
-                        print(f"[Signal] Prob: {prob*100:.2f}% -> {raw_action.upper()}")
-                        
-                    print(f"Filter: {filter_status}")
-                    
-                    forced_tier = None
-                    if not action:
-                        print("\n[!] Filter Blocked.")
-                        force = input("Force Trade? (y/n): ")
-                        if force.strip().lower() == 'y':
-                            action = raw_action
-                            print("Choose Tier:")
-                            print("[1] 1$ (1m)")
-                            print("[2] 10$ (2m)")
-                            print("[3] Custom")
-                            tier_choice = input("Choice: ")
-                            if tier_choice == '1': 
-                                forced_tier = ("1 min", "1", 1)
-                            elif tier_choice == '2': 
-                                forced_tier = ("2 min", "10", 2)
-                            elif tier_choice == '3':
-                                cust_amt = input("Amount: ")
-                                cust_dur = input("Duration (e.g. 1m): ")
-                                dur_mins = int(''.join(filter(str.isdigit, cust_dur)) or '1')
-                                forced_tier = (cust_dur, cust_amt, dur_mins)
-                    
-                    if action:
-                        if forced_tier:
-                            duration, amount, dur_mins = forced_tier
-                        else:
-                            if prob > 0.55 or prob < 0.45:
-                                print("[Tier A Execution]")
-                                duration, amount, dur_mins = ("2 min", "10", 2)
+                        action = raw_action
+                        filter_status = "Skipped"
+                        if 'BB_mid' in processed_df.columns:
+                            last_close = processed_df['close'].iloc[-1]
+                            bb_mid = processed_df['BB_mid'].iloc[-1]
+                            dist_to_mid = last_close - bb_mid
+                            
+                            print(f"[Signal] Prob: {prob*100:.2f}% -> {raw_action.upper()} | Distance to BB_mid: {dist_to_mid:.4f}")
+                            
+                            if raw_action == "buy" and last_close < bb_mid:
+                                filter_status = "BLOCKED (Bearish Trend)"
+                                action = None
+                            elif raw_action == "sell" and last_close > bb_mid:
+                                filter_status = "BLOCKED (Bullish Trend)"
+                                action = None
                             else:
-                                print("[Tier B Execution]")
-                                duration, amount, dur_mins = ("1 min", "1", 1)
+                                filter_status = "PASSED"
                                 
-                        print(f"[FINAL DECISION] {action.upper()} | Amount: {amount}$ | Duration: {duration}")
+                        print(f"Filter: {filter_status}")
                         
-                        # Validate MT5 sync is ready
-                        init_mt5()
-                        entry_tick = mt5.symbol_info_tick(Config.SYMBOL)
-                        if entry_tick is None:
-                            print("[MT5 Sync] Warning: Could not fetch entry tick. Continuing web trade, but sync may fail.")
+                        forced_tier = None
+                        if not action:
+                            print("\n[!] Filter Blocked.")
+                            force = input("Force Trade? (y/n): ")
+                            if force.strip().lower() == 'y':
+                                action = raw_action
+                                print("Choose Tier:")
+                                print("[1] 1$ (1m) | [2] 10$ (2m) | [3] Custom")
+                                tier_choice = input("Choice: ")
+                                if tier_choice == '1': 
+                                    forced_tier = ("1 min", "1", 1)
+                                elif tier_choice == '2': 
+                                    forced_tier = ("2 min", "10", 2)
+                                elif tier_choice == '3':
+                                    cust_amt = input("Amount: ")
+                                    cust_dur = input("Duration (e.g. 1m): ")
+                                    dur_mins = int(''.join(filter(str.isdigit, cust_dur)) or '1')
+                                    forced_tier = (cust_dur, cust_amt, dur_mins)
+                        
+                        if action:
+                            if forced_tier:
+                                duration, amount, dur_mins = forced_tier
+                            else:
+                                if prob > 0.55 or prob < 0.45:
+                                    duration, amount, dur_mins = ("2 min", "10", 2)
+                                else:
+                                    duration, amount, dur_mins = ("1 min", "1", 1)
+                                    
+                            print(f"[FINAL DECISION] {action.upper()} | Amount: {amount}$ | Duration: {duration}")
+                            
                             entry_price = 0
-                        else:
-                            entry_price = entry_tick.ask if action == "buy" else entry_tick.bid
-                            print(f"[MT5 Sync] Entry Price: {entry_price}")
-                        
-                        # Check warm session
-                        try:
-                            if warm_session and warm_session[0].poll() is not None:
-                                # Process died
-                                warm_session = None
-                        except:
+                            if weekend_mode:
+                                tic = yf.Ticker("BTC-USD")
+                                try:
+                                    # Use fast_info for immediate spot price if possible
+                                    entry_price = tic.fast_info.last_price
+                                except:
+                                    entry_price = current_close
+                                print(f"[Yfinance Sync] Entry Price: {entry_price:.2f}")
+                            else:
+                                init_mt5()
+                                entry_tick = mt5.symbol_info_tick(Config.SYMBOL)
+                                if entry_tick:
+                                    entry_price = entry_tick.ask if action == "buy" else entry_tick.bid
+                                    print(f"[MT5 Sync] Entry Price: {entry_price:.5f}")
+                            
+                            success, output_msg = executor.execute_web(
+                                action=action, 
+                                duration=duration,
+                                amount=amount,
+                                warm_session=warm_session
+                            )
+                            
                             warm_session = None
                             
-                        # Execute
-                        success, output_msg = executor.execute_web(
-                            action=action, 
-                            duration=duration,
-                            amount=amount,
-                            warm_session=warm_session
-                        )
-                        
-                        warm_session = None
-                        
-                        if success:
-                            print(f"\n[LIVE TRADE VERIFIED: {action.upper()} ON OLYMP TRADE]")
-                            
-                            if entry_price > 0:
-                                print(f"[MT5 Sync] Waiting {dur_mins} minutes for trade completion...")
-                                time.sleep(dur_mins * 60)
+                            if success:
+                                print(f"\n[LIVE TRADE VERIFIED: {action.upper()} ON OLYMP TRADE]")
                                 
-                                init_mt5() # Ensure connected
-                                exit_tick = mt5.symbol_info_tick(Config.SYMBOL)
-                                if exit_tick is not None:
-                                    exit_price = exit_tick.ask if action == "buy" else exit_tick.bid
-                                    print(f"[MT5 Sync] Expiry Price: {exit_price} (Entry: {entry_price})")
+                                if entry_price > 0:
+                                    print(f"[Verify] Waiting {dur_mins} minutes for trade completion...")
+                                    time.sleep(dur_mins * 60)
                                     
+                                    exit_price = entry_price
+                                    if weekend_mode:
+                                        try:
+                                            tic = yf.Ticker("BTC-USD")
+                                            exit_price = tic.fast_info.last_price
+                                            print(f"[Yfinance Sync] Expiry Price: {exit_price:.2f} (Entry: {entry_price:.2f})")
+                                        except: pass
+                                    else:
+                                        init_mt5()
+                                        exit_tick = mt5.symbol_info_tick(Config.SYMBOL)
+                                        if exit_tick:
+                                            exit_price = exit_tick.ask if action == "buy" else exit_tick.bid
+                                            print(f"[MT5 Sync] Expiry Price: {exit_price:.5f} (Entry: {entry_price:.5f})")
+                                            
                                     loss = False
                                     if action == "buy" and exit_price <= entry_price:
                                         loss = True
@@ -214,46 +231,29 @@ def main():
                                         loss = True
                                         
                                     if loss:
-                                        print("[Outcome] LOSS detected via MT5 sync. Triggering Loss Log.")
-                                        log_loss(processed_df)
+                                        print("\033[91m[Outcome] LOSS detected. Triggering Loss Log.\033[0m")
+                                        log_loss(processed_df, weekend_mode)
                                     else:
-                                        print("[Outcome] WIN detected via MT5 sync.")
-                                else:
-                                    print("[MT5 Sync] Failed to get exit tick.")
+                                        print("\033[92m[Outcome] WIN detected.\033[0m")
+                            else:
+                                print(f"Failed to open trade on Olymp Trade. Reason: {output_msg}")
                         else:
-                            print(f"Failed to open trade on Olymp Trade. Reason: {output_msg}")
-                            print(f"!!! CRITICAL ALERT: Check 'error_screenshot.png' for exact DOM failure !!!")
+                            print("[FINAL DECISION] NO TRADE")
+                            
+                        if warm_session:
+                            try:
+                                warm_session[1].stop()
+                                warm_session[0].terminate()
+                            except: pass
+                            warm_session = None 
                     else:
-                        print("[FINAL DECISION] NO TRADE")
+                        print("Not enough data to form a sequence.")
                         
-                    # Cleanup
-                    if warm_session:
-                        try:
-                            warm_session[1].stop()
-                            warm_session[0].terminate()
-                        except: pass
-                        warm_session = None 
-                else:
-                    print("Not enough data to form a sequence.")
-                    if warm_session:
-                        try:
-                            warm_session[1].stop()
-                            warm_session[0].terminate()
-                        except: pass
-                        warm_session = None
-            else:
-                time.sleep(3)
+            time.sleep(2)
         except Exception as e:
-            print(f"[MAIN LOOP EXCEPTION] {e}")
+            print(f"\033[91m[MAIN LOOP EXCEPTION] {e}\033[0m")
             import traceback
             traceback.print_exc()
-            init_mt5()
-            if warm_session:
-                try:
-                    warm_session[1].stop()
-                    warm_session[0].terminate()
-                except: pass
-                warm_session = None
             time.sleep(5)
 
 if __name__ == "__main__":

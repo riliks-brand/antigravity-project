@@ -13,73 +13,73 @@ def init_mt5():
         return False
     return True
 
-def fetch_data():
+def fetch_data(weekend_mode=False):
     """
-    Fetches the live candles from MT5 (EURUSD) and merges DXY from yfinance.
-    DXY is fetched in a parallel thread to avoid blocking the primary data fetch.
-    Returns a Pandas DataFrame.
+    Fetches the live candles from MT5 (EURUSD) or yfinance (BTC-USD in weekend mode) 
+    and merges DXY from yfinance. DXY is frozen if in weekend mode to prevent model NaNs.
     """
     from threading import Thread
     
-    print(f"Fetching Live Data from MT5 for {Config.SYMBOL}...")
+    ticker = "BTC-USD" if weekend_mode else Config.SYMBOL
+    print(f"Fetching Live Data for {ticker}... (Weekend Mode: {weekend_mode})")
     
-    # ===== DXY THREAD (runs in background while we fetch BTC/MT5) =====
+    # ===== DXY THREAD =====
     dxy_result = {"df": None}
     
     def _fetch_dxy():
         try:
-            print(f"[Thread] Fetching DXY via yfinance ({Config.DXY_TICKER})...")
             dxy_ticker = yf.Ticker(Config.DXY_TICKER)
             df_dxy = dxy_ticker.history(period="1mo", interval="5m")
             if df_dxy is not None and not df_dxy.empty:
                 df_dxy.index = df_dxy.index.tz_localize(None)
                 dxy_result["df"] = df_dxy[['Close']].rename(columns={'Close': 'DXY_Close'})
-                print(f"[Thread] DXY fetched: {len(dxy_result['df'])} rows.")
             else:
                 print("[Thread] DXY fetch returned empty.")
         except Exception as e:
             print(f"[Thread] DXY fetch failed: {e}")
     
-    # Start DXY fetch in background immediately
     dxy_thread = Thread(target=_fetch_dxy, daemon=True)
     dxy_thread.start()
     
-    # ===== PRIMARY ASSET (runs on main thread simultaneously) =====
-    rates = mt5.copy_rates_from_pos(Config.SYMBOL, Config.TIMEFRAME, 0, Config.DATA_POINTS)
-    if rates is None or len(rates) == 0:
-        print(f"Failed to fetch rates from MT5 for {Config.SYMBOL}, error code = {mt5.last_error()}")
-        print("Falling back to yfinance for BTC-USD...")
+    # ===== PRIMARY ASSET =====
+    if weekend_mode:
+        print("[Weekend Mode] Bypassing MT5. Using yfinance 24/7 data for BTC-USD...")
         btc_ticker = yf.Ticker("BTC-USD")
-        df_mt5 = btc_ticker.history(period="7d", interval="1m")
-        if df_mt5.empty:
-            print("Fallback failed. No data.")
+        # Fetch 5m interval to match the model training requirements (which uses 5m candles normally)
+        # Note: If Config.TIMEFRAME says M1 but the user predicts 5-minute lookaheads, we ensure 
+        # yfinance supplies matching granularities. Since the original used 5m for DXY and MT5 was whatever.
+        df_primary = btc_ticker.history(period="7d", interval="5m")
+        if df_primary.empty:
+            print("Failed to fetch Yfinance data for BTC-USD.")
             return None
-        df_mt5.index = df_mt5.index.tz_localize(None)
-        df_mt5.rename(columns={'Open': 'open', 'High': 'high', 'Low': 'low', 'Close': 'close', 'Volume': 'real_volume'}, inplace=True)
+        df_primary.index = df_primary.index.tz_localize(None)
+        df_primary.rename(columns={'Open': 'open', 'High': 'high', 'Low': 'low', 'Close': 'close', 'Volume': 'real_volume'}, inplace=True)
     else:
-        df_mt5 = pd.DataFrame(rates)
-        df_mt5['time'] = pd.to_datetime(df_mt5['time'], unit='s')
-        df_mt5.set_index('time', inplace=True)
+        rates = mt5.copy_rates_from_pos(Config.SYMBOL, Config.TIMEFRAME, 0, Config.DATA_POINTS)
+        if rates is None or len(rates) == 0:
+            print(f"Failed to fetch rates from MT5 for {Config.SYMBOL}, error code = {mt5.last_error()}")
+            return None
+        df_primary = pd.DataFrame(rates)
+        df_primary['time'] = pd.to_datetime(df_primary['time'], unit='s')
+        df_primary.set_index('time', inplace=True)
     
-    print(f"Successfully fetched {len(df_mt5)} rows for primary asset.")
-    
-    # ===== WAIT FOR DXY THREAD TO FINISH (max 10s) =====
+    # ===== MERGE DXY =====
     dxy_thread.join(timeout=10)
     
     if dxy_result["df"] is not None:
-        print("Merging primary asset and DXY...")
-        df_combined = df_mt5.join(dxy_result["df"], how='left')
-        df_combined['DXY_Close'] = df_combined['DXY_Close'].ffill()
-        df_combined.dropna(subset=['DXY_Close'], inplace=True)
-        print(f"Merged data: {len(df_combined)} rows (dropped {len(df_mt5) - len(df_combined)} rows due to DXY gaps).")
+        if weekend_mode:
+            # DXY is frozen on weekends. Use the last available value as static input to avoid NaN dropping overlapping BTC data
+            last_dxy_val = dxy_result["df"]['DXY_Close'].dropna().iloc[-1]
+            df_primary['DXY_Close'] = last_dxy_val
+            print(f"\033[94m[DXY Freeze] Applied static DXY value: {last_dxy_val} to prevent pipeline corruption.\033[0m")
+            df_combined = df_primary
+        else:
+            print("Merging primary asset and DXY...")
+            df_combined = df_primary.join(dxy_result["df"], how='left')
+            df_combined['DXY_Close'] = df_combined['DXY_Close'].ffill()
+            df_combined.dropna(subset=['DXY_Close'], inplace=True)
+            print(f"Merged data: {len(df_combined)} rows.")
         return df_combined
     else:
         print("DXY unavailable. Continuing with primary asset only.")
-        return df_mt5
-
-if __name__ == "__main__":
-    if init_mt5():
-        df = fetch_data()
-        if df is not None:
-            print(df.tail())
-        mt5.shutdown()
+        return df_primary
