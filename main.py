@@ -11,6 +11,9 @@ import os
 import MetaTrader5 as mt5
 import csv
 
+# ===== GLOBAL AVOIDANCE COUNTER =====
+trades_avoided_by_memory = 0
+
 def log_loss(processed_df, weekend_mode):
     try:
         last_row = processed_df.iloc[-1]
@@ -40,7 +43,108 @@ def log_loss(processed_df, weekend_mode):
         print(f"\033[91mFailed to log loss: {e}\033[0m")
 
 
+def compute_memory_similarity(processed_df):
+    """
+    Computes the maximum percentage similarity between the current market state
+    and all recorded loss patterns in losses_log.csv.
+    Returns (max_similarity_pct, matching_loss_index) or (0.0, -1) if no losses exist.
+    """
+    if not os.path.exists('losses_log.csv'):
+        return 0.0, -1
+    
+    try:
+        losses_df = pd.read_csv('losses_log.csv')
+        if losses_df.empty:
+            return 0.0, -1
+    except Exception:
+        return 0.0, -1
+    
+    last_row = processed_df.iloc[-1]
+    
+    # Current state vector (normalized)
+    current_state = np.array([
+        last_row.get('DXY_Close', 0),
+        last_row.get('close', 0) - last_row.get('BB_mid', 0) if 'BB_mid' in processed_df.columns else 0,
+        last_row.get('RSI', 0),
+        last_row.get('ATR', 0),
+        last_row.get('Volatility', 0) if 'Volatility' in processed_df.columns else 0
+    ], dtype=float)
+    
+    max_sim = 0.0
+    match_idx = -1
+    
+    for idx, loss_row in losses_df.iterrows():
+        loss_state = np.array([
+            loss_row.get('DXY', 0),
+            loss_row.get('BB_Pos', 0),
+            loss_row.get('RSI', 0),
+            loss_row.get('ATR', 0),
+            loss_row.get('Volatility', 0)
+        ], dtype=float)
+        
+        # Euclidean distance -> percentage similarity
+        # Normalize by magnitude to get a meaningful percentage
+        norm_current = np.linalg.norm(current_state)
+        norm_loss = np.linalg.norm(loss_state)
+        
+        if norm_current == 0 and norm_loss == 0:
+            similarity = 100.0
+        elif norm_current == 0 or norm_loss == 0:
+            similarity = 0.0
+        else:
+            # Cosine similarity mapped to 0-100%
+            cos_sim = np.dot(current_state, loss_state) / (norm_current * norm_loss)
+            # Clamp to [0, 1] (cosine can be negative for opposite directions)
+            cos_sim = max(0.0, min(1.0, cos_sim))
+            similarity = cos_sim * 100.0
+        
+        if similarity > max_sim:
+            max_sim = similarity
+            match_idx = idx
+    
+    return max_sim, match_idx
+
+
+def print_memory_report(similarity_pct, match_idx):
+    """
+    Prints the Memory Similarity Report with color-coded tiers.
+    Returns: 'BLOCK', 'WARN', or 'PASS'
+    """
+    global trades_avoided_by_memory
+    
+    print(f"\n\033[96m{'='*55}\033[0m")
+    print(f"\033[96m       🧠 MEMORY SIMILARITY CHECK\033[0m")
+    print(f"\033[96m{'='*55}\033[0m")
+    
+    if similarity_pct >= Config.SIMILARITY_HARD_BLOCK:
+        # ===== HARD BLOCK =====
+        trades_avoided_by_memory += 1
+        print(f"\033[91m[DANGER] {similarity_pct:.1f}% Similarity with Previous Loss (#{match_idx}). Trade BLOCKED.\033[0m")
+        print(f"\033[91m[Memory] \"لقد تعلمت من هذه الخسارة السابقة، ولن أدخل هذه الصفقة لأنها تشبهها بنسبة {similarity_pct:.0f}%\"\033[0m")
+        print(f"\033[93m[Stats] Total Trades Avoided by Memory: {trades_avoided_by_memory}\033[0m")
+        print(f"\033[96m{'='*55}\033[0m\n")
+        return 'BLOCK'
+    
+    elif similarity_pct >= Config.SIMILARITY_WARNING:
+        # ===== CO-PILOT WARNING =====
+        print(f"\033[93m[WARNING] {similarity_pct:.1f}% Similarity with Previous Loss (#{match_idx}). Requesting confirmation...\033[0m")
+        print(f"\033[93m[Memory] Current market state is {similarity_pct:.0f}% similar to a previous loss. Proceeding with caution...\033[0m")
+        print(f"\033[93m[Stats] Total Trades Avoided by Memory: {trades_avoided_by_memory}\033[0m")
+        print(f"\033[96m{'='*55}\033[0m\n")
+        return 'WARN'
+    
+    else:
+        # ===== SAFE =====
+        print(f"\033[92m[SAFE] {similarity_pct:.1f}% Similarity — Below danger threshold.\033[0m")
+        print(f"\033[92m[Memory] Current market state is {similarity_pct:.0f}% similar to closest loss. Proceeding normally.\033[0m")
+        print(f"\033[93m[Stats] Total Trades Avoided by Memory: {trades_avoided_by_memory}\033[0m")
+        print(f"\033[96m{'='*55}\033[0m\n")
+        return 'PASS'
+
+
 def main():
+    global trades_avoided_by_memory
+    
     pd.set_option('display.max_columns', None)
     pd.set_option('display.width', 1000)
     
@@ -59,14 +163,16 @@ def main():
     while True:
         try:
             now = datetime.datetime.now()
+            
+            # Detect OTC mode from Config
+            otc_mode = "OTC" in Config.SYMBOL.upper() if hasattr(Config, 'SYMBOL') else False
             weekend_mode = now.weekday() >= 5
             
-            if not weekend_mode:
+            if not weekend_mode and not otc_mode:
                 if mt5.terminal_info() is None:
                     init_mt5()
                     
             minutes_to_next = 5 - (now.minute % 5)
-            # Correct seconds to next 5 minute candle:
             seconds_to_next_candle = minutes_to_next * 60 - now.second if minutes_to_next < 5 else 60 - now.second
 
             # Warm-up phase triggers strictly at roughly T-60s
@@ -128,6 +234,21 @@ def main():
                         prob = model.predict(X_live)[0][0]
                         raw_action = "buy" if prob > 0.5 else "sell"
                         
+                        # ===== MEMORY SIMILARITY CHECK (BEFORE BB Filter) =====
+                        similarity_pct, match_idx = compute_memory_similarity(processed_df)
+                        memory_verdict = print_memory_report(similarity_pct, match_idx)
+                        
+                        if memory_verdict == 'BLOCK':
+                            # Hard block — skip this entire trade cycle
+                            print("\033[91m[FINAL DECISION] TRADE BLOCKED BY MEMORY. Skipping cycle.\033[0m")
+                            if warm_session:
+                                try:
+                                    warm_session[1].stop()
+                                    warm_session[0].terminate()
+                                except: pass
+                                warm_session = None
+                            continue
+                        
                         action = raw_action
                         filter_status = "Skipped"
                         if 'BB_mid' in processed_df.columns:
@@ -147,6 +268,15 @@ def main():
                                 filter_status = "PASSED"
                                 
                         print(f"Filter: {filter_status}")
+                        
+                        # ===== MEMORY WARNING TIER (60-80%): Co-Pilot Confirmation =====
+                        if memory_verdict == 'WARN' and action:
+                            print(f"\n\033[93m[WARNING] {similarity_pct:.0f}% Similarity. Do you still want to force entry? (y/n):\033[0m")
+                            force_mem = input("Decision: ")
+                            if force_mem.strip().lower() != 'y':
+                                trades_avoided_by_memory += 1
+                                print(f"\033[91m[Memory] Trade cancelled by operator. Total Avoided: {trades_avoided_by_memory}\033[0m")
+                                action = None
                         
                         forced_tier = None
                         if not action:
@@ -182,11 +312,15 @@ def main():
                             if weekend_mode:
                                 tic = yf.Ticker("BTC-USD")
                                 try:
-                                    # Use fast_info for immediate spot price if possible
                                     entry_price = tic.fast_info.last_price
                                 except:
                                     entry_price = current_close
                                 print(f"[Yfinance Sync] Entry Price: {entry_price:.2f}")
+                            elif otc_mode:
+                                # OTC mode — entry price from scraper's last tick
+                                from otc_scraper import OTCScraper
+                                entry_price = OTCScraper.get_last_price()
+                                print(f"[OTC Scraper] Entry Price: {entry_price:.5f}")
                             else:
                                 init_mt5()
                                 entry_tick = mt5.symbol_info_tick(Config.SYMBOL)
@@ -217,6 +351,10 @@ def main():
                                             exit_price = tic.fast_info.last_price
                                             print(f"[Yfinance Sync] Expiry Price: {exit_price:.2f} (Entry: {entry_price:.2f})")
                                         except: pass
+                                    elif otc_mode:
+                                        from otc_scraper import OTCScraper
+                                        exit_price = OTCScraper.get_last_price()
+                                        print(f"[OTC Scraper] Expiry Price: {exit_price:.5f} (Entry: {entry_price:.5f})")
                                     else:
                                         init_mt5()
                                         exit_tick = mt5.symbol_info_tick(Config.SYMBOL)

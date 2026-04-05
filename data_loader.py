@@ -15,10 +15,21 @@ def init_mt5():
 
 def fetch_data(weekend_mode=False):
     """
-    Fetches the live candles from MT5 (EURUSD) or yfinance (BTC-USD in weekend mode) 
-    and merges DXY from yfinance. DXY is frozen if in weekend mode to prevent model NaNs.
+    Fetches the live candles from:
+    - MT5 (EURUSD/BTCUSD) in normal weekday mode
+    - yfinance (BTC-USD) in weekend mode
+    - OTC Scraper (DOM/WebSocket) if Config.SYMBOL contains "OTC"
+    
+    Merges DXY from yfinance when available.
+    DXY is frozen if in weekend/OTC mode to prevent model NaNs.
     """
     from threading import Thread
+    
+    # ===== OTC MODE DETECTION =====
+    otc_mode = "OTC" in Config.SYMBOL.upper()
+    
+    if otc_mode:
+        return _fetch_otc_data()
     
     ticker = "BTC-USD" if weekend_mode else Config.SYMBOL
     print(f"Fetching Live Data for {ticker}... (Weekend Mode: {weekend_mode})")
@@ -45,9 +56,6 @@ def fetch_data(weekend_mode=False):
     if weekend_mode:
         print("[Weekend Mode] Bypassing MT5. Using yfinance 24/7 data for BTC-USD...")
         btc_ticker = yf.Ticker("BTC-USD")
-        # Fetch 5m interval to match the model training requirements (which uses 5m candles normally)
-        # Note: If Config.TIMEFRAME says M1 but the user predicts 5-minute lookaheads, we ensure 
-        # yfinance supplies matching granularities. Since the original used 5m for DXY and MT5 was whatever.
         df_primary = btc_ticker.history(period="7d", interval="5m")
         if df_primary.empty:
             print("Failed to fetch Yfinance data for BTC-USD.")
@@ -68,7 +76,6 @@ def fetch_data(weekend_mode=False):
     
     if dxy_result["df"] is not None:
         if weekend_mode:
-            # DXY is frozen on weekends. Use the last available value as static input to avoid NaN dropping overlapping BTC data
             last_dxy_val = dxy_result["df"]['DXY_Close'].dropna().iloc[-1]
             df_primary['DXY_Close'] = last_dxy_val
             print(f"\033[94m[DXY Freeze] Applied static DXY value: {last_dxy_val} to prevent pipeline corruption.\033[0m")
@@ -83,3 +90,55 @@ def fetch_data(weekend_mode=False):
     else:
         print("DXY unavailable. Continuing with primary asset only.")
         return df_primary
+
+
+def _fetch_otc_data():
+    """
+    Fetches candle data from the OTC Scraper (DOM + WebSocket).
+    Bypasses MT5 and yfinance entirely.
+    Adds a frozen DXY value to maintain feature compatibility.
+    """
+    from otc_scraper import get_otc_scraper, OTCScraper
+    
+    print(f"\n\033[95m{'='*55}\033[0m")
+    print(f"\033[95m       🎯 OTC MODE: Fetching from Browser DOM\033[0m")
+    print(f"\033[95m{'='*55}\033[0m")
+    
+    scraper = get_otc_scraper(candle_interval=60)
+    
+    # Check readiness
+    candle_count = OTCScraper.get_candle_count()
+    min_required = Config.SEQUENCE_LENGTH + 50  # Need extra for indicator warmup
+    
+    if candle_count < min_required:
+        print(f"\033[93m[OTC Data] Gathering candles... ({candle_count}/{min_required})\033[0m")
+        print(f"\033[93m[OTC Data] WebSocket may provide instant history. DOM polling in progress.\033[0m")
+        
+        # Wait up to 30 seconds for WebSocket history
+        if not OTCScraper._ws_history_loaded.wait(timeout=30):
+            # Check again after waiting
+            candle_count = OTCScraper.get_candle_count()
+            if candle_count < min_required:
+                print(f"\033[91m[OTC Data] Only {candle_count} candles available. Need {min_required}. Still gathering...\033[0m")
+                return None
+    
+    # Fetch candles
+    df = scraper.get_candles(count=Config.DATA_POINTS)
+    
+    if df is None or df.empty:
+        print("\033[91m[OTC Data] Scraper returned empty data.\033[0m")
+        return None
+    
+    # Add frozen DXY column for feature compatibility
+    # OTC assets don't correlate with DXY but the model pipeline requires it
+    df['DXY_Close'] = 100.0  # Neutral static value
+    print(f"\033[94m[DXY Freeze] Applied static DXY value: 100.0 for OTC mode.\033[0m")
+    
+    # Ensure 'Volatility' column exists (some features reference it)
+    if 'Volatility' not in df.columns:
+        df['Volatility'] = 0
+    
+    print(f"\033[92m[OTC Data] Loaded {len(df)} OTC candles from browser. Latest: {df['close'].iloc[-1]:.5f}\033[0m")
+    print(f"\033[95m{'='*55}\033[0m\n")
+    
+    return df

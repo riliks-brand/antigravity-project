@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Sequential, clone_model
 from tensorflow.keras.layers import LSTM, Dense, Dropout
 from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.preprocessing import RobustScaler
@@ -33,6 +33,8 @@ def prepare_sequential_data(df, sequence_length=Config.SEQUENCE_LENGTH):
     features_scaled = scaler.transform(features)
     
     X, y, sample_weights_list = [], [], []
+    penalized_count = 0
+    
     for i in range(len(features_scaled) - sequence_length):
         X.append(features_scaled[i:i+sequence_length])
         y.append(target[i+sequence_length])
@@ -48,6 +50,7 @@ def prepare_sequential_data(df, sequence_length=Config.SEQUENCE_LENGTH):
                 # Check absolute tolerance for matching historic features
                 if abs(loss_row.get('DXY', 0) - dxy_val) < 0.05 and abs(loss_row.get('RSI', 0) - rsi_val) < 1.0:
                     weight = 1.5
+                    penalized_count += 1
                     break
         sample_weights_list.append(weight)
         
@@ -63,8 +66,19 @@ def prepare_sequential_data(df, sequence_length=Config.SEQUENCE_LENGTH):
     
     print(f"Training data shape: X={X_train.shape}, Y={y_train.shape}")
     print(f"Testing data shape: X={X_test.shape}, Y={y_test.shape}")
+    
+    # ===== INTELLIGENCE REPORT: PENALTY IMPACT =====
     if losses_df is not None and not losses_df.empty:
-        print(f"\033[93m[Sample Weighting] Sample weights applied: {list(train_weights).count(1.5)} loss instances penalized.\033[0m")
+        num_loss_patterns = len(losses_df)
+        weighted_in_train = int(list(train_weights).count(1.5))
+        print(f"\n\033[93m{'='*55}\033[0m")
+        print(f"\033[93m       📊 INTELLIGENCE REPORT: PENALTY IMPACT\033[0m")
+        print(f"\033[93m{'='*55}\033[0m")
+        print(f"\033[93m[Learning] Applied 1.5x Weight to {num_loss_patterns} previous loss patterns.\033[0m")
+        print(f"\033[93m[Learning] {weighted_in_train} training samples matched loss signatures.\033[0m")
+        print(f"\033[93m{'='*55}\033[0m\n")
+    else:
+        print(f"\033[94m[Learning] No previous loss patterns found. Training with uniform weights.\033[0m")
     
     return X_train, X_test, y_train, y_test, scaler, train_weights
 
@@ -96,12 +110,33 @@ def train_and_evaluate(X_train, X_test, y_train, y_test, sample_weights=None):
         verbose=1
     )
     
-    print("Starting Model Training...")
+    # ===== COMPARATIVE ACCURACY: BASELINE (No Weights) =====
+    baseline_accuracy = None
+    has_weights = sample_weights is not None and np.any(sample_weights != 1.0)
+    
+    if has_weights:
+        print("\n\033[96m[Baseline] Training lightweight unweighted model for comparison...\033[0m")
+        baseline_model = build_lstm_model((X_train.shape[1], X_train.shape[2]))
+        baseline_early = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True, verbose=0)
+        baseline_model.fit(
+            X_train, y_train,
+            validation_data=(X_test, y_test),
+            epochs=10,  # Quick baseline — just enough for comparison
+            batch_size=64,
+            callbacks=[baseline_early],
+            verbose=0
+        )
+        baseline_loss, baseline_accuracy = baseline_model.evaluate(X_test, y_test, verbose=0)
+        print(f"\033[96m[Baseline] Unweighted Accuracy: {baseline_accuracy*100:.2f}%\033[0m")
+        del baseline_model  # Free memory
+    
+    # ===== MAIN TRAINING (With Loss Weights) =====
+    print("\nStarting Model Training (with Loss Weights)...")
     history = model.fit(
         X_train, y_train,
         sample_weight=sample_weights,
         validation_data=(X_test, y_test),
-        epochs=30, # Moderate epochs, early stop will catch
+        epochs=30,
         batch_size=64,
         callbacks=[early_stop],
         verbose=1
@@ -111,6 +146,24 @@ def train_and_evaluate(X_train, X_test, y_train, y_test, sample_weights=None):
     loss, accuracy = model.evaluate(X_test, y_test, verbose=0)
     print(f"FINAL TEST ACCURACY: {accuracy*100:.2f}%")
     print(f"FINAL TEST LOSS: {loss:.4f}")
+    
+    # ===== INTELLIGENCE REPORT: COMPARATIVE ACCURACY =====
+    print(f"\n\033[95m{'='*55}\033[0m")
+    print(f"\033[95m       🧠 INTELLIGENCE REPORT: ACCURACY COMPARISON\033[0m")
+    print(f"\033[95m{'='*55}\033[0m")
+    
+    if has_weights and baseline_accuracy is not None:
+        gain = (accuracy - baseline_accuracy) * 100
+        gain_symbol = "📈" if gain >= 0 else "📉"
+        
+        print(f"\033[95m  Accuracy WITHOUT Loss Weights : {baseline_accuracy*100:.2f}%\033[0m")
+        print(f"\033[95m  Accuracy WITH Loss Weights    : {accuracy*100:.2f}%\033[0m")
+        print(f"\033[95m  {gain_symbol} Accuracy Gain from Learning : {gain:+.2f}%\033[0m")
+    else:
+        print(f"\033[95m  Accuracy (No weights applied) : {accuracy*100:.2f}%\033[0m")
+        print(f"\033[95m  (No loss history to compare against)\033[0m")
+    
+    print(f"\033[95m{'='*55}\033[0m\n")
     
     # Plotting Curves
     plt.figure(figsize=(14, 5))

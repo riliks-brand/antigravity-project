@@ -32,3 +32,18 @@ class Config:
     
     # DXY Feature
     DXY_TICKER = "DX-Y.NYB"
+    
+    # -------------------------------------
+    # Memory Similarity Thresholds
+    # -------------------------------------
+    SIMILARITY_HARD_BLOCK = 80   # >= 80% similarity = trade BLOCKED
+    SIMILARITY_WARNING    = 60   # >= 60% similarity = Co-Pilot confirmation required
+    
+    # -------------------------------------
+    # OTC Scraper Settings
+    # -------------------------------------
+    # To switch to OTC mode, change SYMBOL to an OTC asset name
+    # e.g. "EURUSD-OTC", "BTCUSD-OTC", etc.
+    # The presence of "OTC" in the name triggers DOM scraping mode.
+    OTC_CANDLE_INTERVAL = 60     # Aggregate DOM ticks into 60-second candles
+    OTC_CDP_PORT = 9225          # Chrome DevTools Protocol port for browser connection
