@@ -14,10 +14,11 @@ def prepare_sequential_data(df, sequence_length=Config.SEQUENCE_LENGTH):
     import pandas as pd
     import os
     losses_df = None
-    if os.path.exists('losses_log.csv'):
+    log_file = f'losses_log_{Config.TRADE_MODE}.csv'
+    if os.path.exists(log_file):
         try:
-            losses_df = pd.read_csv('losses_log.csv')
-            print(f"\033[92m[Sample Weighting] Loaded {len(losses_df)} historical loss states.\033[0m")
+            losses_df = pd.read_csv(log_file)
+            print(f"\033[92m[Sample Weighting] Loaded {len(losses_df)} historical loss states from {log_file}.\033[0m")
         except Exception as e:
             print(f"\033[91m[Sample Weighting] Error loading losses: {e}\033[0m")
     

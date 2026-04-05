@@ -16,6 +16,7 @@ trades_avoided_by_memory = 0
 
 def log_loss(processed_df, weekend_mode):
     try:
+        log_file = f'losses_log_{Config.TRADE_MODE}.csv'
         last_row = processed_df.iloc[-1]
         loss_dict = {
             'DXY': last_row.get('DXY_Close', 0),
@@ -25,8 +26,8 @@ def log_loss(processed_df, weekend_mode):
             'Volatility': last_row.get('Volatility', 0)
         }
         
-        file_exists = os.path.isfile('losses_log.csv')
-        with open('losses_log.csv', 'a', newline='') as f:
+        file_exists = os.path.isfile(log_file)
+        with open(log_file, 'a', newline='') as f:
             writer = csv.DictWriter(f, fieldnames=loss_dict.keys())
             if not file_exists:
                 writer.writeheader()
@@ -36,9 +37,9 @@ def log_loss(processed_df, weekend_mode):
         if not os.path.exists('archive'):
             os.makedirs('archive')
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        shutil.copy('losses_log.csv', f'archive/losses_log_backup_{timestamp}.csv')
+        shutil.copy(log_file, f'archive/losses_log_{Config.TRADE_MODE}_backup_{timestamp}.csv')
         
-        print(f"\033[92m[Loss Logger] Appended state to losses_log.csv and backed up to archive.\033[0m")
+        print(f"\033[92m[Loss Logger] Appended state to {log_file} and backed up to archive.\033[0m")
     except Exception as e:
         print(f"\033[91mFailed to log loss: {e}\033[0m")
 
@@ -46,14 +47,15 @@ def log_loss(processed_df, weekend_mode):
 def compute_memory_similarity(processed_df):
     """
     Computes the maximum percentage similarity between the current market state
-    and all recorded loss patterns in losses_log.csv.
+    and all recorded loss patterns in the trade mode's respective log.
     Returns (max_similarity_pct, matching_loss_index) or (0.0, -1) if no losses exist.
     """
-    if not os.path.exists('losses_log.csv'):
+    log_file = f'losses_log_{Config.TRADE_MODE}.csv'
+    if not os.path.exists(log_file):
         return 0.0, -1
     
     try:
-        losses_df = pd.read_csv('losses_log.csv')
+        losses_df = pd.read_csv(log_file)
         if losses_df.empty:
             return 0.0, -1
     except Exception:
