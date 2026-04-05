@@ -141,7 +141,7 @@ class TradeExecutor:
         print("[Warm-up] Browser is warm. Cloudflare negotiation complete. Standing by.")
         return proc, p, browser, page
 
-    def execute_web(self, action="buy", url="https://olymptrade.com/platform", 
+    def execute_web(self, action="buy", duration="2 min", amount="10", url="https://olymptrade.com/platform", 
                     warm_session=None):
         """
         Executes a Fixed Time trade on Olymp Trade.
@@ -177,48 +177,56 @@ class TradeExecutor:
             except:
                 print("WARNING: Could not read page title. Proceeding.")
             
-            # ===== STEP 1: SET DURATION TO 2 MINUTES =====
-            print("[Duration] Setting trade duration to 2 minutes...")
-            duration_set = page.evaluate("""() => {
-                // Strategy 1: Click on Duration area and look for duration controller
-                const durationBtns = document.querySelectorAll('button, [role="button"], div[class*="duration"], div[class*="Duration"]');
-                for (const el of durationBtns) {
-                    const txt = el.textContent.trim().toLowerCase();
-                    if (txt.includes('duration') || txt.includes('min') || txt.includes('2 min') || txt.includes('1 min')) {
-                        el.click();
-                        return 'duration-area-clicked';
-                    }
-                }
-                return null;
-            }""")
+            # ===== STEP 1: SET DURATION AND AMOUNT USING JS HEURISTICS =====
+            print(f"[Duration/Amount] Setting duration to {duration} and amount to {amount}...")
             
-            if duration_set:
-                time.sleep(1)
-                # Now try to select 2 minutes from the dropdown/picker
-                page.evaluate("""() => {
-                    const options = document.querySelectorAll('button, [role="option"], [role="listbox"] *, div[class*="option"], li');
-                    for (const opt of options) {
-                        const txt = opt.textContent.trim().toLowerCase();
-                        if (txt === '2' || txt === '2 min' || txt === '2m' || txt.includes('2 min')) {
-                            opt.click();
-                            // Close the modal by clicking on the background/page body
-                            setTimeout(() => { document.body.click(); }, 100);
-                            return '2min-selected-and-closed';
-                        }
-                    }
-                    // Fallback: try + button to increment (assuming starts at 1 min)
-                    const plusBtns = document.querySelectorAll('[class*="plus"], [class*="increase"], [data-test*="plus"]');
-                    if (plusBtns.length > 1) {
-                        // Click the duration + button 1 time (1min -> 2min)
-                        const durationPlus = plusBtns[plusBtns.length - 1]; 
-                        durationPlus.click();
-                        return '2min-via-plus';
-                    }
-                    return null;
-                }""")
-                print("[Duration] Duration adjustment (2m) attempted and modal close triggered.")
-            else:
-                print("[Duration] Could not locate duration control. Using platform default.")
+            # Inject duration and amount logic utilizing heuristic JS
+            js_injection = f"""
+            (() => {{
+                function findReactInputAndSet(keywords, valueToSet) {{
+                    const inputs = document.querySelectorAll('input');
+                    for (const inp of inputs) {{
+                        let parentText = (inp.parentElement && inp.parentElement.textContent || "").toLowerCase();
+                        let placeholder = (inp.placeholder || "").toLowerCase();
+                        // Search nearby text like previous or next sibling
+                        let prevText = (inp.previousElementSibling && inp.previousElementSibling.textContent || "").toLowerCase();
+                        let nextText = (inp.nextElementSibling && inp.nextElementSibling.textContent || "").toLowerCase();
+                        
+                        if (keywords.some(kw => parentText.includes(kw) || placeholder.includes(kw) || prevText.includes(kw) || nextText.includes(kw))) {{
+                            inp.focus();
+                            // clear existing
+                            inp.value = '';
+                            inp.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                            // set new
+                            inp.value = valueToSet;
+                            inp.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                            inp.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                            try {{
+                                // React 16+ value setter override bypass
+                                let nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+                                nativeInputValueSetter.call(inp, valueToSet);
+                                inp.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                            }} catch(e) {{}}
+                            inp.blur();
+                            return true;
+                        }}
+                    }}
+                    return false;
+                }}
+                
+                let amountSet = findReactInputAndSet(['amount', 'invest', '$', 'summ', 'مبلغ', 'استثمار'], '{amount}');
+                let durationDigit = '{duration}'.replace(/[^0-9]/g, '');
+                let durationSet = findReactInputAndSet(['duration', 'time', 'min', 'مدت', 'المدة'], durationDigit);
+                
+                return {{amountSet: amountSet, durationSet: durationSet}};
+            }})()
+            """
+            
+            injection_result = page.evaluate(js_injection)
+            print(f"[UI Heuristics] Injection result: {injection_result}")
+            
+            # Wait for visually confirming the change in the UI element before proceeding
+            time.sleep(1.5)
             
             # ===== STEP 2: AGGRESSIVE RETRY LOGIC (3 Attempts) =====
             MAX_RETRIES = 3

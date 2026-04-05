@@ -11,6 +11,16 @@ import os
 def prepare_sequential_data(df, sequence_length=Config.SEQUENCE_LENGTH):
     print(f"Preparing sequential data with lookback of {sequence_length} candles...")
     
+    import pandas as pd
+    import os
+    losses_df = None
+    if os.path.exists('losses_log.csv'):
+        try:
+            losses_df = pd.read_csv('losses_log.csv')
+            print(f"[Sample Weighting] Loaded {len(losses_df)} historical loss states.")
+        except Exception as e:
+            print(f"[Sample Weighting] Error loading losses: {e}")
+    
     # Scale features using RobustScaler (immune to outliers like long candle shadows)
     scaler = RobustScaler()
     scaler.fit(df.drop(['Target'], axis=1).values)
@@ -22,23 +32,41 @@ def prepare_sequential_data(df, sequence_length=Config.SEQUENCE_LENGTH):
     
     features_scaled = scaler.transform(features)
     
-    X, y = [], []
+    X, y, sample_weights_list = [], [], []
     for i in range(len(features_scaled) - sequence_length):
         X.append(features_scaled[i:i+sequence_length])
         y.append(target[i+sequence_length])
         
+        weight = 1.0
+        if losses_df is not None and not losses_df.empty:
+            last_idx = i + sequence_length - 1
+            row = df_train.iloc[last_idx]
+            dxy_val = row.get('DXY_Close', 0)
+            rsi_val = row.get('RSI', 0)
+            
+            for _, loss_row in losses_df.iterrows():
+                # Check absolute tolerance for matching historic features
+                if abs(loss_row.get('DXY', 0) - dxy_val) < 0.05 and abs(loss_row.get('RSI', 0) - rsi_val) < 1.0:
+                    weight = 1.5
+                    break
+        sample_weights_list.append(weight)
+        
     X = np.array(X)
     y = np.array(y)
+    weights_arr = np.array(sample_weights_list)
     
     # 80-20 split
     split_index = int(len(X) * 0.8)
     X_train, X_test = X[:split_index], X[split_index:]
     y_train, y_test = y[:split_index], y[split_index:]
+    train_weights = weights_arr[:split_index]
     
     print(f"Training data shape: X={X_train.shape}, Y={y_train.shape}")
     print(f"Testing data shape: X={X_test.shape}, Y={y_test.shape}")
+    if losses_df is not None and not losses_df.empty:
+        print(f"Sample weights applied: {list(train_weights).count(1.5)} loss instances penalized.")
     
-    return X_train, X_test, y_train, y_test, scaler
+    return X_train, X_test, y_train, y_test, scaler, train_weights
 
 def build_lstm_model(input_shape):
     print("Building LSTM model architecture...")
@@ -57,7 +85,7 @@ def build_lstm_model(input_shape):
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
     return model
 
-def train_and_evaluate(X_train, X_test, y_train, y_test):
+def train_and_evaluate(X_train, X_test, y_train, y_test, sample_weights=None):
     model = build_lstm_model((X_train.shape[1], X_train.shape[2]))
     
     # EarlyStopping to prevent memorizing the data
@@ -71,6 +99,7 @@ def train_and_evaluate(X_train, X_test, y_train, y_test):
     print("Starting Model Training...")
     history = model.fit(
         X_train, y_train,
+        sample_weight=sample_weights,
         validation_data=(X_test, y_test),
         epochs=30, # Moderate epochs, early stop will catch
         batch_size=64,
