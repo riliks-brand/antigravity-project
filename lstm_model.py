@@ -17,9 +17,9 @@ def prepare_sequential_data(df, sequence_length=Config.SEQUENCE_LENGTH):
     if os.path.exists('losses_log.csv'):
         try:
             losses_df = pd.read_csv('losses_log.csv')
-            print(f"[Sample Weighting] Loaded {len(losses_df)} historical loss states.")
+            print(f"\033[92m[Sample Weighting] Loaded {len(losses_df)} historical loss states.\033[0m")
         except Exception as e:
-            print(f"[Sample Weighting] Error loading losses: {e}")
+            print(f"\033[91m[Sample Weighting] Error loading losses: {e}\033[0m")
     
     # Scale features using RobustScaler (immune to outliers like long candle shadows)
     scaler = RobustScaler()
@@ -64,7 +64,7 @@ def prepare_sequential_data(df, sequence_length=Config.SEQUENCE_LENGTH):
     print(f"Training data shape: X={X_train.shape}, Y={y_train.shape}")
     print(f"Testing data shape: X={X_test.shape}, Y={y_test.shape}")
     if losses_df is not None and not losses_df.empty:
-        print(f"Sample weights applied: {list(train_weights).count(1.5)} loss instances penalized.")
+        print(f"\033[93m[Sample Weighting] Sample weights applied: {list(train_weights).count(1.5)} loss instances penalized.\033[0m")
     
     return X_train, X_test, y_train, y_test, scaler, train_weights
 

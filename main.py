@@ -27,9 +27,15 @@ def log_loss(processed_df):
             if not file_exists:
                 writer.writeheader()
             writer.writerow(loss_dict)
-        print("[Loss Logger] Appended state to losses_log.csv.")
+        import shutil
+        if not os.path.exists('archive'):
+            os.makedirs('archive')
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        shutil.copy('losses_log.csv', f'archive/losses_log_backup_{timestamp}.csv')
+        
+        print(f"\033[92m[Loss Logger] Appended state to losses_log.csv and backed up to archive.\033[0m")
     except Exception as e:
-        print(f"Failed to log loss: {e}")
+        print(f"\033[91mFailed to log loss: {e}\033[0m")
 
 def main():
     if not init_mt5():
