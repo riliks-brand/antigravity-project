@@ -62,5 +62,13 @@ class Config:
     FOREX_DEFAULT_AMOUNT = "10"   # Default investment amount in $
     FOREX_TP_ATR_MULT = 2.0      # Take Profit = ATR × this multiplier
     FOREX_SL_ATR_MULT = 1.0      # Stop Loss   = ATR × this multiplier
-    FOREX_MAX_HOLD_SECONDS = 600  # Max hold time before force-close check (10 min)
+    FOREX_MAX_HOLD_SECONDS = 3600 # Max hold time (1 hour) for 10x leverage trades
     FOREX_POLL_INTERVAL = 5       # Seconds between trade status polls
+    
+    # -------------------------------------
+    # Shark Exit Settings (Dynamic Close)
+    # -------------------------------------
+    SHARK_POLL_INTERVAL = 10          # Seconds between live re-evaluations
+    SHARK_MIN_PROFIT_TO_PROTECT = 0.0 # Min PnL ($) before exit logic activates (0 = any profit)
+    SHARK_REVERSAL_BB_THRESHOLD = 0.95  # BB position >= 0.95 (near top) for BUY = reversal risk
+    SHARK_OPPOSITE_SIGNAL_CONFIDENCE = 0.55  # If LSTM flips to opposite with > 55% confidence, close

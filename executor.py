@@ -380,6 +380,7 @@ class TradeExecutor:
 
     def execute_forex(self, action="buy", amount="10", multiplier="10",
                       tp_price=None, sl_price=None, 
+                      model=None, scaler=None, processed_df=None,
                       url="https://olymptrade.com/platform", warm_session=None):
         """
         Executes a Forex (FX) trade on Olymp Trade.
@@ -768,97 +769,20 @@ class TradeExecutor:
                 except:
                     pass
                 
-                # ===== STEP 4: MONITOR TRADE UNTIL TP/SL HIT =====
-                print(f"\n\033[96m[Forex Monitor] Polling trade status every {Config.FOREX_POLL_INTERVAL}s (max {Config.FOREX_MAX_HOLD_SECONDS}s)...\033[0m")
+                # ===== STEP 4: SHARK EXIT — INTELLIGENT TRADE MONITORING =====
+                print(f"\n\033[96m{'='*55}\033[0m")
+                print(f"\033[96m   🦈 SHARK MODE: Monitoring Trade\033[0m")
+                print(f"\033[96m   Reversal Check every {Config.SHARK_POLL_INTERVAL}s...\033[0m")
+                print(f"\033[96m   Max Hold: {Config.FOREX_MAX_HOLD_SECONDS}s | BB Threshold: {Config.SHARK_REVERSAL_BB_THRESHOLD}\033[0m")
+                print(f"\033[96m{'='*55}\033[0m")
                 
-                trade_start = time.time()
-                last_pnl_print = 0
-                
-                while (time.time() - trade_start) < Config.FOREX_MAX_HOLD_SECONDS:
-                    time.sleep(Config.FOREX_POLL_INTERVAL)
-                    elapsed = int(time.time() - trade_start)
-                    
-                    # Check if trade is still open by looking for PnL indicators in the DOM
-                    trade_status = page.evaluate("""() => {
-                        // Look for active trade/position indicators
-                        const pnlSelectors = [
-                            '[class*="profit"]', '[class*="pnl"]', '[class*="result"]',
-                            '[class*="deal-result"]', '[class*="trade-result"]',
-                            '[data-test*="profit"]', '[data-test*="result"]'
-                        ];
-                        
-                        // Check for position/deal elements
-                        for (const sel of pnlSelectors) {
-                            const el = document.querySelector(sel);
-                            if (el) {
-                                const text = el.textContent.trim();
-                                return { found: true, text: text, selector: sel };
-                            }
-                        }
-                        
-                        // Look for "Close" or "Active" trade indicators
-                        const allEls = document.querySelectorAll('div, span');
-                        let activeTradeFound = false;
-                        let pnlText = '';
-                        
-                        for (const el of allEls) {
-                            const text = (el.textContent || '').trim();
-                            // Check for PnL values like "+$0.05" or "-$0.12"
-                            if (/^[+\\-]\\$?\\d+\\.\\d{2}$/.test(text) || /^[+\\-]\\d+\\.\\d{2}\\$$/.test(text)) {
-                                pnlText = text;
-                                activeTradeFound = true;
-                            }
-                            // Check for closed trade notification
-                            if (text.toLowerCase().includes('closed') || text.toLowerCase().includes('تم الإغلاق')) {
-                                return { found: true, closed: true, text: text, pnl: pnlText };
-                            }
-                        }
-                        
-                        if (activeTradeFound) {
-                            return { found: true, closed: false, pnl: pnlText };
-                        }
-                        
-                        return { found: false };
-                    }""")
-                    
-                    if trade_status and trade_status.get('found'):
-                        pnl_text = trade_status.get('pnl', trade_status.get('text', ''))
-                        
-                        # Print PnL update every 15 seconds
-                        if elapsed - last_pnl_print >= 15:
-                            print(f"  [{elapsed}s] PnL: {pnl_text}")
-                            last_pnl_print = elapsed
-                        
-                        # Check if trade was closed (TP or SL hit)
-                        if trade_status.get('closed'):
-                            outcome['pnl_text'] = pnl_text
-                            
-                            # Determine if it was TP or SL
-                            if pnl_text.startswith('+') or (pnl_text and '-' not in pnl_text and '$' in pnl_text):
-                                outcome['hit'] = 'tp'
-                                print(f"\033[92m[Forex] ✅ TAKE PROFIT HIT! PnL: {pnl_text}\033[0m")
-                            else:
-                                outcome['hit'] = 'sl'
-                                print(f"\033[91m[Forex] ❌ STOP LOSS HIT! PnL: {pnl_text}\033[0m")
-                            
-                            break
-                    
-                    # Timeout warning
-                    if elapsed >= Config.FOREX_MAX_HOLD_SECONDS * 0.8:
-                        remaining = Config.FOREX_MAX_HOLD_SECONDS - elapsed
-                        print(f"\033[93m  [{elapsed}s] Warning: {remaining}s until auto-timeout\033[0m")
-                
-                else:
-                    # Max hold time reached without TP/SL
-                    outcome['hit'] = 'timeout'
-                    print(f"\033[93m[Forex] ⏰ Max hold time ({Config.FOREX_MAX_HOLD_SECONDS}s) reached. Trade may still be open on platform.\033[0m")
-                    
-                    # Take final screenshot
-                    try:
-                        page.screenshot(path="trade_timeout.png")
-                        print("[Screenshot] Saved timeout state to 'trade_timeout.png'")
-                    except:
-                        pass
+                outcome = self.monitor_and_close(
+                    page=page,
+                    action=action,
+                    model=model,
+                    scaler=scaler,
+                    processed_df=processed_df
+                )
                 
                 # Final screenshot after close
                 try:
@@ -870,7 +794,7 @@ class TradeExecutor:
                 return True, f"Forex {action.upper()} via {clicked}", outcome
             else:
                 page.screenshot(path="error_screenshot.png")
-                print("--\u003e ALERT: JS click returned null. Screenshot saved.")
+                print("--> ALERT: JS click returned null. Screenshot saved.")
                 try:
                     import winsound
                     winsound.Beep(400, 800)
@@ -883,7 +807,7 @@ class TradeExecutor:
             print(f"Failed to execute Forex trade: {error_msg}")
             try:
                 page.screenshot(path="error_screenshot.png")
-                print("--\u003e ALERT: Saved debug screenshot to error_screenshot.png")
+                print("--> ALERT: Saved debug screenshot to error_screenshot.png")
             except:
                 pass
             return False, error_msg, outcome
@@ -895,3 +819,274 @@ class TradeExecutor:
                 pass
             proc.terminate()
 
+    def monitor_and_close(self, page, action, model, scaler, processed_df):
+        """
+        🦈 Shark Exit — Intelligent Trade Monitoring & Dynamic Close.
+        
+        Instead of waiting passively for TP/SL, this method actively monitors
+        the trade and closes it when reversal conditions are detected.
+        
+        Exit Conditions:
+        A) Platform TP/SL hit (detected via DOM)
+        B) LSTM opposite signal with high confidence
+        C) Price at Bollinger Band reversal zone while in profit
+        
+        Args:
+            page: Playwright page object for DOM interaction
+            action: 'buy' or 'sell' — the direction of the open trade
+            model: Trained LSTM model (same one that generated the entry signal)
+            scaler: Fitted RobustScaler for feature normalization
+            processed_df: Latest processed DataFrame with features
+            
+        Returns:
+            dict: {hit: 'tp'|'sl'|'shark_exit'|'timeout', reason: str, pnl_text: str}
+        """
+        import time
+        import numpy as np
+        from config import Config
+        from features import feature_engineering_pipeline
+        
+        outcome = {'hit': 'unknown', 'reason': '', 'pnl_text': ''}
+        trade_start = time.time()
+        last_print = 0
+        shark_check_count = 0
+        
+        while (time.time() - trade_start) < Config.FOREX_MAX_HOLD_SECONDS:
+            time.sleep(Config.SHARK_POLL_INTERVAL)
+            elapsed = int(time.time() - trade_start)
+            shark_check_count += 1
+            
+            # ===== CHECK 1: Platform TP/SL (DOM-based) =====
+            try:
+                trade_status = page.evaluate("""() => {
+                    const pnlSelectors = [
+                        '[class*="profit"]', '[class*="pnl"]', '[class*="result"]',
+                        '[class*="deal-result"]', '[class*="trade-result"]',
+                        '[data-test*="profit"]', '[data-test*="result"]'
+                    ];
+                    
+                    for (const sel of pnlSelectors) {
+                        const el = document.querySelector(sel);
+                        if (el) {
+                            const text = el.textContent.trim();
+                            return { found: true, text: text, selector: sel };
+                        }
+                    }
+                    
+                    const allEls = document.querySelectorAll('div, span');
+                    let pnlText = '';
+                    let activeTradeFound = false;
+                    
+                    for (const el of allEls) {
+                        const text = (el.textContent || '').trim();
+                        if (/^[+\\-]\\$?\\d+\\.\\d{2}$/.test(text) || /^[+\\-]\\d+\\.\\d{2}\\$$/.test(text)) {
+                            pnlText = text;
+                            activeTradeFound = true;
+                        }
+                        if (text.toLowerCase().includes('closed') || text.toLowerCase().includes('تم الإغلاق')) {
+                            return { found: true, closed: true, text: text, pnl: pnlText };
+                        }
+                    }
+                    
+                    if (activeTradeFound) {
+                        return { found: true, closed: false, pnl: pnlText };
+                    }
+                    
+                    return { found: false };
+                }""")
+            except Exception as e:
+                print(f"\033[93m  [{elapsed}s] DOM poll error: {str(e)[:50]}\033[0m")
+                continue
+            
+            pnl_text = ''
+            if trade_status and trade_status.get('found'):
+                pnl_text = trade_status.get('pnl', trade_status.get('text', ''))
+                
+                # Check if platform already closed the trade (TP/SL hit)
+                if trade_status.get('closed'):
+                    outcome['pnl_text'] = pnl_text
+                    if pnl_text.startswith('+') or (pnl_text and '-' not in pnl_text and '$' in pnl_text):
+                        outcome['hit'] = 'tp'
+                        outcome['reason'] = 'Platform Take Profit hit'
+                        print(f"\033[92m[Shark] ✅ TAKE PROFIT HIT by platform! PnL: {pnl_text}\033[0m")
+                    else:
+                        outcome['hit'] = 'sl'
+                        outcome['reason'] = 'Platform Stop Loss hit'
+                        print(f"\033[91m[Shark] ❌ STOP LOSS HIT by platform! PnL: {pnl_text}\033[0m")
+                    return outcome
+            
+            # Print status every 30 seconds
+            if elapsed - last_print >= 30:
+                print(f"  [{elapsed}s] 🦈 Shark Check #{shark_check_count} | PnL: {pnl_text}")
+                last_print = elapsed
+            
+            # ===== CHECK 2: LSTM Reversal Signal =====
+            try:
+                # Get fresh data via the unified data loader (yfinance for Forex, scraper for OTC)
+                from data_loader import fetch_data
+                fresh_df = fetch_data()
+                
+                if fresh_df is not None and not fresh_df.empty:
+                    fresh_processed = feature_engineering_pipeline(fresh_df)
+                    
+                    if len(fresh_processed) >= Config.SEQUENCE_LENGTH:
+                        latest_features = fresh_processed.drop(['Target'], axis=1).values
+                        latest_scaled = scaler.transform(latest_features)
+                        X_live = np.array([latest_scaled[-Config.SEQUENCE_LENGTH:]])
+                        
+                        new_prob = model.predict(X_live, verbose=0)[0][0]
+                        new_signal = "buy" if new_prob > 0.5 else "sell"
+                        confidence = new_prob if new_signal == "buy" else (1.0 - new_prob)
+                        
+                        # Check for opposite signal with sufficient confidence
+                        is_opposite = (action == "buy" and new_signal == "sell") or \
+                                      (action == "sell" and new_signal == "buy")
+                        
+                        if is_opposite and confidence >= Config.SHARK_OPPOSITE_SIGNAL_CONFIDENCE:
+                            print(f"\n\033[93m[Shark] 🔄 OPPOSITE SIGNAL DETECTED!\033[0m")
+                            print(f"\033[93m  Entry: {action.upper()} | Now: {new_signal.upper()} ({confidence*100:.1f}% confidence)\033[0m")
+                            
+                            # Check if in profit before closing
+                            in_profit = pnl_text.startswith('+') if pnl_text else False
+                            
+                            if in_profit or pnl_text == '':
+                                # Close the trade! 
+                                close_success = self._click_close_button(page)
+                                if close_success:
+                                    outcome['hit'] = 'shark_exit'
+                                    outcome['reason'] = f'Opposite signal ({new_signal.upper()} @ {confidence*100:.1f}%)'
+                                    outcome['pnl_text'] = pnl_text
+                                    print(f"\033[92m[Shark] 🦈 TRADE CLOSED! Reason: {outcome['reason']} | PnL: {pnl_text}\033[0m")
+                                    
+                                    try:
+                                        import winsound
+                                        winsound.Beep(800, 300)
+                                        time.sleep(0.1)
+                                        winsound.Beep(800, 300)
+                                    except:
+                                        pass
+                                    
+                                    return outcome
+                                else:
+                                    print(f"\033[91m[Shark] Close button not found! Trade still open.\033[0m")
+                            else:
+                                print(f"\033[93m  PnL is negative ({pnl_text}). Holding — letting TP/SL decide.\033[0m")
+                        
+                        # ===== CHECK 3: Bollinger Band Reversal =====
+                        if 'BB_position' in fresh_processed.columns:
+                            bb_pos = fresh_processed['BB_position'].iloc[-1]
+                            
+                            reversal_risk = False
+                            if action == "buy" and bb_pos >= Config.SHARK_REVERSAL_BB_THRESHOLD:
+                                reversal_risk = True
+                                print(f"\033[93m  [{elapsed}s] BB Position: {bb_pos:.2f} — Price near top band (BUY reversal zone)\033[0m")
+                            elif action == "sell" and bb_pos <= (1.0 - Config.SHARK_REVERSAL_BB_THRESHOLD):
+                                reversal_risk = True
+                                print(f"\033[93m  [{elapsed}s] BB Position: {bb_pos:.2f} — Price near bottom band (SELL reversal zone)\033[0m")
+                            
+                            if reversal_risk:
+                                in_profit = pnl_text.startswith('+') if pnl_text else False
+                                if in_profit:
+                                    print(f"\033[93m[Shark] 📈 PROFIT PROTECTION triggered! BB reversal zone + positive PnL\033[0m")
+                                    close_success = self._click_close_button(page)
+                                    if close_success:
+                                        outcome['hit'] = 'shark_exit'
+                                        outcome['reason'] = f'BB reversal protection (BB_pos={bb_pos:.2f})'
+                                        outcome['pnl_text'] = pnl_text
+                                        print(f"\033[92m[Shark] 🦈 TRADE CLOSED! Profit secured: {pnl_text}\033[0m")
+                                        return outcome
+                
+            except Exception as e:
+                # Shark analysis failed — not critical, just skip this cycle
+                if shark_check_count % 6 == 0:  # Print error every ~60s
+                    print(f"\033[93m  [{elapsed}s] Shark analysis error: {str(e)[:60]}\033[0m")
+            
+            # Timeout progress
+            if elapsed >= Config.FOREX_MAX_HOLD_SECONDS * 0.9:
+                remaining = Config.FOREX_MAX_HOLD_SECONDS - elapsed
+                print(f"\033[93m  [{elapsed}s] ⏰ Warning: {remaining}s until auto-timeout\033[0m")
+        
+        # Max hold time reached
+        outcome['hit'] = 'timeout'
+        outcome['reason'] = f'Max hold time ({Config.FOREX_MAX_HOLD_SECONDS}s) reached'
+        outcome['pnl_text'] = pnl_text
+        print(f"\033[93m[Shark] ⏰ TIMEOUT. Trade may still be open. PnL at timeout: {pnl_text}\033[0m")
+        
+        try:
+            page.screenshot(path="trade_timeout.png")
+        except:
+            pass
+        
+        return outcome
+
+    def _click_close_button(self, page):
+        """
+        Clicks the Close/Sell-out button on the Olymp Trade platform DOM.
+        Returns True if a button was found and clicked, False otherwise.
+        """
+        import time
+        
+        clicked = page.evaluate("""() => {
+            // Strategy 1: Look for explicit Close/Sell-out buttons
+            const closeKeywords = ['close', 'sell out', 'close trade', 'إغلاق', 'بيع'];
+            const allBtns = document.querySelectorAll('button, [role="button"], a, div[class*="button"]');
+            
+            for (const btn of allBtns) {
+                const txt = (btn.textContent || '').trim().toLowerCase();
+                for (const kw of closeKeywords) {
+                    if (txt === kw || txt.includes(kw)) {
+                        const rect = btn.getBoundingClientRect();
+                        if (rect.width > 20 && rect.height > 15) {
+                            btn.click();
+                            return 'text-' + kw;
+                        }
+                    }
+                }
+            }
+            
+            // Strategy 2: data-test attributes
+            const closeSelectors = [
+                '[data-test*="close"]', '[data-test*="sell-out"]',
+                '[data-test*="close-trade"]', '[data-test*="close_trade"]'
+            ];
+            for (const sel of closeSelectors) {
+                const el = document.querySelector(sel);
+                if (el) { el.click(); return 'data-test-close'; }
+            }
+            
+            // Strategy 3: X/close icons near active trade
+            const closeIcons = document.querySelectorAll(
+                '[class*="close-icon"], [class*="close_icon"], ' +
+                'svg[class*="close"], [class*="deal"] [class*="close"]'
+            );
+            for (const icon of closeIcons) {
+                icon.click();
+                return 'icon-close';
+            }
+            
+            return null;
+        }""")
+        
+        if clicked:
+            print(f"\033[92m[Close] Button clicked via: {clicked}\033[0m")
+            time.sleep(1)
+            
+            # Sometimes there's a confirmation dialog
+            try:
+                page.evaluate("""() => {
+                    const confirmBtns = document.querySelectorAll('button, [role="button"]');
+                    for (const btn of confirmBtns) {
+                        const txt = (btn.textContent || '').trim().toLowerCase();
+                        if (txt === 'yes' || txt === 'confirm' || txt === 'ok' || txt === 'نعم') {
+                            btn.click();
+                            return true;
+                        }
+                    }
+                    return false;
+                }""")
+            except:
+                pass
+            
+            return True
+        
+        return False

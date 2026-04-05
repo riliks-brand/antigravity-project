@@ -1,14 +1,12 @@
 import numpy as np
-import yfinance as yf
 from config import Config
-from data_loader import init_mt5, fetch_data
+from data_loader import fetch_data
 from features import feature_engineering_pipeline
 from executor import TradeExecutor
 import pandas as pd
 import time
 import datetime
 import os
-import MetaTrader5 as mt5
 import csv
 
 # ===== GLOBAL AVOIDANCE COUNTER =====
@@ -143,7 +141,6 @@ def print_memory_report(similarity_pct, match_idx):
         print(f"\033[96m{'='*55}\033[0m\n")
         return 'PASS'
 
-
 def main():
     global trades_avoided_by_memory
     
@@ -158,22 +155,16 @@ def main():
     stale_count = 0
     last_cycle_close = None
     
-    print("\n" + "="*50)
-    print("INITIATING LIVE CONTINUOUS TRADING LOOP")
-    print("="*50)
+    print("\n" + "="*55)
+    print("  🦈 DIRECT PLATFORM INTELLIGENCE v2.2 — SHARK MODE")
+    print("  Data Source: Browser DOM/WebSocket (MT5/yfinance OFF)")
+    print(f"  Trade Mode: {Config.TRADE_MODE.upper()} | Multiplier: x{Config.FOREX_MULTIPLIER}")
+    print("="*55)
     
     while True:
         try:
             now = datetime.datetime.now()
             
-            # Detect OTC mode from Config
-            otc_mode = "OTC" in Config.SYMBOL.upper() if hasattr(Config, 'SYMBOL') else False
-            weekend_mode = now.weekday() >= 5
-            
-            if not weekend_mode and not otc_mode:
-                if mt5.terminal_info() is None:
-                    init_mt5()
-                    
             minutes_to_next = 5 - (now.minute % 5)
             seconds_to_next_candle = minutes_to_next * 60 - now.second if minutes_to_next < 5 else 60 - now.second
 
@@ -190,7 +181,7 @@ def main():
             if now.minute != last_fetch_minute:
                 last_fetch_minute = now.minute
                 
-                raw_df = fetch_data(weekend_mode=weekend_mode)
+                raw_df = fetch_data()
                 if raw_df is None or raw_df.empty:
                     print("\033[91mData fetch failed. Retrying next cycle...\033[0m")
                     time.sleep(5)
@@ -241,7 +232,6 @@ def main():
                         memory_verdict = print_memory_report(similarity_pct, match_idx)
                         
                         if memory_verdict == 'BLOCK':
-                            # Hard block — skip this entire trade cycle
                             print("\033[91m[FINAL DECISION] TRADE BLOCKED BY MEMORY. Skipping cycle.\033[0m")
                             if warm_session:
                                 try:
@@ -286,172 +276,89 @@ def main():
                             force = input("Force Trade? (y/n): ")
                             if force.strip().lower() == 'y':
                                 action = raw_action
-                                if Config.TRADE_MODE == "forex":
-                                    print("Choose Amount:")
-                                    print("[1] 1$ (x10) | [2] 10$ (x10) | [3] Custom")
-                                    tier_choice = input("Choice: ")
-                                    if tier_choice == '1': 
-                                        forced_tier = {"amount": "1", "multiplier": Config.FOREX_MULTIPLIER}
-                                    elif tier_choice == '2': 
-                                        forced_tier = {"amount": "10", "multiplier": Config.FOREX_MULTIPLIER}
-                                    elif tier_choice == '3':
-                                        cust_amt = input("Amount ($): ")
-                                        cust_mult = input(f"Multiplier (default {Config.FOREX_MULTIPLIER}): ") or Config.FOREX_MULTIPLIER
-                                        forced_tier = {"amount": cust_amt, "multiplier": cust_mult}
-                                else:
-                                    print("Choose Tier:")
-                                    print("[1] 1$ (1m) | [2] 10$ (2m) | [3] Custom")
-                                    tier_choice = input("Choice: ")
-                                    if tier_choice == '1': 
-                                        forced_tier = ("1 min", "1", 1)
-                                    elif tier_choice == '2': 
-                                        forced_tier = ("2 min", "10", 2)
-                                    elif tier_choice == '3':
-                                        cust_amt = input("Amount: ")
-                                        cust_dur = input("Duration (e.g. 1m): ")
-                                        dur_mins = int(''.join(filter(str.isdigit, cust_dur)) or '1')
-                                        forced_tier = (cust_dur, cust_amt, dur_mins)
+                                print("Choose Amount:")
+                                print("[1] 1$ (x10) | [2] 10$ (x10) | [3] Custom")
+                                tier_choice = input("Choice: ")
+                                if tier_choice == '1': 
+                                    forced_tier = {"amount": "1", "multiplier": Config.FOREX_MULTIPLIER}
+                                elif tier_choice == '2': 
+                                    forced_tier = {"amount": "10", "multiplier": Config.FOREX_MULTIPLIER}
+                                elif tier_choice == '3':
+                                    cust_amt = input("Amount ($): ")
+                                    cust_mult = input(f"Multiplier (default {Config.FOREX_MULTIPLIER}): ") or Config.FOREX_MULTIPLIER
+                                    forced_tier = {"amount": cust_amt, "multiplier": cust_mult}
                         
                         if action:
-                            # ===== FOREX MODE =====
-                            if Config.TRADE_MODE == "forex":
-                                # Determine amount and multiplier
-                                if forced_tier and isinstance(forced_tier, dict):
-                                    fx_amount = forced_tier["amount"]
-                                    fx_multiplier = forced_tier["multiplier"]
-                                else:
-                                    fx_amount = Config.FOREX_DEFAULT_AMOUNT
-                                    fx_multiplier = Config.FOREX_MULTIPLIER
-                                
-                                # Calculate ATR-based TP and SL
-                                current_atr = processed_df['ATR'].iloc[-1]
-                                entry_price = processed_df['close'].iloc[-1]
-                                
-                                if action == "buy":
-                                    tp_price = entry_price + (current_atr * Config.FOREX_TP_ATR_MULT)
-                                    sl_price = entry_price - (current_atr * Config.FOREX_SL_ATR_MULT)
-                                else:
-                                    tp_price = entry_price - (current_atr * Config.FOREX_TP_ATR_MULT)
-                                    sl_price = entry_price + (current_atr * Config.FOREX_SL_ATR_MULT)
-                                
-                                print(f"\n\033[96m{'='*55}\033[0m")
-                                print(f"\033[96m       💹 FOREX TRADE PARAMETERS\033[0m")
-                                print(f"\033[96m{'='*55}\033[0m")
-                                print(f"\033[96m  Action      : {action.upper()}\033[0m")
-                                print(f"\033[96m  Amount      : {fx_amount}$\033[0m")
-                                print(f"\033[96m  Multiplier  : x{fx_multiplier}\033[0m")
-                                print(f"\033[96m  Entry Price : {entry_price:.5f}\033[0m")
-                                print(f"\033[96m  ATR         : {current_atr:.5f}\033[0m")
-                                print(f"\033[92m  Take Profit : {tp_price:.5f} (ATR × {Config.FOREX_TP_ATR_MULT})\033[0m")
-                                print(f"\033[91m  Stop Loss   : {sl_price:.5f} (ATR × {Config.FOREX_SL_ATR_MULT})\033[0m")
-                                print(f"\033[96m{'='*55}\033[0m")
-                                
-                                # Execute Forex trade
-                                success, output_msg, outcome = executor.execute_forex(
-                                    action=action,
-                                    amount=fx_amount,
-                                    multiplier=fx_multiplier,
-                                    tp_price=tp_price,
-                                    sl_price=sl_price,
-                                    warm_session=warm_session
-                                )
-                                
-                                warm_session = None
-                                
-                                if success:
-                                    print(f"\n[LIVE TRADE VERIFIED: {action.upper()} FOREX ON OLYMP TRADE]")
-                                    
-                                    # Forex loss = SL hit
-                                    if outcome.get('hit') == 'sl':
-                                        print("\033[91m[Outcome] STOP LOSS HIT — LOSS. Logging market state for future avoidance.\033[0m")
-                                        log_loss(processed_df, weekend_mode)
-                                    elif outcome.get('hit') == 'tp':
-                                        print("\033[92m[Outcome] TAKE PROFIT HIT — WIN! 💰\033[0m")
-                                    elif outcome.get('hit') == 'timeout':
-                                        print("\033[93m[Outcome] TIMEOUT — Trade may still be active. Check platform.\033[0m")
-                                    else:
-                                        print(f"\033[93m[Outcome] Unknown result: {outcome}\033[0m")
-                                else:
-                                    print(f"Failed to open Forex trade on Olymp Trade. Reason: {output_msg}")
-                            
-                            # ===== FIXED TIME MODE (Original) =====
+                            # Determine amount and multiplier
+                            if forced_tier and isinstance(forced_tier, dict):
+                                fx_amount = forced_tier["amount"]
+                                fx_multiplier = forced_tier["multiplier"]
                             else:
-                                if forced_tier and isinstance(forced_tier, tuple):
-                                    duration, amount, dur_mins = forced_tier
-                                else:
-                                    if prob > 0.55 or prob < 0.45:
-                                        duration, amount, dur_mins = ("2 min", "10", 2)
+                                fx_amount = Config.FOREX_DEFAULT_AMOUNT
+                                fx_multiplier = Config.FOREX_MULTIPLIER
+                            
+                            # Calculate ATR-based TP and SL
+                            current_atr = processed_df['ATR'].iloc[-1]
+                            entry_price = processed_df['close'].iloc[-1]
+                            
+                            if action == "buy":
+                                tp_price = entry_price + (current_atr * Config.FOREX_TP_ATR_MULT)
+                                sl_price = entry_price - (current_atr * Config.FOREX_SL_ATR_MULT)
+                            else:
+                                tp_price = entry_price - (current_atr * Config.FOREX_TP_ATR_MULT)
+                                sl_price = entry_price + (current_atr * Config.FOREX_SL_ATR_MULT)
+                            
+                            print(f"\n\033[96m{'='*55}\033[0m")
+                            print(f"\033[96m       💹 FOREX TRADE PARAMETERS\033[0m")
+                            print(f"\033[96m{'='*55}\033[0m")
+                            print(f"\033[96m  Action      : {action.upper()}\033[0m")
+                            print(f"\033[96m  Amount      : {fx_amount}$\033[0m")
+                            print(f"\033[96m  Multiplier  : x{fx_multiplier}\033[0m")
+                            print(f"\033[96m  Entry Price : {entry_price:.5f}\033[0m")
+                            print(f"\033[96m  ATR         : {current_atr:.5f}\033[0m")
+                            print(f"\033[92m  Take Profit : {tp_price:.5f} (ATR x {Config.FOREX_TP_ATR_MULT})\033[0m")
+                            print(f"\033[91m  Stop Loss   : {sl_price:.5f} (ATR x {Config.FOREX_SL_ATR_MULT})\033[0m")
+                            print(f"\033[96m{'='*55}\033[0m")
+                            
+                            # Execute Forex trade with Shark Exit
+                            success, output_msg, outcome = executor.execute_forex(
+                                action=action,
+                                amount=fx_amount,
+                                multiplier=fx_multiplier,
+                                tp_price=tp_price,
+                                sl_price=sl_price,
+                                model=model,
+                                scaler=scaler,
+                                processed_df=processed_df,
+                                warm_session=warm_session
+                            )
+                            
+                            warm_session = None
+                            
+                            if success:
+                                print(f"\n[LIVE TRADE VERIFIED: {action.upper()} FOREX ON OLYMP TRADE]")
+                                
+                                hit_type = outcome.get('hit', 'unknown')
+                                
+                                if hit_type == 'sl':
+                                    print("\033[91m[Outcome] STOP LOSS HIT — LOSS. Logging for memory.\033[0m")
+                                    log_loss(processed_df, False)
+                                elif hit_type == 'tp':
+                                    print("\033[92m[Outcome] TAKE PROFIT HIT — WIN! 💰\033[0m")
+                                elif hit_type == 'shark_exit':
+                                    pnl = outcome.get('pnl_text', '')
+                                    reason = outcome.get('reason', '')
+                                    if pnl.startswith('-'):
+                                        print(f"\033[91m[Outcome] SHARK EXIT (LOSS): {reason} | PnL: {pnl}\033[0m")
+                                        log_loss(processed_df, False)
                                     else:
-                                        duration, amount, dur_mins = ("1 min", "1", 1)
-                                        
-                                print(f"[FINAL DECISION] {action.upper()} | Amount: {amount}$ | Duration: {duration}")
-                                
-                                entry_price = 0
-                                if weekend_mode:
-                                    tic = yf.Ticker("BTC-USD")
-                                    try:
-                                        entry_price = tic.fast_info.last_price
-                                    except:
-                                        entry_price = current_close
-                                    print(f"[Yfinance Sync] Entry Price: {entry_price:.2f}")
-                                elif otc_mode:
-                                    from otc_scraper import OTCScraper
-                                    entry_price = OTCScraper.get_last_price()
-                                    print(f"[OTC Scraper] Entry Price: {entry_price:.5f}")
+                                        print(f"\033[92m[Outcome] SHARK EXIT (WIN): {reason} | PnL: {pnl} 🦈💰\033[0m")
+                                elif hit_type == 'timeout':
+                                    print("\033[93m[Outcome] TIMEOUT — Trade may still be active. Check platform.\033[0m")
                                 else:
-                                    init_mt5()
-                                    entry_tick = mt5.symbol_info_tick(Config.SYMBOL)
-                                    if entry_tick:
-                                        entry_price = entry_tick.ask if action == "buy" else entry_tick.bid
-                                        print(f"[MT5 Sync] Entry Price: {entry_price:.5f}")
-                                
-                                success, output_msg = executor.execute_web(
-                                    action=action, 
-                                    duration=duration,
-                                    amount=amount,
-                                    warm_session=warm_session
-                                )
-                                
-                                warm_session = None
-                                
-                                if success:
-                                    print(f"\n[LIVE TRADE VERIFIED: {action.upper()} ON OLYMP TRADE]")
-                                    
-                                    if entry_price > 0:
-                                        print(f"[Verify] Waiting {dur_mins} minutes for trade completion...")
-                                        time.sleep(dur_mins * 60)
-                                        
-                                        exit_price = entry_price
-                                        if weekend_mode:
-                                            try:
-                                                tic = yf.Ticker("BTC-USD")
-                                                exit_price = tic.fast_info.last_price
-                                                print(f"[Yfinance Sync] Expiry Price: {exit_price:.2f} (Entry: {entry_price:.2f})")
-                                            except: pass
-                                        elif otc_mode:
-                                            from otc_scraper import OTCScraper
-                                            exit_price = OTCScraper.get_last_price()
-                                            print(f"[OTC Scraper] Expiry Price: {exit_price:.5f} (Entry: {entry_price:.5f})")
-                                        else:
-                                            init_mt5()
-                                            exit_tick = mt5.symbol_info_tick(Config.SYMBOL)
-                                            if exit_tick:
-                                                exit_price = exit_tick.ask if action == "buy" else exit_tick.bid
-                                                print(f"[MT5 Sync] Expiry Price: {exit_price:.5f} (Entry: {entry_price:.5f})")
-                                                
-                                        loss = False
-                                        if action == "buy" and exit_price <= entry_price:
-                                            loss = True
-                                        elif action == "sell" and exit_price >= entry_price:
-                                            loss = True
-                                            
-                                        if loss:
-                                            print("\033[91m[Outcome] LOSS detected. Triggering Loss Log.\033[0m")
-                                            log_loss(processed_df, weekend_mode)
-                                        else:
-                                            print("\033[92m[Outcome] WIN detected.\033[0m")
-                                else:
-                                    print(f"Failed to open trade on Olymp Trade. Reason: {output_msg}")
+                                    print(f"\033[93m[Outcome] Unknown result: {outcome}\033[0m")
+                            else:
+                                print(f"Failed to open Forex trade on Olymp Trade. Reason: {output_msg}")
                         else:
                             print("[FINAL DECISION] NO TRADE")
                             
