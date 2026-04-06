@@ -157,9 +157,9 @@ def main():
     force_evaluation = False
     
     print("\n" + "="*55)
-    print("  ⏱️ DIRECT PLATFORM INTELLIGENCE v2.3 — EXPERT FIXED TIME")
-    print("  Data Source: Universal Browser DOM/WebSocket")
-    print("  Trade Mode: FIXED TIME | Chain Attacks: ENABLED")
+    print("  ⏱️ EXPERT FIXED TIME v2.3 — CHAIN ATTACKS ENABLED")
+    print("  Data Source: yfinance (instant 1700+ candles)")
+    print("  Execution: Browser CDP (Olymp Trade Fixed Time)")
     print("="*55)
     
     while True:
@@ -169,7 +169,7 @@ def main():
             minutes_to_next = 5 - (now.minute % 5)
             seconds_to_next_candle = minutes_to_next * 60 - now.second if minutes_to_next < 5 else 60 - now.second
 
-            # Warm-up phase triggers strictly at roughly T-60s
+            # Warm-up: pre-connect to browser ~60s before signal evaluation
             if seconds_to_next_candle <= 60 and seconds_to_next_candle > 5 and warm_session is None:
                 print(f"\n[WARM-UP] Candle closes in ~{seconds_to_next_candle}s. Pre-opening browser...")
                 try:
@@ -177,7 +177,7 @@ def main():
                 except Exception as e:
                     print(f"[WARM-UP] Failed: {e}. Will cold-start at execution time.")
                     warm_session = None
-                    
+                
             # 60s Sampling Rate
             if now.minute != last_fetch_minute:
                 last_fetch_minute = now.minute
@@ -185,6 +185,7 @@ def main():
                 raw_df = fetch_data()
                 if raw_df is None or raw_df.empty:
                     print("\033[91mData fetch failed. Retrying next cycle...\033[0m")
+                    last_fetch_minute = -1  # Prevent 60s soft-lock
                     time.sleep(5)
                     continue
                     
@@ -251,11 +252,6 @@ def main():
                         
                         if memory_verdict == 'BLOCK':
                             print("\033[91m[FINAL DECISION] TRADE BLOCKED BY MEMORY. Skipping cycle.\033[0m")
-                            if warm_session:
-                                try:
-                                    warm_session[1].stop()  # Disconnect Playwright only
-                                except: pass
-                                warm_session = None
                             continue
                             
                         # ===== TREND FILTER (WARNING ONLY) =====
@@ -297,8 +293,6 @@ def main():
                                 warm_session=warm_session
                             )
                             
-                            warm_session = None
-                            
                             if success:
                                 print(f"\n\033[92m[LIVE EXPERT TRADE VERIFIED: {action.upper()} FIXED TIME ON OLYMP TRADE]\033[0m")
                                 print("\033[93m[Wait] Waiting for fixed time expiration (2 mins)...\033[0m")
@@ -306,21 +300,14 @@ def main():
                                 print("\033[96m[Completed] Trade expired. Please verify UI for result.\033[0m")
                             else:
                                 print(f"\033[91mFailed to open Fixed Time trade. Reason: {output_msg}\033[0m")
-                            
                             # Trigger a follow-up chain evaluation
                             print("\n\033[93m[Chain Attack] Activating continuous market scan (bypassing 5m wait)...\033[0m")
                             force_evaluation = True
                             
                         else:
                             print("[FINAL DECISION] NO TRADE")
-                            
-                        if warm_session:
-                            try:
-                                warm_session[1].stop()  # Disconnect Playwright only
-                            except: pass
-                            warm_session = None 
                     else:
-                        print("Not enough data to form a sequence.")
+                        print("\033[93m[Data] Not enough data to form a sequence.\033[0m")
                         
             time.sleep(2)
         except Exception as e:

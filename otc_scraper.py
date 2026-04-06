@@ -59,6 +59,13 @@ class OTCScraper:
         self._playwright = None
         self._dom_thread = None
         self._aggregator_thread = None
+        
+    @classmethod
+    def get_playwright_session(cls):
+        """Returns the active (Proc, Playwright, Browser, Page) tuple for trade execution."""
+        if cls._instance and cls._instance._playwright:
+            return (None, cls._instance._playwright, cls._instance._browser, cls._instance._page)
+        return None
     
     def start(self):
         """
@@ -95,9 +102,11 @@ class OTCScraper:
         # Step 1: Intercept WebSocket for historical candles
         self._setup_ws_interception()
         
-        # Step 2: Start DOM polling for live ticks
-        self._dom_thread = threading.Thread(target=self._dom_poll_loop, daemon=True)
-        self._dom_thread.start()
+        print("\033[93m[OTC Scraper] Reloading browser page to force historical data sync...\033[0m")
+        self._page.reload()
+        
+        # Step 2: Set up main-thread DOM polling (bypassing threading limits)
+        print("[OTC Scraper] DOM polling logic initialized for main thread execution.")
         
         # Step 3: Start candle aggregator
         self._aggregator_thread = threading.Thread(target=self._aggregator_loop, daemon=True)
@@ -254,28 +263,15 @@ class OTCScraper:
         
         return False
     
-    def _dom_poll_loop(self):
+    @staticmethod
+    def poll_dom_main_thread(page):
         """
-        Background thread: polls the DOM every 1 second to extract the live price.
+        Called DIRECTLY from the main thread loop (e.g. main.py) every cycle
+        to safely extract the live price without Playwright cross-thread errors.
         """
-        print("[OTC Scraper] DOM polling thread started.")
-        
-        # JavaScript to extract the live price from Olymp Trade's DOM
-        # This tries multiple selectors that the platform may use
         js_extract_price = """
         () => {
-            // Strategy 1: Common quote value selectors
-            const selectors = [
-                '.quote__val',
-                '.trading-deal__price-value',
-                '[data-test="asset-price"]',
-                '.current-price',
-                '.price-value',
-                '.instrument-price',
-                '.chart-price',
-                '.deal-price__value'
-            ];
-            
+            const selectors = ['.quote__val', '.trading-deal__price-value', '[data-test="asset-price"]', '.current-price', '.price-value', '.instrument-price', '.chart-price', '.deal-price__value'];
             for (const sel of selectors) {
                 const el = document.querySelector(sel);
                 if (el) {
@@ -284,55 +280,29 @@ class OTCScraper:
                     if (price > 0) return price;
                 }
             }
-            
-            // Strategy 2: Find any element with a price-like large number
-            // Look for elements that update frequently (likely the price)
             const allSpans = document.querySelectorAll('span, div');
             for (const el of allSpans) {
                 if (el.children.length === 0) {
                     const text = el.textContent.trim();
-                    // Match price patterns like "1.23456" or "83421.50"
                     if (/^\\d{1,6}\\.\\d{2,6}$/.test(text)) {
-                        const fontSize = window.getComputedStyle(el).fontSize;
-                        const size = parseInt(fontSize);
-                        // Price elements are typically displayed in larger font
-                        if (size >= 18) {
-                            return parseFloat(text);
-                        }
+                        const size = parseInt(window.getComputedStyle(el).fontSize);
+                        if (size >= 14) return parseFloat(text);
                     }
                 }
             }
-            
             return null;
         }
         """
-        
-        consecutive_failures = 0
-        
-        while OTCScraper._running:
-            try:
-                price = self._page.evaluate(js_extract_price)
-                
-                if price and price > 0:
-                    now = time.time()
-                    with OTCScraper._lock:
-                        OTCScraper._ticks.append((now, price))
-                        OTCScraper._last_price = price
-                    consecutive_failures = 0
-                else:
-                    consecutive_failures += 1
-                    if consecutive_failures == 10:
-                        print("\033[93m[OTC Scraper] Warning: 10 consecutive DOM poll failures. Price element may have changed.\033[0m")
-                    if consecutive_failures == 60:
-                        print("\033[91m[OTC Scraper] Critical: 60 consecutive failures. Check if the platform DOM has updated.\033[0m")
-                
-            except Exception as e:
-                consecutive_failures += 1
-                if consecutive_failures % 30 == 0:
-                    print(f"\033[91m[OTC DOM] Polling error (attempt {consecutive_failures}): {str(e)[:60]}\033[0m")
+        try:
+            price = page.evaluate(js_extract_price)
+            if price and price > 0:
+                now = time.time()
+                with OTCScraper._lock:
+                    OTCScraper._ticks.append((now, price))
+                    OTCScraper._last_price = price
+        except Exception as e:
+            pass
             
-            time.sleep(1)
-    
     def _aggregator_loop(self):
         """
         Background thread: aggregates raw ticks into OHLCV candles.

@@ -100,8 +100,30 @@ class TradeExecutor:
         p = sync_playwright().start()
         
         try:
-            browser = p.chromium.connect_over_cdp("http://localhost:9225")
-            page = browser.contexts[0].pages[0]
+            browser = p.chromium.connect_over_cdp("http://127.0.0.1:9225")
+            
+            # Smart page finder: scan ALL contexts/tabs for the Olymp Trade platform
+            page = None
+            for ctx in browser.contexts:
+                for pg in ctx.pages:
+                    page_url = pg.url.lower()
+                    if 'olymptrade' in page_url or 'olymp' in page_url:
+                        page = pg
+                        print(f"[Warm-up] Found Olymp Trade tab: {pg.url[:80]}")
+                        break
+                if page:
+                    break
+            
+            # Fallback: use the last page of the last context (most recently opened)
+            if page is None:
+                for ctx in reversed(browser.contexts):
+                    if ctx.pages:
+                        page = ctx.pages[-1]
+                        print(f"[Warm-up] No Olymp Trade tab found. Using active tab: {page.url[:80]}")
+                        break
+            
+            if page is None:
+                raise Exception("No pages found in any browser context")
             
             # Wait for DOM to be ready
             try:
@@ -369,11 +391,11 @@ class TradeExecutor:
             return False, error_msg
         finally:
             time.sleep(2)
-            try:
-                p.stop()
-            except:
-                pass
-            # proc.terminate()  # Removed because browser is user-managed
+            if cold_start:
+                try: browser.disconnect()
+                except: pass
+                try: p.stop()
+                except: pass
 
     def execute_forex(self, action="buy", amount="10", multiplier="10",
                       tp_price=None, sl_price=None, 
@@ -835,11 +857,11 @@ class TradeExecutor:
             return False, error_msg, outcome
         finally:
             time.sleep(2)
-            try:
-                p.stop()  # Disconnect Playwright (does NOT close the browser)
-            except:
-                pass
-            # NOTE: We do NOT terminate the browser — the user manages it
+            if cold_start:
+                try: browser.disconnect()
+                except: pass
+                try: p.stop()
+                except: pass
 
     def monitor_and_close(self, page, action, model, scaler, processed_df):
         """
