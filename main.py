@@ -178,6 +178,20 @@ def main():
             
             minutes_to_next = 5 - (now.minute % 5)
             seconds_to_next_candle = minutes_to_next * 60 - now.second if minutes_to_next < 5 else 60 - now.second
+            
+            # Keep-alive: pulse the browser connection every ~30s to prevent session death
+            if warm_session and now.second % 30 == 0:
+                try:
+                    _ = warm_session[3].url  # Lightweight CDP pulse
+                except:
+                    print("\033[93m[Keep-Alive] Session lost. Auto-reconnecting...\033[0m")
+                    try: warm_session[1].stop()
+                    except: pass
+                    try:
+                        warm_session = executor.warm_up_browser()
+                        print("\033[92m[Keep-Alive] ✅ Reconnected successfully.\033[0m")
+                    except:
+                        warm_session = None
                 
             # 60s Sampling Rate
             if now.minute != last_fetch_minute:
@@ -286,7 +300,26 @@ def main():
                             print(f"\033[96m  Duration    : {duration}\033[0m")
                             print(f"\033[96m{'='*55}\033[0m")
                             
-                            # Execute Fixed Time trade
+                            # Execute Fixed Time trade  
+                            # Health check: verify browser session is still alive
+                            try:
+                                if warm_session and warm_session[3]:
+                                    _ = warm_session[3].url  # Quick pulse check
+                            except:
+                                print("\033[93m[Session] Browser session died. Reconnecting...\033[0m")
+                                try:
+                                    warm_session[1].stop()
+                                except:
+                                    pass
+                                warm_session = None
+                            
+                            if warm_session is None:
+                                print("\033[96m[Reconnect] Opening fresh browser connection...\033[0m")
+                                try:
+                                    warm_session = executor.warm_up_browser()
+                                except Exception as re_err:
+                                    print(f"\033[91m[Reconnect] Failed: {re_err}\033[0m")
+                            
                             success, output_msg = executor.execute_web(
                                 action=action,
                                 duration=duration,
