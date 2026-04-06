@@ -268,42 +268,63 @@ class TradeExecutor:
             
             if action.lower() == "buy":
                 print("[Action] Clicking UP/BUY button...")
-                clicked = page.evaluate("""() => {
+                clicked_info = page.evaluate("""() => {
+                    function getCenter(el) {
+                        const rect = el.getBoundingClientRect();
+                        return { x: rect.left + rect.width/2, y: rect.top + rect.height/2, method: '' };
+                    }
                     // P1: data-test
                     let btn = document.querySelector('[data-test*="up-button"], [data-test*="up_button"]');
-                    if (btn) { btn.click(); return 'data-test-up'; }
-                    // P2: exact text match (Up, Buy, Call)
+                    if (btn) { let res = getCenter(btn); res.method = 'data-test-up'; return res; }
+                    // P2: exact text match (Up, Buy, Call, شراء, صعود)
                     for (const b of document.querySelectorAll('button, [role="button"]')) {
                         const txt = b.textContent.trim().toLowerCase();
-                        if (txt === 'up' || txt === 'buy' || txt === 'call') { b.click(); return 'text-' + txt; }
+                        if (txt === 'up' || txt === 'buy' || txt === 'call' || txt === 'شراء' || txt === 'صعود') { 
+                            let res = getCenter(b); res.method = 'text-' + txt; return res; 
+                        }
                     }
                     // P3: partial text match
                     for (const b of document.querySelectorAll('button, [role="button"]')) {
                         const txt = b.textContent.trim().toLowerCase();
-                        if (txt.includes('up') && !txt.includes('update') && !txt.includes('support')) { b.click(); return 'partial-up'; }
+                        if (txt.includes('up') && !txt.includes('update') && !txt.includes('support')) { 
+                            let res = getCenter(b); res.method = 'partial-up'; return res; 
+                        }
                     }
-                    // P4: XPath
+                    // P4: XPath fallback
                     const x = document.evaluate("//button[contains(translate(., 'UP', 'up'), 'up')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-                    if (x) { x.click(); return 'xpath-up'; }
+                    if (x) { let res = getCenter(x); res.method = 'xpath-up'; return res; }
                     return null;
                 }""")
             else:
                 print("[Action] Clicking DOWN/SELL button...")
-                clicked = page.evaluate("""() => {
+                clicked_info = page.evaluate("""() => {
+                    function getCenter(el) {
+                        const rect = el.getBoundingClientRect();
+                        return { x: rect.left + rect.width/2, y: rect.top + rect.height/2, method: '' };
+                    }
                     let btn = document.querySelector('[data-test*="down-button"], [data-test*="down_button"]');
-                    if (btn) { btn.click(); return 'data-test-down'; }
+                    if (btn) { let res = getCenter(btn); res.method = 'data-test-down'; return res; }
                     for (const b of document.querySelectorAll('button, [role="button"]')) {
                         const txt = b.textContent.trim().toLowerCase();
-                        if (txt === 'down' || txt === 'sell' || txt === 'put') { b.click(); return 'text-' + txt; }
+                        if (txt === 'down' || txt === 'sell' || txt === 'put' || txt === 'بيع' || txt === 'هبوط') { 
+                            let res = getCenter(b); res.method = 'text-' + txt; return res; 
+                        }
                     }
                     for (const b of document.querySelectorAll('button, [role="button"]')) {
                         const txt = b.textContent.trim().toLowerCase();
-                        if (txt.includes('down') && !txt.includes('download')) { b.click(); return 'partial-down'; }
+                        if (txt.includes('down') && !txt.includes('download')) { 
+                            let res = getCenter(b); res.method = 'partial-down'; return res; 
+                        }
                     }
                     const x = document.evaluate("//button[contains(translate(., 'DOWN', 'down'), 'down')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-                    if (x) { x.click(); return 'xpath-down'; }
+                    if (x) { let res = getCenter(x); res.method = 'xpath-down'; return res; }
                     return null;
                 }""")
+            
+            clicked = None
+            if clicked_info:
+                page.mouse.click(clicked_info['x'], clicked_info['y'])
+                clicked = clicked_info['method']
             
             exec_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
             
@@ -352,7 +373,7 @@ class TradeExecutor:
                 p.stop()
             except:
                 pass
-            proc.terminate()
+            # proc.terminate()  # Removed because browser is user-managed
 
     def execute_forex(self, action="buy", amount="10", multiplier="10",
                       tp_price=None, sl_price=None, 

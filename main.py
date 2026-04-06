@@ -154,6 +154,7 @@ def main():
     
     stale_count = 0
     last_cycle_close = None
+    force_evaluation = False
     
     print("\n" + "="*55)
     print("  🦈 DIRECT PLATFORM INTELLIGENCE v2.2 — SHARK MODE")
@@ -205,12 +206,18 @@ def main():
                     
                 print(f"[Loop] Active cache maintained. Current Close: {current_close:.2f} (Stale Count: {stale_count})")
                 
-                # Trade Evaluation ONLY on 5m boundary
-                if now.minute % 5 == 0 and now.minute != last_trade_minute:
-                    print("\n" + "="*50)
-                    print(f"[SIGNAL EVALUATION] Trigger Time: {now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}")
-                    print("="*50)
-                    
+                # Trade Evaluation ONLY on 5m boundary OR if a trade just finished (Expert Chaining)
+                if (now.minute % 5 == 0 and now.minute != last_trade_minute) or force_evaluation:
+                    if force_evaluation:
+                        print("\n" + "="*50)
+                        print(f"⚡ [EXPERT CHAINING] Immediate Follow-up Evaluation Triggered!")
+                        print("="*50)
+                    else:
+                        print("\n" + "="*50)
+                        print(f"[SIGNAL EVALUATION] Trigger Time: {now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}")
+                        print("="*50)
+                        
+                    force_evaluation = False  # Reset flag so it only fires once per trigger
                     last_trade_minute = now.minute
                     
                     from lstm_model import prepare_sequential_data, train_and_evaluate
@@ -225,9 +232,20 @@ def main():
                         X_live = np.array([X_live])
                         
                         prob = model.predict(X_live)[0][0]
-                        raw_action = "buy" if prob > 0.5 else "sell"
                         
-                        # ===== MEMORY SIMILARITY CHECK (BEFORE BB Filter) =====
+                        # Trust the Brain: Expert entry thresholds
+                        action = None
+                        raw_action = None
+                        if prob > 0.52:
+                            raw_action = "buy"
+                            action = raw_action
+                        elif prob < 0.48:
+                            raw_action = "sell"
+                            action = raw_action
+                        else:
+                            print(f"\033[93m[Neutral Zone] Prob {prob*100:.2f}% is between 48% and 52%. Skipping trade.\033[0m")
+                        
+                        # ===== MEMORY SIMILARITY CHECK =====
                         similarity_pct, match_idx = compute_memory_similarity(processed_df)
                         memory_verdict = print_memory_report(similarity_pct, match_idx)
                         
@@ -239,44 +257,28 @@ def main():
                                 except: pass
                                 warm_session = None
                             continue
-                        
-                        action = raw_action
-                        filter_status = "Skipped"
-                        if 'BB_mid' in processed_df.columns:
+                            
+                        # ===== TREND FILTER (WARNING ONLY) =====
+                        if 'BB_mid' in processed_df.columns and action:
                             last_close = processed_df['close'].iloc[-1]
                             bb_mid = processed_df['BB_mid'].iloc[-1]
                             dist_to_mid = last_close - bb_mid
                             
-                            print(f"[Signal] Prob: {prob*100:.2f}% -> {raw_action.upper()} | Distance to BB_mid: {dist_to_mid:.4f}")
+                            print(f"[Signal] Prob: {prob*100:.2f}% -> {action.upper()} | Distance to BB_mid: {dist_to_mid:.4f}")
                             
-                            if raw_action == "buy" and last_close < bb_mid:
-                                filter_status = "BLOCKED (Bearish Trend)"
-                                action = None
-                            elif raw_action == "sell" and last_close > bb_mid:
-                                filter_status = "BLOCKED (Bullish Trend)"
-                                action = None
-                            else:
-                                filter_status = "PASSED"
-                                
-                        print(f"Filter: {filter_status}")
+                            if (action == "buy" and last_close < bb_mid) or (action == "sell" and last_close > bb_mid):
+                                print("\033[93m[Warning] Trading AGAINST the Bollinger Band trend.\033[0m")
+                                print("\033[96m[Expert Mode] LSTM Confidence is strong. Bypassing Trend Filter for Entry. Relying on Shark Exit.\033[0m")
                         
                         # ===== MEMORY WARNING TIER (60-80%): Auto-proceed with caution =====
                         if memory_verdict == 'WARN' and action:
                             print(f"\033[93m[Memory] {similarity_pct:.0f}% Similarity — Proceeding with caution (auto-mode).\033[0m")
-                            # In auto mode, we proceed but log the warning
                         
-                        forced_tier = None
-                        if not action:
-                            print("\033[93m[Auto] BB Filter blocked. Skipping this signal.\033[0m")
                         
                         if action:
-                            # Determine amount and multiplier
-                            if forced_tier and isinstance(forced_tier, dict):
-                                fx_amount = forced_tier["amount"]
-                                fx_multiplier = forced_tier["multiplier"]
-                            else:
-                                fx_amount = Config.FOREX_DEFAULT_AMOUNT
-                                fx_multiplier = Config.FOREX_MULTIPLIER
+                            # Apply Config values
+                            fx_amount = Config.FOREX_DEFAULT_AMOUNT
+                            fx_multiplier = Config.FOREX_MULTIPLIER
                             
                             # Calculate ATR-based TP and SL
                             current_atr = processed_df['ATR'].iloc[-1]
@@ -290,13 +292,12 @@ def main():
                                 sl_price = entry_price + (current_atr * Config.FOREX_SL_ATR_MULT)
                             
                             print(f"\n\033[96m{'='*55}\033[0m")
-                            print(f"\033[96m       💹 FOREX TRADE PARAMETERS\033[0m")
+                            print(f"\033[96m       💹 EXPERT FOREX TRADE (SHARK MODE)\033[0m")
                             print(f"\033[96m{'='*55}\033[0m")
                             print(f"\033[96m  Action      : {action.upper()}\033[0m")
                             print(f"\033[96m  Amount      : {fx_amount}$\033[0m")
                             print(f"\033[96m  Multiplier  : x{fx_multiplier}\033[0m")
                             print(f"\033[96m  Entry Price : {entry_price:.5f}\033[0m")
-                            print(f"\033[96m  ATR         : {current_atr:.5f}\033[0m")
                             print(f"\033[92m  Take Profit : {tp_price:.5f} (ATR x {Config.FOREX_TP_ATR_MULT})\033[0m")
                             print(f"\033[91m  Stop Loss   : {sl_price:.5f} (ATR x {Config.FOREX_SL_ATR_MULT})\033[0m")
                             print(f"\033[96m{'='*55}\033[0m")
@@ -340,6 +341,11 @@ def main():
                                     print(f"\033[93m[Outcome] Unknown result: {outcome}\033[0m")
                             else:
                                 print(f"Failed to open Forex trade on Olymp Trade. Reason: {output_msg}")
+                            
+                            # Trigger a follow-up chain evaluation
+                            print("\n\033[93m[Chain Attack] Activating continuous market scan (bypassing 5m wait)...\033[0m")
+                            force_evaluation = True
+                            
                         else:
                             print("[FINAL DECISION] NO TRADE")
                             
