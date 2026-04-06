@@ -157,9 +157,9 @@ def main():
     force_evaluation = False
     
     print("\n" + "="*55)
-    print("  🦈 DIRECT PLATFORM INTELLIGENCE v2.2 — SHARK MODE")
-    print("  Data Source: Browser DOM/WebSocket (MT5/yfinance OFF)")
-    print(f"  Trade Mode: {Config.TRADE_MODE.upper()} | Multiplier: x{Config.FOREX_MULTIPLIER}")
+    print("  ⏱️ DIRECT PLATFORM INTELLIGENCE v2.3 — EXPERT FIXED TIME")
+    print("  Data Source: Universal Browser DOM/WebSocket")
+    print("  Trade Mode: FIXED TIME | Chain Attacks: ENABLED")
     print("="*55)
     
     while True:

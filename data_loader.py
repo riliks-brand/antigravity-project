@@ -33,49 +33,9 @@ def fetch_data(**kwargs):
         pd.DataFrame with columns: open, high, low, close, real_volume, DXY_Close
         or None on failure.
     """
-    # Route to OTC scraper only for true OTC assets
-    if "OTC" in Config.SYMBOL.upper():
-        return _fetch_otc_data()
-    
-    # ===== FOREX/CRYPTO: Use yfinance (instant, reliable) =====
-    # Map broker symbols to yfinance tickers
-    symbol_map = {
-        "BTCUSD": "BTC-USD",
-        "ETHUSD": "ETH-USD",
-        "EURUSD": "EURUSD=X",
-        "GBPUSD": "GBPUSD=X",
-        "USDJPY": "JPY=X",
-        "XAUUSD": "GC=F",
-    }
-    
-    ticker_name = symbol_map.get(Config.SYMBOL, "BTC-USD")
-    print(f"Fetching Live Data for {ticker_name}... (Platform Intelligence v2.2)")
-    
-    try:
-        ticker = yf.Ticker(ticker_name)
-        df = ticker.history(period="7d", interval="5m")
-        
-        if df is None or df.empty:
-            print("\033[91m[Data] yfinance returned empty data.\033[0m")
-            return None
-        
-        # Normalize column names to match pipeline expectations
-        df.index = df.index.tz_localize(None)
-        df.rename(columns={
-            'Open': 'open', 'High': 'high', 'Low': 'low',
-            'Close': 'close', 'Volume': 'real_volume'
-        }, inplace=True)
-        
-        # Freeze DXY at 100.0 — no thread, no crash
-        df['DXY_Close'] = 100.0
-        print(f"\033[94m[DXY Freeze] Static DXY = 100.0 (no external dependency)\033[0m")
-        
-        print(f"\033[92m[Data] Loaded {len(df)} candles. Latest: {df['close'].iloc[-1]:.2f}\033[0m")
-        return df
-        
-    except Exception as e:
-        print(f"\033[91m[Data] yfinance fetch failed: {e}\033[0m")
-        return None
+    # Force all data fetching to come exclusively from the active browser tab!
+    # This ensures proprietary pairs (like 'Halal Market Axis') work flawlessly.
+    return _fetch_otc_data()
 
 
 def _fetch_otc_data():
