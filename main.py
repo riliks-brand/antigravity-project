@@ -235,8 +235,7 @@ def main():
                             print("\033[91m[FINAL DECISION] TRADE BLOCKED BY MEMORY. Skipping cycle.\033[0m")
                             if warm_session:
                                 try:
-                                    warm_session[1].stop()
-                                    warm_session[0].terminate()
+                                    warm_session[1].stop()  # Disconnect Playwright only
                                 except: pass
                                 warm_session = None
                             continue
@@ -261,32 +260,14 @@ def main():
                                 
                         print(f"Filter: {filter_status}")
                         
-                        # ===== MEMORY WARNING TIER (60-80%): Co-Pilot Confirmation =====
+                        # ===== MEMORY WARNING TIER (60-80%): Auto-proceed with caution =====
                         if memory_verdict == 'WARN' and action:
-                            print(f"\n\033[93m[WARNING] {similarity_pct:.0f}% Similarity. Do you still want to force entry? (y/n):\033[0m")
-                            force_mem = input("Decision: ")
-                            if force_mem.strip().lower() != 'y':
-                                trades_avoided_by_memory += 1
-                                print(f"\033[91m[Memory] Trade cancelled by operator. Total Avoided: {trades_avoided_by_memory}\033[0m")
-                                action = None
+                            print(f"\033[93m[Memory] {similarity_pct:.0f}% Similarity — Proceeding with caution (auto-mode).\033[0m")
+                            # In auto mode, we proceed but log the warning
                         
                         forced_tier = None
                         if not action:
-                            print("\n[!] Filter Blocked.")
-                            force = input("Force Trade? (y/n): ")
-                            if force.strip().lower() == 'y':
-                                action = raw_action
-                                print("Choose Amount:")
-                                print("[1] 1$ (x10) | [2] 10$ (x10) | [3] Custom")
-                                tier_choice = input("Choice: ")
-                                if tier_choice == '1': 
-                                    forced_tier = {"amount": "1", "multiplier": Config.FOREX_MULTIPLIER}
-                                elif tier_choice == '2': 
-                                    forced_tier = {"amount": "10", "multiplier": Config.FOREX_MULTIPLIER}
-                                elif tier_choice == '3':
-                                    cust_amt = input("Amount ($): ")
-                                    cust_mult = input(f"Multiplier (default {Config.FOREX_MULTIPLIER}): ") or Config.FOREX_MULTIPLIER
-                                    forced_tier = {"amount": cust_amt, "multiplier": cust_mult}
+                            print("\033[93m[Auto] BB Filter blocked. Skipping this signal.\033[0m")
                         
                         if action:
                             # Determine amount and multiplier
@@ -364,8 +345,7 @@ def main():
                             
                         if warm_session:
                             try:
-                                warm_session[1].stop()
-                                warm_session[0].terminate()
+                                warm_session[1].stop()  # Disconnect Playwright only
                             except: pass
                             warm_session = None 
                     else:

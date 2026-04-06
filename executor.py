@@ -89,57 +89,33 @@ class TradeExecutor:
 
     def warm_up_browser(self, url="https://olymptrade.com/platform"):
         """
-        Opens the browser early (Warm-up Phase) so Cloudflare passes before the candle closes.
-        Returns (proc, playwright_instance, browser, page) to be reused by execute_web.
+        Connects to the user's EXISTING browser on CDP port 9225.
+        The browser must already be running with --remote-debugging-port=9225.
+        
+        Does NOT launch or kill any browser process.
+        Returns (None, playwright_instance, browser, page) — proc is None.
         """
-        import os
         import time
-        import subprocess
-        import psutil
-        
-        browser_exe = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
-        if not os.path.exists(browser_exe):
-            browser_exe = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
-            if not os.path.exists(browser_exe):
-                browser_exe = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
-                
-        profile_path = os.path.abspath("./cdp_profile")
-        
-        # Kill any lingering browser using our profile
-        for p_proc in psutil.process_iter(['name', 'cmdline']):
-            try:
-                if p_proc.info['cmdline'] and profile_path in " ".join(p_proc.info['cmdline']):
-                    p_proc.kill()
-            except:
-                pass
-        
-        time.sleep(1)
-        
-        # Native Browser Launch (Forcing WebGL/GPU for Olymp Trade Charts)
-        proc = subprocess.Popen([
-            browser_exe,
-            "--remote-debugging-port=9225",
-            f"--user-data-dir={profile_path}",
-            "--ignore-gpu-blocklist",
-            "--enable-webgl",
-            "--no-sandbox",
-            url
-        ])
-        
-        time.sleep(10)  # Extended wait to ensure WebGL/Canvas loads fully
         
         p = sync_playwright().start()
-        browser = p.chromium.connect_over_cdp("http://localhost:9225")
-        page = browser.contexts[0].pages[0]
         
-        # Wait for DOM content only (speed)
         try:
-            page.wait_for_load_state("domcontentloaded", timeout=15000)
-        except:
-            pass
-        
-        print("[Warm-up] Browser is warm. Cloudflare negotiation complete. Standing by.")
-        return proc, p, browser, page
+            browser = p.chromium.connect_over_cdp("http://localhost:9225")
+            page = browser.contexts[0].pages[0]
+            
+            # Wait for DOM to be ready
+            try:
+                page.wait_for_load_state("domcontentloaded", timeout=10000)
+            except:
+                pass
+            
+            print("[Warm-up] Connected to existing browser on port 9225. Standing by.")
+            return None, p, browser, page
+        except Exception as e:
+            print(f"\033[91m[Warm-up] Cannot connect to browser on port 9225: {e}\033[0m")
+            print("\033[93m[Warm-up] Make sure Chrome is running with: --remote-debugging-port=9225\033[0m")
+            p.stop()
+            raise
 
     def execute_web(self, action="buy", duration="2 min", amount="10", url="https://olymptrade.com/platform", 
                     warm_session=None):
@@ -654,18 +630,25 @@ class TradeExecutor:
             
             if action.lower() == "buy":
                 print("[Action] Clicking BUY (Green) button...")
-                clicked = page.evaluate("""() => {
+                clicked_info = page.evaluate("""() => {
+                    function getCenter(el) {
+                        const rect = el.getBoundingClientRect();
+                        return { x: rect.left + rect.width/2, y: rect.top + rect.height/2, method: '' };
+                    }
+                    
                     // P1: data-test attributes for buy
                     let btn = document.querySelector(
                         '[data-test*="buy-button"], [data-test*="buy_button"], ' +
                         '[data-test*="up-button"], [data-test*="up_button"]'
                     );
-                    if (btn) { btn.click(); return 'data-test-buy'; }
+                    if (btn) { let res = getCenter(btn); res.method = 'data-test-buy'; return res; }
                     
                     // P2: Exact text match — Buy
                     for (const b of document.querySelectorAll('button, [role="button"]')) {
                         const txt = b.textContent.trim().toLowerCase();
-                        if (txt === 'buy') { b.click(); return 'text-buy'; }
+                        if (txt === 'buy' || txt === 'شراء') { 
+                            let res = getCenter(b); res.method = 'text-buy'; return res; 
+                        }
                     }
                     
                     // P3: Green-colored large button (Buy is typically green)
@@ -673,46 +656,55 @@ class TradeExecutor:
                         const style = window.getComputedStyle(b);
                         const bg = style.backgroundColor;
                         const rect = b.getBoundingClientRect();
-                        // Green button with reasonable size (not small icon buttons)
                         if (rect.width > 60 && rect.height > 30) {
                             if (bg.includes('0, 200') || bg.includes('0, 180') || 
                                 bg.includes('76, 175') || bg.includes('56, 142') ||
-                                bg.includes('46, 125') || bg.includes('67, 160')) {
-                                b.click(); return 'color-green-buy';
+                                bg.includes('46, 125') || bg.includes('67, 160') ||
+                                bg.includes('rgb(0, 191') || bg.includes('rgb(13, 169')) {
+                                let res = getCenter(b); res.method = 'color-green-buy'; return res;
                             }
                         }
                     }
                     
-                    // P4: Partial text + position (Buy button is usually on the left/top)
+                    // P4: Partial text
                     for (const b of document.querySelectorAll('button, [role="button"]')) {
                         const txt = b.textContent.trim().toLowerCase();
                         if (txt.includes('buy') && !txt.includes('buying')) {
-                            b.click(); return 'partial-buy';
+                            let res = getCenter(b); res.method = 'partial-buy'; return res;
                         }
                     }
                     
-                    // P5: Fallback — Up/Call for backward compat
+                    // P5: Fallback — Up/Call
                     for (const b of document.querySelectorAll('button, [role="button"]')) {
                         const txt = b.textContent.trim().toLowerCase();
-                        if (txt === 'up' || txt === 'call') { b.click(); return 'fallback-' + txt; }
+                        if (txt === 'up' || txt === 'call' || txt === 'صعود') { 
+                            let res = getCenter(b); res.method = 'fallback-' + txt; return res; 
+                        }
                     }
                     
                     return null;
                 }""")
             else:
                 print("[Action] Clicking SELL (Red) button...")
-                clicked = page.evaluate("""() => {
+                clicked_info = page.evaluate("""() => {
+                    function getCenter(el) {
+                        const rect = el.getBoundingClientRect();
+                        return { x: rect.left + rect.width/2, y: rect.top + rect.height/2, method: '' };
+                    }
+                    
                     // P1: data-test
                     let btn = document.querySelector(
                         '[data-test*="sell-button"], [data-test*="sell_button"], ' +
                         '[data-test*="down-button"], [data-test*="down_button"]'
                     );
-                    if (btn) { btn.click(); return 'data-test-sell'; }
+                    if (btn) { let res = getCenter(btn); res.method = 'data-test-sell'; return res; }
                     
                     // P2: Exact text — Sell
                     for (const b of document.querySelectorAll('button, [role="button"]')) {
                         const txt = b.textContent.trim().toLowerCase();
-                        if (txt === 'sell') { b.click(); return 'text-sell'; }
+                        if (txt === 'sell' || txt === 'بيع') { 
+                            let res = getCenter(b); res.method = 'text-sell'; return res; 
+                        }
                     }
                     
                     // P3: Red-colored large button
@@ -723,8 +715,9 @@ class TradeExecutor:
                         if (rect.width > 60 && rect.height > 30) {
                             if (bg.includes('244, 67') || bg.includes('229, 57') ||
                                 bg.includes('211, 47') || bg.includes('239, 83') ||
-                                bg.includes('255, 82') || bg.includes('234, 57')) {
-                                b.click(); return 'color-red-sell';
+                                bg.includes('255, 82') || bg.includes('234, 57') ||
+                                bg.includes('rgb(255, 98') || bg.includes('rgb(240, 83')) {
+                                let res = getCenter(b); res.method = 'color-red-sell'; return res;
                             }
                         }
                     }
@@ -733,14 +726,16 @@ class TradeExecutor:
                     for (const b of document.querySelectorAll('button, [role="button"]')) {
                         const txt = b.textContent.trim().toLowerCase();
                         if (txt.includes('sell') && !txt.includes('selling')) {
-                            b.click(); return 'partial-sell';
+                            let res = getCenter(b); res.method = 'partial-sell'; return res;
                         }
                     }
                     
                     // P5: Fallback
                     for (const b of document.querySelectorAll('button, [role="button"]')) {
                         const txt = b.textContent.trim().toLowerCase();
-                        if (txt === 'down' || txt === 'put') { b.click(); return 'fallback-' + txt; }
+                        if (txt === 'down' || txt === 'put' || txt === 'هبوط') { 
+                            let res = getCenter(b); res.method = 'fallback-' + txt; return res; 
+                        }
                     }
                     
                     return null;
@@ -748,8 +743,14 @@ class TradeExecutor:
             
             exec_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
             
+            clicked = None
+            if clicked_info:
+                # Use real mouse click (isTrusted = true)
+                page.mouse.click(clicked_info['x'], clicked_info['y'])
+                clicked = clicked_info['method']
+            
             if clicked:
-                print(f"\033[92m[JS Execution] Click confirmed via: {clicked} at {exec_time}\033[0m")
+                print(f"\033[92m[JS Execution] Click confirmed (Real Mouse Event) via: {clicked} at {exec_time}\033[0m")
                 print(f"\033[92m[Forex Trade Opened] {action.upper()} | x{multiplier} | {amount}$\033[0m")
                 
                 # Screenshot
@@ -814,10 +815,10 @@ class TradeExecutor:
         finally:
             time.sleep(2)
             try:
-                p.stop()
+                p.stop()  # Disconnect Playwright (does NOT close the browser)
             except:
                 pass
-            proc.terminate()
+            # NOTE: We do NOT terminate the browser — the user manages it
 
     def monitor_and_close(self, page, action, model, scaler, processed_df):
         """
@@ -895,7 +896,11 @@ class TradeExecutor:
                     return { found: false };
                 }""")
             except Exception as e:
-                print(f"\033[93m  [{elapsed}s] DOM poll error: {str(e)[:50]}\033[0m")
+                err_msg = str(e)
+                print(f"\033[93m  [{elapsed}s] DOM poll error: {err_msg[:50]}\033[0m")
+                if "has been closed" in err_msg or "Target page" in err_msg:
+                    print("\033[91m[Shark] Browser closed or connection lost. Exiting monitor loop.\033[0m")
+                    return {'hit': 'unknown', 'reason': 'Browser closed', 'pnl_text': ''}
                 continue
             
             pnl_text = ''
