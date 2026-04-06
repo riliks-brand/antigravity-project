@@ -162,21 +162,22 @@ def main():
     print("  Execution: Browser CDP (Olymp Trade Fixed Time)")
     print("="*55)
     
+    # === STARTUP: Lock on target BEFORE any data fetching ===
+    print("\n\033[96m[STARTUP] Initializing browser connection...\033[0m")
+    try:
+        warm_session = executor.warm_up_browser()
+        print("\033[92m[STARTUP] ✅ Browser ready. Entering main loop.\033[0m\n")
+    except Exception as e:
+        print(f"\033[91m[STARTUP] ⚠️ Browser init failed: {e}\033[0m")
+        print("\033[93m[STARTUP] Will attempt cold-start when a trade signal appears.\033[0m\n")
+        warm_session = None
+    
     while True:
         try:
             now = datetime.datetime.now()
             
             minutes_to_next = 5 - (now.minute % 5)
             seconds_to_next_candle = minutes_to_next * 60 - now.second if minutes_to_next < 5 else 60 - now.second
-
-            # Warm-up: pre-connect to browser ~60s before signal evaluation
-            if seconds_to_next_candle <= 60 and seconds_to_next_candle > 5 and warm_session is None:
-                print(f"\n[WARM-UP] Candle closes in ~{seconds_to_next_candle}s. Pre-opening browser...")
-                try:
-                    warm_session = executor.warm_up_browser()
-                except Exception as e:
-                    print(f"[WARM-UP] Failed: {e}. Will cold-start at execution time.")
-                    warm_session = None
                 
             # 60s Sampling Rate
             if now.minute != last_fetch_minute:

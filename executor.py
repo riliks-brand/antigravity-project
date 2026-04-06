@@ -89,55 +89,108 @@ class TradeExecutor:
 
     def warm_up_browser(self, url="https://olymptrade.com/platform"):
         """
-        Connects to the user's EXISTING browser on CDP port 9225.
-        The browser must already be running with --remote-debugging-port=9225.
+        Connects to the user's browser on CDP port 9225.
+        If no browser is listening, auto-launches Chrome or Edge with the correct flags.
+        After connecting, ensures the active page is on the Olymp Trade platform (Target Lock).
         
-        Does NOT launch or kill any browser process.
-        Returns (None, playwright_instance, browser, page) — proc is None.
+        Returns (None, playwright_instance, browser, page).
         """
         import time
+        import subprocess
+        import shutil
         
         p = sync_playwright().start()
         
+        # === STEP 1: Try to connect to existing browser ===
+        browser = None
         try:
             browser = p.chromium.connect_over_cdp("http://127.0.0.1:9225")
+            print("\033[92m[Warm-up] Connected to existing browser on port 9225.\033[0m")
+        except Exception as e:
+            print(f"\033[93m[Warm-up] No browser found on port 9225. Auto-launching...\033[0m")
+            p.stop()  # Clean up the failed Playwright instance
             
-            # Smart page finder: scan ALL contexts/tabs for the Olymp Trade platform
-            page = None
-            for ctx in browser.contexts:
-                for pg in ctx.pages:
-                    page_url = pg.url.lower()
-                    if 'olymptrade' in page_url or 'olymp' in page_url:
-                        page = pg
-                        print(f"[Warm-up] Found Olymp Trade tab: {pg.url[:80]}")
-                        break
-                if page:
+            # === STEP 2: Auto-launch Chrome or Edge ===
+            chrome_paths = [
+                r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+                r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+                shutil.which("chrome") or "",
+            ]
+            edge_paths = [
+                r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+                r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+                shutil.which("msedge") or "",
+            ]
+            
+            browser_exe = None
+            for path in chrome_paths + edge_paths:
+                if path and __import__('os').path.isfile(path):
+                    browser_exe = path
                     break
             
-            # Fallback: use the last page of the last context (most recently opened)
-            if page is None:
-                for ctx in reversed(browser.contexts):
-                    if ctx.pages:
-                        page = ctx.pages[-1]
-                        print(f"[Warm-up] No Olymp Trade tab found. Using active tab: {page.url[:80]}")
-                        break
+            if browser_exe is None:
+                raise Exception("No Chrome or Edge found. Please install Chrome or launch manually with --remote-debugging-port=9225")
             
-            if page is None:
-                raise Exception("No pages found in any browser context")
+            print(f"\033[96m[Auto-Launch] Starting: {browser_exe}\033[0m")
+            subprocess.Popen([
+                browser_exe,
+                f"--remote-debugging-port=9225",
+                "--no-first-run",
+                "--no-default-browser-check",
+                url
+            ])
             
-            # Wait for DOM to be ready
-            try:
-                page.wait_for_load_state("domcontentloaded", timeout=10000)
-            except:
-                pass
-            
-            print("[Warm-up] Connected to existing browser on port 9225. Standing by.")
-            return None, p, browser, page
-        except Exception as e:
-            print(f"\033[91m[Warm-up] Cannot connect to browser on port 9225: {e}\033[0m")
-            print("\033[93m[Warm-up] Make sure Chrome is running with: --remote-debugging-port=9225\033[0m")
-            p.stop()
-            raise
+            # Wait for browser to boot up
+            p = sync_playwright().start()
+            for attempt in range(15):
+                try:
+                    time.sleep(2)
+                    browser = p.chromium.connect_over_cdp("http://127.0.0.1:9225")
+                    print(f"\033[92m[Auto-Launch] Browser connected after {(attempt+1)*2}s.\033[0m")
+                    break
+                except:
+                    if attempt == 14:
+                        p.stop()
+                        raise Exception("Browser launched but CDP connection failed after 30s")
+        
+        # === STEP 3: Smart Page Finder — scan ALL contexts/tabs ===
+        page = None
+        for ctx in browser.contexts:
+            for pg in ctx.pages:
+                page_url = pg.url.lower()
+                if 'olymptrade' in page_url or 'olymp' in page_url:
+                    page = pg
+                    print(f"\033[92m[Target Lock] ✅ Found Olymp Trade tab: {pg.url[:80]}\033[0m")
+                    break
+            if page:
+                break
+        
+        # Fallback: pick the last page of any context
+        if page is None:
+            for ctx in reversed(browser.contexts):
+                if ctx.pages:
+                    page = ctx.pages[-1]
+                    break
+        
+        if page is None:
+            raise Exception("No pages found in any browser context")
+        
+        # === STEP 4: Target Lock — force navigation if not on the platform ===
+        current_url = page.url.lower()
+        if 'olymptrade' not in current_url and 'olymp' not in current_url:
+            print(f"\033[93m[Target Lock] Wrong page detected: {page.url[:60]}\033[0m")
+            print(f"\033[96m[Target Lock] Navigating to {url}...\033[0m")
+            page.goto(url, wait_until="domcontentloaded", timeout=30000)
+            print(f"\033[92m[Target Lock] ✅ Arrived at: {page.url[:80]}\033[0m")
+        
+        # Wait for DOM to be fully ready
+        try:
+            page.wait_for_load_state("domcontentloaded", timeout=10000)
+        except:
+            pass
+        
+        print("\033[92m[Warm-up] Browser LOCKED ON TARGET. Ready to execute trades.\033[0m")
+        return None, p, browser, page
 
     def execute_web(self, action="buy", duration="2 min", amount="10", url="https://olymptrade.com/platform", 
                     warm_session=None):
