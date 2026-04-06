@@ -278,69 +278,34 @@ def main():
                         if action:
                             # Apply Config values
                             fx_amount = Config.FOREX_DEFAULT_AMOUNT
-                            fx_multiplier = Config.FOREX_MULTIPLIER
                             
-                            # Calculate ATR-based TP and SL
-                            current_atr = processed_df['ATR'].iloc[-1]
-                            entry_price = processed_df['close'].iloc[-1]
-                            
-                            if action == "buy":
-                                tp_price = entry_price + (current_atr * Config.FOREX_TP_ATR_MULT)
-                                sl_price = entry_price - (current_atr * Config.FOREX_SL_ATR_MULT)
-                            else:
-                                tp_price = entry_price - (current_atr * Config.FOREX_TP_ATR_MULT)
-                                sl_price = entry_price + (current_atr * Config.FOREX_SL_ATR_MULT)
+                            duration = "2 min"  # Standard fixed time duration
                             
                             print(f"\n\033[96m{'='*55}\033[0m")
-                            print(f"\033[96m       💹 EXPERT FOREX TRADE (SHARK MODE)\033[0m")
+                            print(f"\033[96m       ⏱️ EXPERT FIXED TIME TRADE\033[0m")
                             print(f"\033[96m{'='*55}\033[0m")
                             print(f"\033[96m  Action      : {action.upper()}\033[0m")
                             print(f"\033[96m  Amount      : {fx_amount}$\033[0m")
-                            print(f"\033[96m  Multiplier  : x{fx_multiplier}\033[0m")
-                            print(f"\033[96m  Entry Price : {entry_price:.5f}\033[0m")
-                            print(f"\033[92m  Take Profit : {tp_price:.5f} (ATR x {Config.FOREX_TP_ATR_MULT})\033[0m")
-                            print(f"\033[91m  Stop Loss   : {sl_price:.5f} (ATR x {Config.FOREX_SL_ATR_MULT})\033[0m")
+                            print(f"\033[96m  Duration    : {duration}\033[0m")
                             print(f"\033[96m{'='*55}\033[0m")
                             
-                            # Execute Forex trade with Shark Exit
-                            success, output_msg, outcome = executor.execute_forex(
+                            # Execute Fixed Time trade
+                            success, output_msg = executor.execute_web(
                                 action=action,
+                                duration=duration,
                                 amount=fx_amount,
-                                multiplier=fx_multiplier,
-                                tp_price=tp_price,
-                                sl_price=sl_price,
-                                model=model,
-                                scaler=scaler,
-                                processed_df=processed_df,
                                 warm_session=warm_session
                             )
                             
                             warm_session = None
                             
                             if success:
-                                print(f"\n[LIVE TRADE VERIFIED: {action.upper()} FOREX ON OLYMP TRADE]")
-                                
-                                hit_type = outcome.get('hit', 'unknown')
-                                
-                                if hit_type == 'sl':
-                                    print("\033[91m[Outcome] STOP LOSS HIT — LOSS. Logging for memory.\033[0m")
-                                    log_loss(processed_df, False)
-                                elif hit_type == 'tp':
-                                    print("\033[92m[Outcome] TAKE PROFIT HIT — WIN! 💰\033[0m")
-                                elif hit_type == 'shark_exit':
-                                    pnl = outcome.get('pnl_text', '')
-                                    reason = outcome.get('reason', '')
-                                    if pnl.startswith('-'):
-                                        print(f"\033[91m[Outcome] SHARK EXIT (LOSS): {reason} | PnL: {pnl}\033[0m")
-                                        log_loss(processed_df, False)
-                                    else:
-                                        print(f"\033[92m[Outcome] SHARK EXIT (WIN): {reason} | PnL: {pnl} 🦈💰\033[0m")
-                                elif hit_type == 'timeout':
-                                    print("\033[93m[Outcome] TIMEOUT — Trade may still be active. Check platform.\033[0m")
-                                else:
-                                    print(f"\033[93m[Outcome] Unknown result: {outcome}\033[0m")
+                                print(f"\n\033[92m[LIVE EXPERT TRADE VERIFIED: {action.upper()} FIXED TIME ON OLYMP TRADE]\033[0m")
+                                print("\033[93m[Wait] Waiting for fixed time expiration (2 mins)...\033[0m")
+                                time.sleep(125)  # Wait for 2 minutes + brief buffer
+                                print("\033[96m[Completed] Trade expired. Please verify UI for result.\033[0m")
                             else:
-                                print(f"Failed to open Forex trade on Olymp Trade. Reason: {output_msg}")
+                                print(f"\033[91mFailed to open Fixed Time trade. Reason: {output_msg}\033[0m")
                             
                             # Trigger a follow-up chain evaluation
                             print("\n\033[93m[Chain Attack] Activating continuous market scan (bypassing 5m wait)...\033[0m")
