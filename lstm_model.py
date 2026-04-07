@@ -14,7 +14,7 @@ def prepare_sequential_data(df, sequence_length=Config.SEQUENCE_LENGTH):
     import pandas as pd
     import os
     losses_df = None
-    log_file = f'losses_log_{Config.TRADE_MODE}.csv'
+    log_file = f'losses_log_{getattr(Config, "TRADING_MODE", "FIXED_TIME")}.csv'
     if os.path.exists(log_file):
         try:
             losses_df = pd.read_csv(log_file)

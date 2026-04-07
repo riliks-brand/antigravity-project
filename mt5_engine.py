@@ -3,12 +3,24 @@ import MetaTrader5 as mt5
 def connect_to_exness():
     """
     Initializes connection and logs into the MT5 Terminal for Exness.
+    Includes retry logic for IPC timeouts.
     """
     from config import Config
+    import time
     
-    # Attempt initialization
-    if not mt5.initialize():
-        print(f"\033[91mMT5 Initialization failed. Error code: {mt5.last_error()}\033[0m")
+    # Attempt initialization with Retries
+    max_retries = 3
+    connected = False
+    for attempt in range(max_retries):
+        if mt5.initialize():
+            connected = True
+            break
+        print(f"\033[93m[MT5] Connection attempt {attempt+1} failed. Retrying in 2s...\033[0m")
+        time.sleep(2)
+        
+    if not connected:
+        print(f"\033[91mMT5 Initialization failed after {max_retries} attempts. Error code: {mt5.last_error()}\033[0m")
+        print("\033[93m[Tip] Make sure the MetaTrader 5 Terminal is open on your Windows desktop.\033[0m")
         return False
         
     # Attempt Login

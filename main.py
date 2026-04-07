@@ -144,9 +144,27 @@ def print_memory_report(similarity_pct, match_idx):
 def main():
     global trades_avoided_by_memory
     
-    if getattr(Config, 'TRADING_MODE', 'FIXED_TIME') == 'FOREX':
+    print("\n" + "="*55)
+    print("  🚀 EXPERT TRADING BOT v2.5 — BOOTLOADER")
+    print("="*55)
+    print("  [1] FIXED TIME (Olymp Trade - Browser Required)")
+    print("  [2] FOREX (Exness - MT5 Terminal Required)")
+    print("="*55)
+    
+    choice = input("Select Mode [1/2]: ").strip()
+    if choice == '2':
+        trading_mode = 'FOREX'
+    else:
+        trading_mode = 'FIXED_TIME'
+
+    if trading_mode == 'FOREX':
         from mt5_engine import connect_to_exness
-        connect_to_exness()
+        if not connect_to_exness():
+            print("\033[91m[Fatal] Could not establish MT5 connection. Exiting.\033[0m")
+            return
+    
+    # Update Config dynamically for internal checks
+    Config.TRADING_MODE = trading_mode
     
     pd.set_option('display.max_columns', None)
     pd.set_option('display.width', 1000)
@@ -160,23 +178,33 @@ def main():
     last_cycle_close = None
     force_evaluation = False
     
-    print("\n" + "="*55)
-    print("  ⏱️ EXPERT FIXED TIME v2.3 — CHAIN ATTACKS ENABLED")
-    print("  Data Source: yfinance (instant 1700+ candles)")
-    print("  Execution: Browser CDP (Olymp Trade Fixed Time)")
+    if trading_mode == 'FIXED_TIME':
+        print("  ⏱️ EXPERT FIXED TIME v2.3 — CHAIN ATTACKS ENABLED")
+        print("  Data Source: yfinance (instant 1700+ candles)")
+        print("  Execution: Browser CDP (Olymp Trade Fixed Time)")
+    else:
+        print("  📈 EXPERT FOREX v1.0 — EXNESS MT5 INTEGRATED")
+        print("  Data Source: yfinance (instant 1700+ candles)")
+        print("  Execution: MetaTrader 5 (Exness Terminal)")
     print("="*55)
     
-    # === STARTUP: Link to the active browser via Scraper ===
-    print("\n\033[96m[STARTUP] Initializing unified browser connection...\033[0m")
-    try:
-        from otc_scraper import get_otc_scraper
-        scraper = get_otc_scraper(candle_interval=60)
-        warm_session = scraper.get_playwright_session()
-        print("\033[92m[STARTUP] ✅ Browser ready. Market synced. Entering main loop.\033[0m\n")
-    except Exception as e:
-        print(f"\033[91m[STARTUP] ⚠️ Browser init failed: {e}\033[0m")
-        print("\033[93m[STARTUP] Will attempt cold-start on next cycle.\033[0m\n")
-        warm_session = None
+    scraper = None
+    warm_session = None
+    
+    # === STARTUP: Link to the active browser via Scraper (ONLY for FIXED_TIME) ===
+    if trading_mode == 'FIXED_TIME':
+        print("\n\033[96m[STARTUP] Initializing unified browser connection...\033[0m")
+        try:
+            from otc_scraper import get_otc_scraper
+            scraper = get_otc_scraper(candle_interval=60)
+            warm_session = scraper.get_playwright_session()
+            print("\033[92m[STARTUP] ✅ Browser ready. Market synced. Entering main loop.\033[0m\n")
+        except Exception as e:
+            print(f"\033[91m[STARTUP] ⚠️ Browser init failed: {e}\033[0m")
+            print("\033[93m[STARTUP] Will attempt cold-start on next cycle.\033[0m\n")
+            warm_session = None
+    else:
+        print("\n\033[92m[STARTUP] MT5 Mode active. Skipping browser bridge initialization.\033[0m\n")
     
     while True:
         try:
@@ -207,7 +235,7 @@ def main():
             if now.minute != last_fetch_minute:
                 last_fetch_minute = now.minute
                 
-                raw_df = fetch_data()
+                raw_df = fetch_data(trading_mode=trading_mode)
                 if raw_df is None or raw_df.empty:
                     print("\033[91mData fetch failed. Retrying next cycle...\033[0m")
                     last_fetch_minute = -1  # Prevent 60s soft-lock
