@@ -89,31 +89,72 @@ class TradeExecutor:
 
     def warm_up_browser(self, url="https://olymptrade.com/platform"):
         """
-        Connects to the user's EXISTING browser on CDP port 9225.
-        
-        The user is responsible for:
-        1. Opening Chrome with: --remote-debugging-port=9225
-        2. Logging in to Olymp Trade
-        3. Opening the desired market/asset
+        Connects to the browser on CDP port 9225.
+        Auto-launches Chrome if it's not already running.
         
         The bot will simply connect and use whatever page is active.
         Returns (None, playwright_instance, browser, page).
         """
         import time
+        import subprocess
+        import shutil
         
         p = sync_playwright().start()
+        browser = None
         
         try:
             browser = p.chromium.connect_over_cdp("http://127.0.0.1:9225")
-            print("\033[92m[Browser] ✅ Connected to browser on port 9225.\033[0m")
+            print("\033[92m[Browser] ✅ Connected to existing browser on port 9225.\033[0m")
         except Exception as e:
+            print(f"\033[93m[Warm-up] No browser found on port 9225. Auto-launching...\033[0m")
             p.stop()
-            raise Exception(
-                "No browser found on port 9225!\n"
-                "  Please open Chrome first with:\n"
-                '  chrome.exe --remote-debugging-port=9225\n'
-                "  Then log in to Olymp Trade and open your desired market."
-            )
+            
+            # === Auto-launch Chrome or Edge ===
+            chrome_paths = [
+                r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+                r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+                shutil.which("chrome") or "",
+            ]
+            edge_paths = [
+                r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+                r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+                shutil.which("msedge") or "",
+            ]
+            
+            browser_exe = None
+            for path in chrome_paths + edge_paths:
+                if path and __import__('os').path.isfile(path):
+                    browser_exe = path
+                    break
+            
+            if browser_exe is None:
+                raise Exception("No Chrome or Edge found. Please install Chrome or launch manually with --remote-debugging-port=9225")
+            
+            import os
+            profile_dir = os.path.join(os.getcwd(), "chrome_bot_profile")
+            
+            print(f"\033[96m[Auto-Launch] Starting: {browser_exe} (Isolated Profile)\033[0m")
+            subprocess.Popen([
+                browser_exe,
+                f"--remote-debugging-port=9225",
+                f"--user-data-dir={profile_dir}",
+                "--no-first-run",
+                "--no-default-browser-check",
+                url
+            ])
+            
+            # Wait for browser to boot up
+            p = sync_playwright().start()
+            for attempt in range(15):
+                try:
+                    time.sleep(2)
+                    browser = p.chromium.connect_over_cdp("http://127.0.0.1:9225")
+                    print(f"\033[92m[Auto-Launch] Browser connected after {(attempt+1)*2}s.\033[0m")
+                    break
+                except:
+                    if attempt == 14:
+                        p.stop()
+                        raise Exception("Browser launched but CDP connection failed after 30s")
         
         # Find the best page: prefer /platform, skip tracking iframes
         page = None
@@ -144,6 +185,30 @@ class TradeExecutor:
             raise Exception("No usable pages found in the browser.")
         
         print(f"\033[92m[Browser] Active page: {page.url[:90]}\033[0m")
+        
+        # === Target Lock & Login Detection ===
+        current_url = page.url.lower()
+        
+        # If on login page, wait for user to log in
+        if 'login' in current_url or '/platform' not in current_url:
+            print(f"\n\033[91m{'='*55}\033[0m")
+            print(f"\033[91m  ⚠️  LOGIN REQUIRED — Please log in to Olymp Trade!\033[0m")
+            print(f"\033[91m{'='*55}\033[0m")
+            print(f"\033[93m  The bot detected the login page.\033[0m")
+            print(f"\033[93m  Please log in manually in the newly opened browser.\033[0m")
+            print(f"\033[93m  The bot will wait and auto-detect when you're in...\033[0m\n")
+            
+            # Since this is a dedicated profile, they only need to do this ONCE.
+            for wait_attempt in range(120):  # Wait up to 4 minutes
+                time.sleep(2)
+                current_url = page.url.lower()
+                if '/platform' in current_url:
+                    print(f"\033[92m[Target Lock] ✅ Login detected! Now on: {page.url[:80]}\033[0m")
+                    break
+                if wait_attempt % 15 == 0 and wait_attempt > 0:
+                    print(f"\033[93m[Target Lock] Still waiting for login... ({wait_attempt*2}s)\033[0m")
+            else:
+                print(f"\033[91m[Target Lock] Login timeout (4 min). Proceeding anyway.\033[0m")
         
         # Wait for DOM
         try:
@@ -190,56 +255,14 @@ class TradeExecutor:
             except:
                 print("WARNING: Could not read page title. Proceeding.")
             
-            # ===== STEP 1: SET DURATION AND AMOUNT USING JS HEURISTICS =====
-            print(f"[Duration/Amount] Setting duration to {duration} and amount to {amount}...")
+            # ===== STEP 1: SET DURATION AND AMOUNT (Trusting User UI) =====
+            print(f"\033[96m[UI Setup] Bot is trusting your manual screen setup for Amount and Duration.\033[0m")
+            print(f"\033[96m[UI Setup] Please ensure it is set to {amount}$ and {duration}.\033[0m")
             
-            # Inject duration and amount logic utilizing heuristic JS
-            js_injection = f"""
-            (() => {{
-                function findReactInputAndSet(keywords, valueToSet) {{
-                    const inputs = document.querySelectorAll('input');
-                    for (const inp of inputs) {{
-                        let parentText = (inp.parentElement && inp.parentElement.textContent || "").toLowerCase();
-                        let placeholder = (inp.placeholder || "").toLowerCase();
-                        // Search nearby text like previous or next sibling
-                        let prevText = (inp.previousElementSibling && inp.previousElementSibling.textContent || "").toLowerCase();
-                        let nextText = (inp.nextElementSibling && inp.nextElementSibling.textContent || "").toLowerCase();
-                        
-                        if (keywords.some(kw => parentText.includes(kw) || placeholder.includes(kw) || prevText.includes(kw) || nextText.includes(kw))) {{
-                            inp.focus();
-                            // clear existing
-                            inp.value = '';
-                            inp.dispatchEvent(new Event('input', {{ bubbles: true }}));
-                            // set new
-                            inp.value = valueToSet;
-                            inp.dispatchEvent(new Event('input', {{ bubbles: true }}));
-                            inp.dispatchEvent(new Event('change', {{ bubbles: true }}));
-                            try {{
-                                // React 16+ value setter override bypass
-                                let nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
-                                nativeInputValueSetter.call(inp, valueToSet);
-                                inp.dispatchEvent(new Event('input', {{ bubbles: true }}));
-                            }} catch(e) {{}}
-                            inp.blur();
-                            return true;
-                        }}
-                    }}
-                    return false;
-                }}
-                
-                let amountSet = findReactInputAndSet(['amount', 'invest', '$', 'summ', 'مبلغ', 'استثمار'], '{amount}');
-                let durationDigit = '{duration}'.replace(/[^0-9]/g, '');
-                let durationSet = findReactInputAndSet(['duration', 'time', 'min', 'مدت', 'المدة'], durationDigit);
-                
-                return {{amountSet: amountSet, durationSet: durationSet}};
-            }})()
-            """
-            
-            injection_result = page.evaluate(js_injection)
-            print(f"[UI Heuristics] Injection result: {injection_result}")
-            
-            # Wait for visually confirming the change in the UI element before proceeding
-            time.sleep(1.5)
+            # We skip automated typing entirely because Olymp Trade's masks are too aggressive 
+            # and might interpret '2' as 20 hours. Since this is a persistent profile, 
+            # your manual settings will be saved automatically!
+            time.sleep(0.5)
             
             # ===== STEP 2: AGGRESSIVE RETRY LOGIC (3 Attempts) =====
             MAX_RETRIES = 3

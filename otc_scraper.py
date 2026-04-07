@@ -85,19 +85,21 @@ class OTCScraper:
         print(f"\033[96m       🎯 OTC SCRAPER: INITIALIZING\033[0m")
         print(f"\033[96m{'='*55}\033[0m")
         
-        # Connect to the existing browser via CDP
-        print(f"[OTC Scraper] Connecting to browser on CDP port {self.cdp_port}...")
-        self._playwright = sync_playwright().start()
-        
+        # Connect to the existing browser using the standard executor
+        print(f"[OTC Scraper] Linking with TradeExecutor for unified browser connection...")
         try:
-            self._browser = self._playwright.chromium.connect_over_cdp(f"http://localhost:{self.cdp_port}")
-            self._page = self._browser.contexts[0].pages[0]
-            print("\033[92m[OTC Scraper] Connected to browser successfully.\033[0m")
+            from executor import TradeExecutor
+            executor = TradeExecutor()
+            warm_session = executor.warm_up_browser()
+            
+            self._playwright = warm_session[1]
+            self._browser = warm_session[2]
+            self._page = warm_session[3]
+            print("\033[92m[OTC Scraper] Unified Browser Session Linked Successfully.\033[0m")
         except Exception as e:
             print(f"\033[91m[OTC Scraper] Failed to connect to browser: {e}\033[0m")
-            print("[OTC Scraper] Make sure the browser is running with --remote-debugging-port=9225")
             OTCScraper._running = False
-            return
+            raise Exception("Cannot fetch data: Browser connection failed.")
         
         # Step 1: Intercept WebSocket for historical candles
         self._setup_ws_interception()

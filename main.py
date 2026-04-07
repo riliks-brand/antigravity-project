@@ -162,14 +162,16 @@ def main():
     print("  Execution: Browser CDP (Olymp Trade Fixed Time)")
     print("="*55)
     
-    # === STARTUP: Lock on target BEFORE any data fetching ===
-    print("\n\033[96m[STARTUP] Initializing browser connection...\033[0m")
+    # === STARTUP: Link to the active browser via Scraper ===
+    print("\n\033[96m[STARTUP] Initializing unified browser connection...\033[0m")
     try:
-        warm_session = executor.warm_up_browser()
-        print("\033[92m[STARTUP] ✅ Browser ready. Entering main loop.\033[0m\n")
+        from otc_scraper import get_otc_scraper
+        scraper = get_otc_scraper(candle_interval=60)
+        warm_session = scraper.get_playwright_session()
+        print("\033[92m[STARTUP] ✅ Browser ready. Market synced. Entering main loop.\033[0m\n")
     except Exception as e:
         print(f"\033[91m[STARTUP] ⚠️ Browser init failed: {e}\033[0m")
-        print("\033[93m[STARTUP] Will attempt cold-start when a trade signal appears.\033[0m\n")
+        print("\033[93m[STARTUP] Will attempt cold-start on next cycle.\033[0m\n")
         warm_session = None
     
     while True:
@@ -188,9 +190,13 @@ def main():
                     try: warm_session[1].stop()
                     except: pass
                     try:
-                        warm_session = executor.warm_up_browser()
-                        print("\033[92m[Keep-Alive] ✅ Reconnected successfully.\033[0m")
-                    except:
+                        warm_session = getattr(scraper, 'get_playwright_session', lambda: None)()
+                        if warm_session is None:
+                            scraper.start()
+                            warm_session = scraper.get_playwright_session()
+                        print("\033[92m[Keep-Alive] ✅ Reconnected successfully through Scraper.\033[0m")
+                    except Exception as e:
+                        print(f"\033[91m[Keep-Alive] Failed to reconnect: {e}\033[0m")
                         warm_session = None
                 
             # 60s Sampling Rate
@@ -314,9 +320,13 @@ def main():
                                 warm_session = None
                             
                             if warm_session is None:
-                                print("\033[96m[Reconnect] Opening fresh browser connection...\033[0m")
+                                print("\033[96m[Reconnect] Fetching session from Scraper...\033[0m")
                                 try:
-                                    warm_session = executor.warm_up_browser()
+                                    warm_session = scraper.get_playwright_session()
+                                    if warm_session is None:
+                                        print("\033[93m[Reconnect] Scraper restarting...\033[0m")
+                                        scraper.start()
+                                        warm_session = scraper.get_playwright_session()
                                 except Exception as re_err:
                                     print(f"\033[91m[Reconnect] Failed: {re_err}\033[0m")
                             
@@ -343,7 +353,13 @@ def main():
                     else:
                         print("\033[93m[Data] Not enough data to form a sequence.\033[0m")
                         
-            time.sleep(2)
+            # === LIVE BROWSER PRICE POLLING ===
+            if warm_session and warm_session[3]:
+                # Directly ask the scraper to extract the current tick from the page DOM
+                if hasattr(scraper, 'poll_dom_main_thread'):
+                    scraper.poll_dom_main_thread(warm_session[3])
+                    
+            time.sleep(1)  # Faster cycle to catch tick data accurately
         except Exception as e:
             print(f"\033[91m[MAIN LOOP EXCEPTION] {e}\033[0m")
             import traceback
