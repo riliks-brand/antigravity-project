@@ -8,9 +8,9 @@ class Config:
     # MetaTrader 5 Credentials & Connection
     # -------------------------------------
     # REPLACE WITH YOUR ACTUAL DEMO CREDENTIALS
-    LOGIN = 5048877064
-    PASSWORD = "@nRtKeT3"
-    SERVER = "MetaQuotes-Demo"
+    LOGIN = 260633091
+    PASSWORD = "P@$$w0rd21"
+    SERVER = "Exness-MT5Trial15"
     
     # -------------------------------------
     # Trading Data Settings
