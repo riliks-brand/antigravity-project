@@ -9,6 +9,7 @@ venv/
 cdp_profile/
 edge_profile/
 playwright_profile/
+chrome_bot_profile/
 auth.json
 error_screenshot.png
 

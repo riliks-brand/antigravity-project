@@ -14,7 +14,7 @@ trades_avoided_by_memory = 0
 
 def log_loss(processed_df, weekend_mode):
     try:
-        log_file = f'losses_log_{Config.TRADE_MODE}.csv'
+        log_file = f'losses_log_{getattr(Config, "TRADING_MODE", "FIXED_TIME")}.csv'
         last_row = processed_df.iloc[-1]
         loss_dict = {
             'DXY': last_row.get('DXY_Close', 0),
@@ -35,7 +35,7 @@ def log_loss(processed_df, weekend_mode):
         if not os.path.exists('archive'):
             os.makedirs('archive')
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        shutil.copy(log_file, f'archive/losses_log_{Config.TRADE_MODE}_backup_{timestamp}.csv')
+        shutil.copy(log_file, f'archive/losses_log_{getattr(Config, "TRADING_MODE", "FIXED_TIME")}_backup_{timestamp}.csv')
         
         print(f"\033[92m[Loss Logger] Appended state to {log_file} and backed up to archive.\033[0m")
     except Exception as e:
@@ -48,7 +48,7 @@ def compute_memory_similarity(processed_df):
     and all recorded loss patterns in the trade mode's respective log.
     Returns (max_similarity_pct, matching_loss_index) or (0.0, -1) if no losses exist.
     """
-    log_file = f'losses_log_{Config.TRADE_MODE}.csv'
+    log_file = f'losses_log_{getattr(Config, "TRADING_MODE", "FIXED_TIME")}.csv'
     if not os.path.exists(log_file):
         return 0.0, -1
     
@@ -143,6 +143,10 @@ def print_memory_report(similarity_pct, match_idx):
 
 def main():
     global trades_avoided_by_memory
+    
+    if getattr(Config, 'TRADING_MODE', 'FIXED_TIME') == 'FOREX':
+        from mt5_engine import connect_to_exness
+        connect_to_exness()
     
     pd.set_option('display.max_columns', None)
     pd.set_option('display.width', 1000)
@@ -294,59 +298,95 @@ def main():
                         
                         if action:
                             # Apply Config values
-                            fx_amount = Config.FOREX_DEFAULT_AMOUNT
+                            fx_amount = getattr(Config, 'FOREX_RISK_PER_TRADE', 10.0)
                             
-                            duration = "2 min"  # Standard fixed time duration
-                            
-                            print(f"\n\033[96m{'='*55}\033[0m")
-                            print(f"\033[96m       ⏱️ EXPERT FIXED TIME TRADE\033[0m")
-                            print(f"\033[96m{'='*55}\033[0m")
-                            print(f"\033[96m  Action      : {action.upper()}\033[0m")
-                            print(f"\033[96m  Amount      : {fx_amount}$\033[0m")
-                            print(f"\033[96m  Duration    : {duration}\033[0m")
-                            print(f"\033[96m{'='*55}\033[0m")
-                            
-                            # Execute Fixed Time trade  
-                            # Health check: verify browser session is still alive
-                            try:
-                                if warm_session and warm_session[3]:
-                                    _ = warm_session[3].url  # Quick pulse check
-                            except:
-                                print("\033[93m[Session] Browser session died. Reconnecting...\033[0m")
+                            if getattr(Config, 'TRADING_MODE', 'FIXED_TIME') == 'FIXED_TIME':
+                                duration = "2 min"  # Standard fixed time duration
+                                
+                                print(f"\n\033[96m{'='*55}\033[0m")
+                                print(f"\033[96m       ⏱️ EXPERT FIXED TIME TRADE\033[0m")
+                                print(f"\033[96m{'='*55}\033[0m")
+                                print(f"\033[96m  Action      : {action.upper()}\033[0m")
+                                print(f"\033[96m  Amount      : {fx_amount}$\033[0m")
+                                print(f"\033[96m  Duration    : {duration}\033[0m")
+                                print(f"\033[96m{'='*55}\033[0m")
+                                
+                                # Execute Fixed Time trade  
+                                # Health check: verify browser session is still alive
                                 try:
-                                    warm_session[1].stop()
+                                    if warm_session and warm_session[3]:
+                                        _ = warm_session[3].url  # Quick pulse check
                                 except:
-                                    pass
-                                warm_session = None
-                            
-                            if warm_session is None:
-                                print("\033[96m[Reconnect] Fetching session from Scraper...\033[0m")
-                                try:
-                                    warm_session = scraper.get_playwright_session()
-                                    if warm_session is None:
-                                        print("\033[93m[Reconnect] Scraper restarting...\033[0m")
-                                        scraper.start()
+                                    print("\033[93m[Session] Browser session died. Reconnecting...\033[0m")
+                                    try:
+                                        warm_session[1].stop()
+                                    except:
+                                        pass
+                                    warm_session = None
+                                
+                                if warm_session is None:
+                                    print("\033[96m[Reconnect] Fetching session from Scraper...\033[0m")
+                                    try:
                                         warm_session = scraper.get_playwright_session()
-                                except Exception as re_err:
-                                    print(f"\033[91m[Reconnect] Failed: {re_err}\033[0m")
-                            
-                            success, output_msg = executor.execute_web(
-                                action=action,
-                                duration=duration,
-                                amount=fx_amount,
-                                warm_session=warm_session
-                            )
-                            
-                            if success:
-                                print(f"\n\033[92m[LIVE EXPERT TRADE VERIFIED: {action.upper()} FIXED TIME ON OLYMP TRADE]\033[0m")
-                                print("\033[93m[Wait] Waiting for fixed time expiration (2 mins)...\033[0m")
-                                time.sleep(125)  # Wait for 2 minutes + brief buffer
-                                print("\033[96m[Completed] Trade expired. Please verify UI for result.\033[0m")
-                            else:
-                                print(f"\033[91mFailed to open Fixed Time trade. Reason: {output_msg}\033[0m")
-                            # Trigger a follow-up chain evaluation
-                            print("\n\033[93m[Chain Attack] Activating continuous market scan (bypassing 5m wait)...\033[0m")
-                            force_evaluation = True
+                                        if warm_session is None:
+                                            print("\033[93m[Reconnect] Scraper restarting...\033[0m")
+                                            scraper.start()
+                                            warm_session = scraper.get_playwright_session()
+                                    except Exception as re_err:
+                                        print(f"\033[91m[Reconnect] Failed: {re_err}\033[0m")
+                                
+                                success, output_msg = executor.execute_web(
+                                    action=action,
+                                    duration=duration,
+                                    amount=fx_amount,
+                                    warm_session=warm_session
+                                )
+                                
+                                if success:
+                                    print(f"\n\033[92m[LIVE EXPERT TRADE VERIFIED: {action.upper()} FIXED TIME ON OLYMP TRADE]\033[0m")
+                                    print("\033[93m[Wait] Waiting for fixed time expiration (2 mins)...\033[0m")
+                                    time.sleep(125)  # Wait for 2 minutes + brief buffer
+                                    print("\033[96m[Completed] Trade expired. Please verify UI for result.\033[0m")
+                                else:
+                                    print(f"\033[91mFailed to open Fixed Time trade. Reason: {output_msg}\033[0m")
+                                # Trigger a follow-up chain evaluation
+                                print("\n\033[93m[Chain Attack] Activating continuous market scan (bypassing 5m wait)...\033[0m")
+                                force_evaluation = True
+                                
+                            elif Config.TRADING_MODE == 'FOREX':
+                                current_atr = processed_df['ATR'].iloc[-1]
+                                from mt5_engine import get_tick_info, execute_forex_trade
+                                tick, info = get_tick_info(Config.FOREX_SYMBOL)
+                                
+                                if info and info.point > 0:
+                                    sl_points = int((current_atr * 1.5) / info.point)
+                                    tp_points = sl_points * 2
+                                    
+                                    print(f"\n\033[96m{'='*55}\033[0m")
+                                    print(f"\033[96m       📈 EXNESS FOREX MT5 TRADE\033[0m")
+                                    print(f"\033[96m{'='*55}\033[0m")
+                                    print(f"\033[96m  Action      : {action.upper()}\033[0m")
+                                    print(f"\033[96m  Risk Amount : {Config.FOREX_RISK_PER_TRADE}$\033[0m")
+                                    print(f"\033[96m  SL (points) : {sl_points} | TP (points) : {tp_points}\033[0m")
+                                    print(f"\033[96m  ATR         : {current_atr:.5f}\033[0m")
+                                    print(f"\033[96m{'='*55}\033[0m")
+                                    
+                                    success, output_msg = execute_forex_trade(
+                                        action=action.upper(),
+                                        symbol=Config.FOREX_SYMBOL,
+                                        risk_amount=Config.FOREX_RISK_PER_TRADE,
+                                        sl_points=sl_points,
+                                        tp_points=tp_points
+                                    )
+                                    
+                                    if success:
+                                        print(f"\033[92m[FOREX] {output_msg}\033[0m")
+                                        print("\n\033[93m[Chain Attack] Forex trade placed. Scanning for next opportunities...\033[0m")
+                                        force_evaluation = True
+                                    else:
+                                        print(f"\033[91m[FOREX] Trade execution failed: {output_msg}\033[0m")
+                                else:
+                                    print(f"\033[91m[FOREX] Could not retrieve MT5 symbol info for {Config.FOREX_SYMBOL}. Skipping trade. Is the symbol visible/correct based on your account type (e.g. BTCUSDm)?\033[0m")
                             
                         else:
                             print("[FINAL DECISION] NO TRADE")

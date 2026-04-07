@@ -51,19 +51,17 @@ class Config:
     # -------------------------------------
     # Trade Mode Selection
     # -------------------------------------
-    # "fixed_time" = Up/Down with expiry (original mode)
-    # "forex"      = Buy/Sell with Multiplier + TP/SL (new Forex mode)
-    TRADE_MODE = "forex"
+    # "FIXED_TIME" = Up/Down with expiry (Olymp Trade)
+    # "FOREX"      = Live MT5 execution (Exness)
+    TRADING_MODE = "FOREX"
     
     # -------------------------------------
-    # Forex Mode Settings
+    # Forex Mode Settings (Exness MT5)
     # -------------------------------------
-    FOREX_MULTIPLIER = "10"       # Leverage multiplier: "10" or "100"
-    FOREX_DEFAULT_AMOUNT = "10"   # Default investment amount in $
-    FOREX_TP_ATR_MULT = 2.0      # Take Profit = ATR × this multiplier
-    FOREX_SL_ATR_MULT = 1.0      # Stop Loss   = ATR × this multiplier
-    FOREX_MAX_HOLD_SECONDS = 3600 # Max hold time (1 hour) for 10x leverage trades
-    FOREX_POLL_INTERVAL = 5       # Seconds between trade status polls
+    FOREX_RISK_PER_TRADE = 10.0   # Actionable risk amount in standard account currency (e.g. $)
+    FOREX_SYMBOL = "BTCUSD"       # Target trading symbol in MT5 (e.g., BTCUSD, EURUSDm)
+    MAGIC_NUMBER = 121052         # Unique trade ID for the bot
+
     
     # -------------------------------------
     # Shark Exit Settings (Dynamic Close)
