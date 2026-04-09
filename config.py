@@ -8,9 +8,10 @@ class Config:
     # MetaTrader 5 Credentials & Connection
     # -------------------------------------
     # REPLACE WITH YOUR ACTUAL DEMO CREDENTIALS
-    LOGIN = 260633091
-    PASSWORD = "P@$$w0rd21"
-    SERVER = "Exness-MT5Trial15"
+    LOGIN = 5049001425
+    PASSWORD = "_sTcEx2i"
+    SERVER = "MetaQuotes-Demo"
+    MT5_PATH = r"C:\Program Files\MetaTrader 5\terminal64.exe"
     
     # -------------------------------------
     # Trading Data Settings
@@ -59,7 +60,7 @@ class Config:
     # Forex Mode Settings (Exness MT5)
     # -------------------------------------
     FOREX_RISK_PER_TRADE = 10.0   # Actionable risk amount in standard account currency (e.g. $)
-    FOREX_SYMBOL = "BTCUSD"       # Target trading symbol in MT5 (e.g., BTCUSD, EURUSDm)
+    FOREX_SYMBOL = "EURUSD"       # Target trading symbol in MT5 (e.g., BTCUSD, EURUSDm)
     MAGIC_NUMBER = 121052         # Unique trade ID for the bot
 
     
