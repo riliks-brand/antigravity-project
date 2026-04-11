@@ -1,438 +1,492 @@
+"""
+Main Loop — Elite v3.0
+========================
+The master orchestrator that ties all systems together.
+
+Architecture:
+  Data (MT5) → Features → LSTM → Hybrid Filters → Trade Manager → Execute
+
+Features:
+- Multi-Timeframe analysis
+- Hybrid Filter Layer (Trend, Volatility, Range, Session, News, Spread)
+- Adaptive probability thresholds
+- Memory as probability modifier
+- Candle-close confirmation
+- Heartbeat monitor
+- Comprehensive logging & monitoring
+"""
+
 import numpy as np
-from config import Config
-from data_loader import fetch_data
-from features import feature_engineering_pipeline
-from executor import TradeExecutor
 import pandas as pd
 import time
 import datetime
 import os
 import csv
+import logging
+from config import Config
 
-# ===== GLOBAL AVOIDANCE COUNTER =====
-trades_avoided_by_memory = 0
-
-def log_loss(processed_df, weekend_mode):
-    try:
-        log_file = f'losses_log_{getattr(Config, "TRADING_MODE", "FIXED_TIME")}.csv'
-        last_row = processed_df.iloc[-1]
-        loss_dict = {
-            'DXY': last_row.get('DXY_Close', 0),
-            'BB_Pos': last_row.get('close', 0) - last_row.get('BB_mid', 0) if 'BB_mid' in last_row else 0,
-            'RSI': last_row.get('RSI', 0),
-            'ATR': last_row.get('ATR', 0),
-            'Volatility': last_row.get('Volatility', 0)
-        }
-        
-        file_exists = os.path.isfile(log_file)
-        with open(log_file, 'a', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=loss_dict.keys())
-            if not file_exists:
-                writer.writeheader()
-            writer.writerow(loss_dict)
-            
-        import shutil
-        if not os.path.exists('archive'):
-            os.makedirs('archive')
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        shutil.copy(log_file, f'archive/losses_log_{getattr(Config, "TRADING_MODE", "FIXED_TIME")}_backup_{timestamp}.csv')
-        
-        print(f"\033[92m[Loss Logger] Appended state to {log_file} and backed up to archive.\033[0m")
-    except Exception as e:
-        print(f"\033[91mFailed to log loss: {e}\033[0m")
+# ===== Setup Master Logger =====
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(name)s] [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler(Config.LOG_FILE, encoding="utf-8"),
+        logging.StreamHandler(),
+    ]
+)
+logger = logging.getLogger("Main")
 
 
 def compute_memory_similarity(processed_df):
     """
-    Computes the maximum percentage similarity between the current market state
-    and all recorded loss patterns in the trade mode's respective log.
-    Returns (max_similarity_pct, matching_loss_index) or (0.0, -1) if no losses exist.
+    Computes similarity as a PROBABILITY MODIFIER (not a hard block).
+    Returns (bias_adjustment, similarity_pct, match_idx).
     """
-    log_file = f'losses_log_{getattr(Config, "TRADING_MODE", "FIXED_TIME")}.csv'
+    log_file = Config.TRADING_HISTORY_FILE
     if not os.path.exists(log_file):
-        return 0.0, -1
-    
+        return 0.0, 0.0, -1
+
     try:
         losses_df = pd.read_csv(log_file)
+        # Only consider losses
+        losses_df = losses_df[losses_df.get('pnl', pd.Series(dtype=float)) < 0]
         if losses_df.empty:
-            return 0.0, -1
+            return 0.0, 0.0, -1
     except Exception:
-        return 0.0, -1
-    
+        return 0.0, 0.0, -1
+
     last_row = processed_df.iloc[-1]
-    
-    # Current state vector (normalized)
+
+    # Current state vector
     current_state = np.array([
-        last_row.get('DXY_Close', 0),
-        last_row.get('close', 0) - last_row.get('BB_mid', 0) if 'BB_mid' in processed_df.columns else 0,
-        last_row.get('RSI', 0),
+        last_row.get('RSI', 50),
         last_row.get('ATR', 0),
-        last_row.get('Volatility', 0) if 'Volatility' in processed_df.columns else 0
+        last_row.get('Volatility', 0),
+        last_row.get('ADX', 25),
+        last_row.get('BB_position', 0.5),
     ], dtype=float)
-    
+
     max_sim = 0.0
     match_idx = -1
-    
+
+    # Build loss state vectors from features that were present at entry
     for idx, loss_row in losses_df.iterrows():
         loss_state = np.array([
-            loss_row.get('DXY', 0),
-            loss_row.get('BB_Pos', 0),
-            loss_row.get('RSI', 0),
-            loss_row.get('ATR', 0),
-            loss_row.get('Volatility', 0)
+            loss_row.get('RSI', 50) if 'RSI' in losses_df.columns else 50,
+            loss_row.get('ATR', 0) if 'ATR' in losses_df.columns else 0,
+            loss_row.get('Volatility', 0) if 'Volatility' in losses_df.columns else 0,
+            loss_row.get('ADX', 25) if 'ADX' in losses_df.columns else 25,
+            loss_row.get('BB_position', 0.5) if 'BB_position' in losses_df.columns else 0.5,
         ], dtype=float)
-        
-        # Euclidean distance -> percentage similarity
-        # Normalize by magnitude to get a meaningful percentage
-        norm_current = np.linalg.norm(current_state)
-        norm_loss = np.linalg.norm(loss_state)
-        
-        if norm_current == 0 and norm_loss == 0:
+
+        norm_c = np.linalg.norm(current_state)
+        norm_l = np.linalg.norm(loss_state)
+
+        if norm_c == 0 and norm_l == 0:
             similarity = 100.0
-        elif norm_current == 0 or norm_loss == 0:
+        elif norm_c == 0 or norm_l == 0:
             similarity = 0.0
         else:
-            # Cosine similarity mapped to 0-100%
-            cos_sim = np.dot(current_state, loss_state) / (norm_current * norm_loss)
-            # Clamp to [0, 1] (cosine can be negative for opposite directions)
+            cos_sim = np.dot(current_state, loss_state) / (norm_c * norm_l)
             cos_sim = max(0.0, min(1.0, cos_sim))
             similarity = cos_sim * 100.0
-        
+
         if similarity > max_sim:
             max_sim = similarity
             match_idx = idx
-    
-    return max_sim, match_idx
+
+    # Convert similarity to probability bias
+    # Only apply if above threshold
+    if max_sim >= Config.MEMORY_SIMILARITY_THRESHOLD:
+        # Scale: 60% sim → small bias, 100% sim → full bias
+        scale = (max_sim - Config.MEMORY_SIMILARITY_THRESHOLD) / (100 - Config.MEMORY_SIMILARITY_THRESHOLD)
+        bias = -scale * Config.MEMORY_BIAS_SCALE  # Negative = reduce confidence
+        return bias, max_sim, match_idx
+
+    return 0.0, max_sim, match_idx
 
 
-def print_memory_report(similarity_pct, match_idx):
+def get_adaptive_thresholds(current_atr, atr_series):
     """
-    Prints the Memory Similarity Report with color-coded tiers.
-    Returns: 'BLOCK', 'WARN', or 'PASS'
+    Dynamically adjust probability thresholds based on volatility.
+    High volatility → stricter thresholds (more selective)
+    Low volatility → looser thresholds
     """
-    global trades_avoided_by_memory
-    
-    print(f"\n\033[96m{'='*55}\033[0m")
-    print(f"\033[96m       🧠 MEMORY SIMILARITY CHECK\033[0m")
-    print(f"\033[96m{'='*55}\033[0m")
-    
-    if similarity_pct >= Config.SIMILARITY_HARD_BLOCK:
-        # ===== HARD BLOCK =====
-        trades_avoided_by_memory += 1
-        print(f"\033[91m[DANGER] {similarity_pct:.1f}% Similarity with Previous Loss (#{match_idx}). Trade BLOCKED.\033[0m")
-        print(f"\033[91m[Memory] \"لقد تعلمت من هذه الخسارة السابقة، ولن أدخل هذه الصفقة لأنها تشبهها بنسبة {similarity_pct:.0f}%\"\033[0m")
-        print(f"\033[93m[Stats] Total Trades Avoided by Memory: {trades_avoided_by_memory}\033[0m")
-        print(f"\033[96m{'='*55}\033[0m\n")
-        return 'BLOCK'
-    
-    elif similarity_pct >= Config.SIMILARITY_WARNING:
-        # ===== CO-PILOT WARNING =====
-        print(f"\033[93m[WARNING] {similarity_pct:.1f}% Similarity with Previous Loss (#{match_idx}). Requesting confirmation...\033[0m")
-        print(f"\033[93m[Memory] Current market state is {similarity_pct:.0f}% similar to a previous loss. Proceeding with caution...\033[0m")
-        print(f"\033[93m[Stats] Total Trades Avoided by Memory: {trades_avoided_by_memory}\033[0m")
-        print(f"\033[96m{'='*55}\033[0m\n")
-        return 'WARN'
-    
-    else:
-        # ===== SAFE =====
-        print(f"\033[92m[SAFE] {similarity_pct:.1f}% Similarity — Below danger threshold.\033[0m")
-        print(f"\033[92m[Memory] Current market state is {similarity_pct:.0f}% similar to closest loss. Proceeding normally.\033[0m")
-        print(f"\033[93m[Stats] Total Trades Avoided by Memory: {trades_avoided_by_memory}\033[0m")
-        print(f"\033[96m{'='*55}\033[0m\n")
-        return 'PASS'
+    if not Config.ADAPTIVE_THRESHOLD_ENABLED or atr_series is None or len(atr_series) < 20:
+        return Config.PROB_THRESHOLD_BUY, Config.PROB_THRESHOLD_SELL
+
+    atr_mean = atr_series.mean()
+    atr_std = atr_series.std()
+
+    if atr_std <= 0:
+        return Config.PROB_THRESHOLD_BUY, Config.PROB_THRESHOLD_SELL
+
+    z_score = (current_atr - atr_mean) / atr_std
+
+    # High vol (z > 1): tighten thresholds by up to 5%
+    # Low vol (z < -1): loosen thresholds by up to 5%
+    adjustment = np.clip(z_score * 0.025, -0.05, 0.05)
+
+    buy_threshold = Config.PROB_THRESHOLD_BUY + adjustment
+    sell_threshold = Config.PROB_THRESHOLD_SELL - adjustment
+
+    # Clamp to sane values
+    buy_threshold = np.clip(buy_threshold, 0.55, 0.85)
+    sell_threshold = np.clip(sell_threshold, 0.15, 0.45)
+
+    return buy_threshold, sell_threshold
+
+
+def apply_hybrid_filters(processed_df, direction, symbol, server_time=None):
+    """
+    The Hybrid Filter Layer — rejects bad signals before they reach execution.
+    Returns (passed: bool, reason: str)
+    """
+    last = processed_df.iloc[-1]
+    reasons = []
+
+    # 1. ADX Range Filter: reject if market is ranging
+    adx_val = last.get('ADX', 30)
+    if adx_val < Config.ADX_RANGING_THRESHOLD:
+        reasons.append(f"RANGING: ADX={adx_val:.1f} < {Config.ADX_RANGING_THRESHOLD}")
+
+    # 2. Trend Alignment (H1): reject if trading against H1 trend
+    h1_trend = last.get('H1_trend', 0)
+    if h1_trend != 0:
+        if direction == "BUY" and h1_trend == -1:
+            reasons.append("COUNTER-TREND: BUY against H1 downtrend")
+        elif direction == "SELL" and h1_trend == 1:
+            reasons.append("COUNTER-TREND: SELL against H1 uptrend")
+
+    # 3. Low Volatility Filter
+    volatility = last.get('Volatility', 0)
+    if volatility < Config.ATR_THRESHOLD:
+        reasons.append(f"LOW VOLATILITY: {volatility:.6f} < {Config.ATR_THRESHOLD}")
+
+    # 4. News Filter
+    from news_filter import is_news_window
+    news_blocked, news_reason = is_news_window(symbol, server_time)
+    if news_blocked:
+        reasons.append(news_reason)
+
+    # 5. Session Filter
+    from trade_manager import TradeManager
+    in_session, session_reason = TradeManager.is_in_trading_session(symbol)
+    if not in_session:
+        reasons.append(f"SESSION: {session_reason}")
+
+    # 6. Spread Filter
+    spread_ok, spread_pts = TradeManager.check_spread(symbol)
+    if not spread_ok and spread_pts > 0:
+        reasons.append(f"SPREAD: {spread_pts:.1f} > {Config.MAX_SPREAD_POINTS}")
+
+    if reasons:
+        return False, " | ".join(reasons)
+    return True, "All filters passed"
+
 
 def main():
-    global trades_avoided_by_memory
-    
-    print("\n" + "="*55)
-    print("  🚀 EXPERT TRADING BOT v2.5 — BOOTLOADER")
-    print("="*55)
-    print("  [1] FIXED TIME (Olymp Trade - Browser Required)")
-    print("  [2] FOREX (Exness - MT5 Terminal Required)")
-    print("="*55)
-    
-    choice = input("Select Mode [1/2]: ").strip()
-    if choice == '2':
-        trading_mode = 'FOREX'
-    else:
-        trading_mode = 'FIXED_TIME'
+    print("\n" + "=" * 65)
+    print("  🚀 ELITE TRADING BOT v3.0 — PROFESSIONAL MT5 + LSTM ENGINE")
+    print("=" * 65)
+    print("  📊 Data Source   : MetaTrader 5 (Native)")
+    print("  🧠 Model         : LSTM (Multi-Timeframe)")
+    print("  ⚙️  Execution     : MT5 Direct (Smart Retry)")
+    print("  🛡️  Risk Engine   : Equity Curve + Kill Switch + Cooldown")
+    print("  📰 News Filter   : ForexFactory (High Impact)")
+    print(f"  💹 Symbol        : {Config.FOREX_SYMBOL}")
+    print(f"  📈 Risk/Trade    : {Config.RISK_PERCENT_PER_TRADE}%")
+    print(f"  🔴 Daily Max Loss: {Config.MAX_DAILY_LOSS_PCT}%")
+    print("=" * 65)
 
-    if trading_mode == 'FOREX':
-        from mt5_engine import connect_to_exness
-        if not connect_to_exness():
-            print("\033[91m[Fatal] Could not establish MT5 connection. Exiting.\033[0m")
-            return
-    
-    # Update Config dynamically for internal checks
-    Config.TRADING_MODE = trading_mode
-    
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.width', 1000)
-    
-    executor = TradeExecutor()
-    last_trade_minute = -1
-    last_fetch_minute = -1
-    warm_session = None
-    
-    stale_count = 0
-    last_cycle_close = None
-    force_evaluation = False
-    
-    if trading_mode == 'FIXED_TIME':
-        print("  ⏱️ EXPERT FIXED TIME v2.3 — CHAIN ATTACKS ENABLED")
-        print("  Data Source: yfinance (instant 1700+ candles)")
-        print("  Execution: Browser CDP (Olymp Trade Fixed Time)")
-    else:
-        print("  📈 EXPERT FOREX v1.0 — EXNESS MT5 INTEGRATED")
-        print("  Data Source: yfinance (instant 1700+ candles)")
-        print("  Execution: MetaTrader 5 (Exness Terminal)")
-    print("="*55)
-    
-    scraper = None
-    warm_session = None
-    
-    # === STARTUP: Link to the active browser via Scraper (ONLY for FIXED_TIME) ===
-    if trading_mode == 'FIXED_TIME':
-        print("\n\033[96m[STARTUP] Initializing unified browser connection...\033[0m")
-        try:
-            from otc_scraper import get_otc_scraper
-            scraper = get_otc_scraper(candle_interval=60)
-            warm_session = scraper.get_playwright_session()
-            print("\033[92m[STARTUP] ✅ Browser ready. Market synced. Entering main loop.\033[0m\n")
-        except Exception as e:
-            print(f"\033[91m[STARTUP] ⚠️ Browser init failed: {e}\033[0m")
-            print("\033[93m[STARTUP] Will attempt cold-start on next cycle.\033[0m\n")
-            warm_session = None
-    else:
-        print("\n\033[92m[STARTUP] MT5 Mode active. Skipping browser bridge initialization.\033[0m\n")
-    
+    # ===== PHASE 1: Connect to MT5 =====
+    from mt5_engine import (
+        connect_to_exness, heartbeat, execute_forex_trade,
+        check_kill_switch, get_account_balance, get_account_equity,
+        get_server_time, close_all_positions,
+    )
+
+    if not connect_to_exness():
+        logger.critical("[Fatal] Could not establish MT5 connection. Exiting.")
+        return
+
+    # ===== PHASE 2: Initialize Trade Manager =====
+    from trade_manager import TradeManager
+    manager = TradeManager()
+    manager.reset_daily_stats(get_account_balance())
+
+    # ===== PHASE 3: Import Data & Model modules =====
+    from data_loader import fetch_mtf_data, fetch_tick_data, is_market_open
+    from features import feature_engineering_pipeline
+    from lstm_model import prepare_sequential_data, train_and_evaluate
+
+    # State variables
+    last_eval_candle = -1
+    last_heartbeat = time.time()
+    candle_index = 0
+
+    print("\n\033[92m[STARTUP] ✅ All systems online. Entering main loop.\033[0m\n")
+
     while True:
         try:
-            now = datetime.datetime.now()
-            
-            minutes_to_next = 5 - (now.minute % 5)
-            seconds_to_next_candle = minutes_to_next * 60 - now.second if minutes_to_next < 5 else 60 - now.second
-            
-            # Keep-alive: pulse the browser connection every ~30s to prevent session death
-            if warm_session and now.second % 30 == 0:
+            now = datetime.datetime.utcnow()
+
+            # ===== HEARTBEAT =====
+            if time.time() - last_heartbeat > Config.HEARTBEAT_INTERVAL_SECONDS:
+                if not heartbeat():
+                    logger.error("[Heartbeat] MT5 reconnection failed. Waiting 30s...")
+                    time.sleep(30)
+                    continue
+                last_heartbeat = time.time()
+
+            # ===== KILL SWITCH =====
+            if check_kill_switch():
+                logger.critical("[KILL SWITCH] Trading halted. Closing all positions...")
+                close_all_positions()
+                print("\n\033[91m⛔ KILL SWITCH ACTIVATED — Daily loss limit exceeded.\033[0m")
+                print("\033[91m⛔ All positions closed. Bot paused until next day.\033[0m\n")
+                # Wait until midnight
+                tomorrow = (now + datetime.timedelta(days=1)).replace(hour=0, minute=5, second=0)
+                wait_seconds = (tomorrow - now).total_seconds()
+                logger.info("[KILL SWITCH] Sleeping %.0f seconds until next day.", wait_seconds)
+                time.sleep(max(wait_seconds, 60))
+                manager.reset_daily_stats(get_account_balance())
+                continue
+
+            # ===== DAILY RESET =====
+            if now.hour == 0 and now.minute < 2:
+                manager.reset_daily_stats(get_account_balance())
+
+            # ===== MARKET OPEN CHECK =====
+            if not is_market_open(Config.FOREX_SYMBOL):
+                logger.info("[Market] %s is closed. Waiting...", Config.FOREX_SYMBOL)
+                time.sleep(60)
+                continue
+
+            # ===== TICK MANAGEMENT (every cycle) =====
+            tick_data = fetch_tick_data(Config.FOREX_SYMBOL)
+            if tick_data and len(manager.active_trades) > 0:
+                # Get current ATR for trailing stop calculations
+                quick_df = None
                 try:
-                    _ = warm_session[3].url  # Lightweight CDP pulse
-                except:
-                    print("\033[93m[Keep-Alive] Session lost. Auto-reconnecting...\033[0m")
-                    try: warm_session[1].stop()
-                    except: pass
-                    try:
-                        warm_session = getattr(scraper, 'get_playwright_session', lambda: None)()
-                        if warm_session is None:
-                            scraper.start()
-                            warm_session = scraper.get_playwright_session()
-                        print("\033[92m[Keep-Alive] ✅ Reconnected successfully through Scraper.\033[0m")
-                    except Exception as e:
-                        print(f"\033[91m[Keep-Alive] Failed to reconnect: {e}\033[0m")
-                        warm_session = None
-                
-            # 60s Sampling Rate
-            if now.minute != last_fetch_minute:
-                last_fetch_minute = now.minute
-                
-                raw_df = fetch_data(trading_mode=trading_mode)
-                if raw_df is None or raw_df.empty:
-                    print("\033[91mData fetch failed. Retrying next cycle...\033[0m")
-                    last_fetch_minute = -1  # Prevent 60s soft-lock
-                    time.sleep(5)
-                    continue
-                    
-                processed_df = feature_engineering_pipeline(raw_df)
-                
-                # Anti-freeze Check
-                current_close = processed_df['close'].iloc[-1]
-                if last_cycle_close == current_close:
-                    stale_count += 1
+                    from data_loader import fetch_mt5_ohlc
+                    quick_df = fetch_mt5_ohlc(Config.FOREX_SYMBOL, Config.TIMEFRAME, 20)
+                    if quick_df is not None and 'high' in quick_df.columns:
+                        from ta.volatility import AverageTrueRange
+                        atr_series = AverageTrueRange(
+                            high=quick_df['high'], low=quick_df['low'],
+                            close=quick_df['close'], window=14
+                        ).average_true_range()
+                        current_atr = atr_series.iloc[-1] if len(atr_series) > 0 else 0.001
+                    else:
+                        current_atr = 0.001
+                except Exception:
+                    current_atr = 0.001
+
+                manager.on_tick(
+                    Config.FOREX_SYMBOL,
+                    tick_data['bid'],
+                    tick_data['ask'],
+                    current_atr,
+                )
+
+            # ===== CANDLE CLOSE CONFIRMATION (5-minute boundary) =====
+            server_time = get_server_time(Config.FOREX_SYMBOL)
+            server_minute = server_time.minute
+
+            # Only evaluate on M5 candle close (minute % 5 == 0) and not repeated
+            is_candle_close = (server_minute % 5 == 0) and (server_minute != last_eval_candle)
+
+            if not is_candle_close:
+                time.sleep(1)
+                continue
+
+            # Mark this candle as evaluated
+            last_eval_candle = server_minute
+            candle_index += 1
+
+            logger.info("\n" + "=" * 55)
+            logger.info("[EVALUATION] Candle #%d | Server Time: %s",
+                        candle_index, server_time.strftime('%Y-%m-%d %H:%M:%S'))
+            logger.info("=" * 55)
+
+            # ===== FETCH MULTI-TIMEFRAME DATA =====
+            mtf_data = fetch_mtf_data(Config.FOREX_SYMBOL)
+            if mtf_data is None:
+                logger.error("[Data] MTF fetch failed. Skipping cycle.")
+                continue
+
+            df_m5 = mtf_data["M5"]
+            df_m15 = mtf_data.get("M15", pd.DataFrame())
+            df_h1 = mtf_data.get("H1", pd.DataFrame())
+
+            if df_m5 is None or df_m5.empty:
+                logger.error("[Data] Primary M5 data empty. Skipping.")
+                continue
+
+            # ===== FEATURE ENGINEERING =====
+            processed_df = feature_engineering_pipeline(
+                df_m5,
+                df_confirm=df_m15 if not df_m15.empty else None,
+                df_trend=df_h1 if not df_h1.empty else None,
+            )
+
+            if processed_df is None or processed_df.empty:
+                logger.error("[Features] Pipeline returned empty. Skipping.")
+                continue
+
+            # ===== LSTM PREDICTION =====
+            try:
+                X_train, X_test, y_train, y_test, scaler, train_weights = prepare_sequential_data(processed_df)
+                model, history, acc = train_and_evaluate(
+                    X_train, X_test, y_train, y_test, sample_weights=train_weights
+                )
+            except Exception as e:
+                logger.error("[LSTM] Training failed: %s", e)
+                continue
+
+            latest_features = processed_df.drop(['Target'], axis=1).values
+            latest_features_scaled = scaler.transform(latest_features)
+
+            if len(latest_features_scaled) < Config.SEQUENCE_LENGTH:
+                logger.warning("[LSTM] Not enough data for sequence. Skipping.")
+                continue
+
+            X_live = latest_features_scaled[-Config.SEQUENCE_LENGTH:]
+            X_live = np.array([X_live])
+
+            raw_prob = float(model.predict(X_live)[0][0])
+
+            # ===== MEMORY PROBABILITY MODIFIER =====
+            memory_bias, sim_pct, sim_idx = compute_memory_similarity(processed_df)
+            adjusted_prob = raw_prob + memory_bias
+            adjusted_prob = np.clip(adjusted_prob, 0.0, 1.0)
+
+            if abs(memory_bias) > 0.001:
+                logger.info("[Memory] Similarity: %.1f%% | Bias: %+.3f | Raw: %.4f → Adjusted: %.4f",
+                            sim_pct, memory_bias, raw_prob, adjusted_prob)
+
+            # ===== ADAPTIVE THRESHOLDS =====
+            current_atr = processed_df['ATR'].iloc[-1]
+            buy_threshold, sell_threshold = get_adaptive_thresholds(
+                current_atr, processed_df['ATR']
+            )
+
+            # ===== DECISION =====
+            direction = None
+            if adjusted_prob > buy_threshold:
+                direction = "BUY"
+            elif adjusted_prob < sell_threshold:
+                direction = "SELL"
+            else:
+                logger.info(
+                    "[HOLD] Prob %.4f between thresholds (BUY>%.2f, SELL<%.2f). No trade.",
+                    adjusted_prob, buy_threshold, sell_threshold,
+                )
+                continue
+
+            logger.info("[SIGNAL] %s | Prob: %.4f (raw: %.4f) | Thresholds: BUY>%.2f SELL<%.2f",
+                        direction, adjusted_prob, raw_prob, buy_threshold, sell_threshold)
+
+            # ===== HYBRID FILTER LAYER =====
+            filter_passed, filter_reason = apply_hybrid_filters(
+                processed_df, direction, Config.FOREX_SYMBOL, server_time
+            )
+
+            if not filter_passed:
+                logger.warning("[FILTERED] %s signal REJECTED: %s", direction, filter_reason)
+                manager.log_rejected_trade(direction, filter_reason, adjusted_prob, sim_pct)
+                continue
+
+            # ===== TRADE MANAGER GUARD =====
+            can_trade, guard_reason = manager.can_trade(direction, candle_index)
+            if not can_trade:
+                logger.warning("[GUARD] Trade blocked: %s", guard_reason)
+                manager.log_rejected_trade(direction, guard_reason, adjusted_prob, sim_pct)
+                continue
+
+            # ===== ALL CLEAR — EXECUTE TRADE =====
+            logger.info("[EXECUTING] %s %s — All filters passed ✅", direction, Config.FOREX_SYMBOL)
+
+            # Calculate SL/TP in points
+            import MetaTrader5 as mt5
+            info = mt5.symbol_info(Config.FOREX_SYMBOL)
+            point = info.point if info else 0.00001
+
+            sl_points = int((current_atr * Config.SL_ATR_MULT) / point)
+            tp1_points = int((current_atr * Config.TP1_ATR_MULT) / point)
+            tp2_points = int((current_atr * Config.TP2_ATR_MULT) / point)
+
+            # Equity curve risk adjustment
+            risk_mult = manager.get_risk_multiplier(get_account_equity())
+
+            signal_time_ms = time.time() * 1000
+
+            result = execute_forex_trade(
+                action=direction,
+                symbol=Config.FOREX_SYMBOL,
+                sl_points=sl_points,
+                tp_points=tp1_points,  # TP set to TP1 initially
+                risk_multiplier=risk_mult,
+                signal_time_ms=signal_time_ms,
+            )
+
+            if result and result.get("success"):
+                # Calculate TP2 price for trailing
+                tick = mt5.symbol_info_tick(Config.FOREX_SYMBOL)
+                if direction == "BUY":
+                    tp2_price = result["filled_price"] + (tp2_points * point)
                 else:
-                    stale_count = 0
-                    
-                last_cycle_close = current_close
-                
-                if stale_count >= 3:
-                    print(f"\033[91m[Stale Data] Market is flat or frozen for 3 consecutive cycles. Waiting...\033[0m")
-                    time.sleep(5)
-                    continue
-                    
-                print(f"[Loop] Active cache maintained. Current Close: {current_close:.2f} (Stale Count: {stale_count})")
-                
-                # Trade Evaluation ONLY on 5m boundary OR if a trade just finished (Expert Chaining)
-                if (now.minute % 5 == 0 and now.minute != last_trade_minute) or force_evaluation:
-                    if force_evaluation:
-                        print("\n" + "="*50)
-                        print(f"⚡ [EXPERT CHAINING] Immediate Follow-up Evaluation Triggered!")
-                        print("="*50)
-                    else:
-                        print("\n" + "="*50)
-                        print(f"[SIGNAL EVALUATION] Trigger Time: {now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}")
-                        print("="*50)
-                        
-                    force_evaluation = False  # Reset flag so it only fires once per trigger
-                    last_trade_minute = now.minute
-                    
-                    from lstm_model import prepare_sequential_data, train_and_evaluate
-                    X_train, X_test, y_train, y_test, scaler, train_weights = prepare_sequential_data(processed_df)
-                    model, history, acc = train_and_evaluate(X_train, X_test, y_train, y_test, sample_weights=train_weights)
-                    
-                    latest_features = processed_df.drop(['Target'], axis=1).values
-                    latest_features_scaled = scaler.transform(latest_features)
-                    
-                    if len(latest_features_scaled) >= Config.SEQUENCE_LENGTH:
-                        X_live = latest_features_scaled[-Config.SEQUENCE_LENGTH:]
-                        X_live = np.array([X_live])
-                        
-                        prob = model.predict(X_live)[0][0]
-                        
-                        # Trust the Brain: Expert entry thresholds
-                        action = None
-                        raw_action = None
-                        if prob > 0.52:
-                            raw_action = "buy"
-                            action = raw_action
-                        elif prob < 0.48:
-                            raw_action = "sell"
-                            action = raw_action
-                        else:
-                            print(f"\033[93m[Neutral Zone] Prob {prob*100:.2f}% is between 48% and 52%. Skipping trade.\033[0m")
-                        
-                        # ===== MEMORY SIMILARITY CHECK =====
-                        similarity_pct, match_idx = compute_memory_similarity(processed_df)
-                        memory_verdict = print_memory_report(similarity_pct, match_idx)
-                        
-                        if memory_verdict == 'BLOCK':
-                            print("\033[91m[FINAL DECISION] TRADE BLOCKED BY MEMORY. Skipping cycle.\033[0m")
-                            continue
-                            
-                        # ===== TREND FILTER (WARNING ONLY) =====
-                        if 'BB_mid' in processed_df.columns and action:
-                            last_close = processed_df['close'].iloc[-1]
-                            bb_mid = processed_df['BB_mid'].iloc[-1]
-                            dist_to_mid = last_close - bb_mid
-                            
-                            print(f"[Signal] Prob: {prob*100:.2f}% -> {action.upper()} | Distance to BB_mid: {dist_to_mid:.4f}")
-                            
-                            if (action == "buy" and last_close < bb_mid) or (action == "sell" and last_close > bb_mid):
-                                print("\033[93m[Warning] Trading AGAINST the Bollinger Band trend.\033[0m")
-                                print("\033[96m[Expert Mode] LSTM Confidence is strong. Bypassing Trend Filter for Entry. Relying on Shark Exit.\033[0m")
-                        
-                        # ===== MEMORY WARNING TIER (60-80%): Auto-proceed with caution =====
-                        if memory_verdict == 'WARN' and action:
-                            print(f"\033[93m[Memory] {similarity_pct:.0f}% Similarity — Proceeding with caution (auto-mode).\033[0m")
-                        
-                        
-                        if action:
-                            # Apply Config values
-                            fx_amount = getattr(Config, 'FOREX_RISK_PER_TRADE', 10.0)
-                            
-                            if getattr(Config, 'TRADING_MODE', 'FIXED_TIME') == 'FIXED_TIME':
-                                duration = "2 min"  # Standard fixed time duration
-                                
-                                print(f"\n\033[96m{'='*55}\033[0m")
-                                print(f"\033[96m       ⏱️ EXPERT FIXED TIME TRADE\033[0m")
-                                print(f"\033[96m{'='*55}\033[0m")
-                                print(f"\033[96m  Action      : {action.upper()}\033[0m")
-                                print(f"\033[96m  Amount      : {fx_amount}$\033[0m")
-                                print(f"\033[96m  Duration    : {duration}\033[0m")
-                                print(f"\033[96m{'='*55}\033[0m")
-                                
-                                # Execute Fixed Time trade  
-                                # Health check: verify browser session is still alive
-                                try:
-                                    if warm_session and warm_session[3]:
-                                        _ = warm_session[3].url  # Quick pulse check
-                                except:
-                                    print("\033[93m[Session] Browser session died. Reconnecting...\033[0m")
-                                    try:
-                                        warm_session[1].stop()
-                                    except:
-                                        pass
-                                    warm_session = None
-                                
-                                if warm_session is None:
-                                    print("\033[96m[Reconnect] Fetching session from Scraper...\033[0m")
-                                    try:
-                                        warm_session = scraper.get_playwright_session()
-                                        if warm_session is None:
-                                            print("\033[93m[Reconnect] Scraper restarting...\033[0m")
-                                            scraper.start()
-                                            warm_session = scraper.get_playwright_session()
-                                    except Exception as re_err:
-                                        print(f"\033[91m[Reconnect] Failed: {re_err}\033[0m")
-                                
-                                success, output_msg = executor.execute_web(
-                                    action=action,
-                                    duration=duration,
-                                    amount=fx_amount,
-                                    warm_session=warm_session
-                                )
-                                
-                                if success:
-                                    print(f"\n\033[92m[LIVE EXPERT TRADE VERIFIED: {action.upper()} FIXED TIME ON OLYMP TRADE]\033[0m")
-                                    print("\033[93m[Wait] Waiting for fixed time expiration (2 mins)...\033[0m")
-                                    time.sleep(125)  # Wait for 2 minutes + brief buffer
-                                    print("\033[96m[Completed] Trade expired. Please verify UI for result.\033[0m")
-                                else:
-                                    print(f"\033[91mFailed to open Fixed Time trade. Reason: {output_msg}\033[0m")
-                                # Trigger a follow-up chain evaluation
-                                print("\n\033[93m[Chain Attack] Activating continuous market scan (bypassing 5m wait)...\033[0m")
-                                force_evaluation = True
-                                
-                            elif Config.TRADING_MODE == 'FOREX':
-                                current_atr = processed_df['ATR'].iloc[-1]
-                                from mt5_engine import get_tick_info, execute_forex_trade
-                                tick, info = get_tick_info(Config.FOREX_SYMBOL)
-                                
-                                if info and info.point > 0:
-                                    sl_points = int((current_atr * 1.5) / info.point)
-                                    tp_points = sl_points * 2
-                                    
-                                    print(f"\n\033[96m{'='*55}\033[0m")
-                                    print(f"\033[96m       📈 EXNESS FOREX MT5 TRADE\033[0m")
-                                    print(f"\033[96m{'='*55}\033[0m")
-                                    print(f"\033[96m  Action      : {action.upper()}\033[0m")
-                                    print(f"\033[96m  Risk Amount : {Config.FOREX_RISK_PER_TRADE}$\033[0m")
-                                    print(f"\033[96m  SL (points) : {sl_points} | TP (points) : {tp_points}\033[0m")
-                                    print(f"\033[96m  ATR         : {current_atr:.5f}\033[0m")
-                                    print(f"\033[96m{'='*55}\033[0m")
-                                    
-                                    success, output_msg = execute_forex_trade(
-                                        action=action.upper(),
-                                        symbol=Config.FOREX_SYMBOL,
-                                        risk_amount=Config.FOREX_RISK_PER_TRADE,
-                                        sl_points=sl_points,
-                                        tp_points=tp_points
-                                    )
-                                    
-                                    if success:
-                                        print(f"\033[92m[FOREX] {output_msg}\033[0m")
-                                        print("\n\033[93m[Chain Attack] Forex trade placed. Scanning for next opportunities...\033[0m")
-                                        force_evaluation = True
-                                    else:
-                                        print(f"\033[91m[FOREX] Trade execution failed: {output_msg}\033[0m")
-                                else:
-                                    print(f"\033[91m[FOREX] Could not retrieve MT5 symbol info for {Config.FOREX_SYMBOL}. Skipping trade. Is the symbol visible/correct based on your account type (e.g. BTCUSDm)?\033[0m")
-                            
-                        else:
-                            print("[FINAL DECISION] NO TRADE")
-                    else:
-                        print("\033[93m[Data] Not enough data to form a sequence.\033[0m")
-                        
-            # === LIVE BROWSER PRICE POLLING ===
-            if warm_session and warm_session[3]:
-                # Directly ask the scraper to extract the current tick from the page DOM
-                if hasattr(scraper, 'poll_dom_main_thread'):
-                    scraper.poll_dom_main_thread(warm_session[3])
-                    
-            time.sleep(1)  # Faster cycle to catch tick data accurately
+                    tp2_price = result["filled_price"] - (tp2_points * point)
+
+                # Register with Trade Manager
+                manager.register_trade(
+                    ticket=result["ticket"],
+                    symbol=Config.FOREX_SYMBOL,
+                    direction=direction,
+                    volume=result["volume"],
+                    entry_price=result["filled_price"],
+                    expected_price=result["expected_price"],
+                    sl_price=result["sl_price"],
+                    tp1_price=result["tp_price"],
+                    tp2_price=tp2_price,
+                    signal_time_ms=signal_time_ms,
+                    fill_time_ms=result["fill_time_ms"],
+                )
+
+                # Update signal tracker for deduplication
+                manager.update_signal_tracker(direction, candle_index)
+
+                # Print status
+                manager.print_status()
+
+                # Print stats
+                stats = manager.get_stats()
+                if stats["total"] > 0:
+                    print(f"\n\033[95m{'='*55}\033[0m")
+                    print(f"\033[95m       📊 PERFORMANCE STATS\033[0m")
+                    print(f"\033[95m{'='*55}\033[0m")
+                    print(f"\033[95m  Total Trades  : {stats['total']}\033[0m")
+                    print(f"\033[95m  Win Rate      : {stats['win_rate']:.1f}%\033[0m")
+                    print(f"\033[95m  Profit Factor : {stats['profit_factor']:.2f}\033[0m")
+                    print(f"\033[95m  Max Drawdown  : ${stats['max_dd']:.2f}\033[0m")
+                    print(f"\033[95m  Daily P&L     : {'🟢' if stats['daily_pnl'] >= 0 else '🔴'} ${stats['daily_pnl']:.2f}\033[0m")
+                    print(f"\033[95m{'='*55}\033[0m\n")
+
+            else:
+                logger.error("[EXECUTION FAILED] %s %s — No trade placed.",
+                             direction, Config.FOREX_SYMBOL)
+
+        except KeyboardInterrupt:
+            print("\n\033[93m[EXIT] Bot stopped by user. Saving state...\033[0m")
+            manager._save_state()
+            print("\033[93m[EXIT] State saved. Active trades are still managed by MT5.\033[0m")
+            break
+
         except Exception as e:
-            print(f"\033[91m[MAIN LOOP EXCEPTION] {e}\033[0m")
-            import traceback
-            traceback.print_exc()
+            logger.error("[MAIN LOOP EXCEPTION] %s", e, exc_info=True)
             time.sleep(5)
+
 
 if __name__ == "__main__":
     main()

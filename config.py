@@ -1,73 +1,133 @@
 # config.py
-# MT5 Configuration and Project Settings
+# Professional MT5 Trading Bot — Elite Configuration v3.0
 
 import MetaTrader5 as mt5
 
 class Config:
-    # -------------------------------------
+    # =========================================
     # MetaTrader 5 Credentials & Connection
-    # -------------------------------------
-    # REPLACE WITH YOUR ACTUAL DEMO CREDENTIALS
+    # =========================================
     LOGIN = 5049001425
     PASSWORD = "_sTcEx2i"
     SERVER = "MetaQuotes-Demo"
     MT5_PATH = r"C:\Program Files\MetaTrader 5\terminal64.exe"
-    
-    # -------------------------------------
-    # Trading Data Settings
-    # -------------------------------------
-    ATR_THRESHOLD = 0.0002 # Filter for low liquidity periods
-    # Using BTCUSD because Forex is closed on weekends!
-    SYMBOL = "BTCUSD"
-    TIMEFRAME = mt5.TIMEFRAME_M1
-    DATA_POINTS = 50000  # Number of candles to fetch
-    
-    # -------------------------------------
-    # Feature Engineering Settings
-    # -------------------------------------
-    # The predictive horizon: predict if price goes up/down 5 minutes ahead
-    PREDICT_LOOKAHEAD = 5  
-    
-    # LSTM Sequence parameters
-    SEQUENCE_LENGTH = 120 # Look back 120 candles
-    
-    # DXY Feature
-    DXY_TICKER = "DX-Y.NYB"
-    
-    # -------------------------------------
-    # Memory Similarity Thresholds
-    # -------------------------------------
-    SIMILARITY_HARD_BLOCK = 80   # >= 80% similarity = trade BLOCKED
-    SIMILARITY_WARNING    = 60   # >= 60% similarity = Co-Pilot confirmation required
-    
-    # -------------------------------------
-    # OTC Scraper Settings
-    # -------------------------------------
-    # To switch to OTC mode, change SYMBOL to an OTC asset name
-    # e.g. "EURUSD-OTC", "BTCUSD-OTC", etc.
-    # The presence of "OTC" in the name triggers DOM scraping mode.
-    OTC_CANDLE_INTERVAL = 60     # Aggregate DOM ticks into 60-second candles
-    OTC_CDP_PORT = 9225          # Chrome DevTools Protocol port for browser connection
-    
-    # -------------------------------------
-    # Trade Mode Selection
-    # -------------------------------------
-    # "FIXED_TIME" = Up/Down with expiry (Olymp Trade)
-    # "FOREX"      = Live MT5 execution (Exness)
-    TRADING_MODE = "FOREX"
-    
-    # -------------------------------------
-    # Forex Mode Settings (Exness MT5)
-    # -------------------------------------
-    FOREX_RISK_PER_TRADE = 10.0   # Actionable risk amount in standard account currency (e.g. $)
-    FOREX_SYMBOL = "EURUSD"       # Target trading symbol in MT5 (e.g., BTCUSD, EURUSDm)
-    MAGIC_NUMBER = 121052         # Unique trade ID for the bot
 
-    
-    # -------------------------------------
-    # Shark Exit Settings (Dynamic Close)
-    # -------------------------------------
-    SHARK_POLL_INTERVAL = 10          # Seconds between live re-evaluations
-    SHARK_MIN_PROFIT_TO_PROTECT = 0.0 # Min PnL ($) before exit logic activates (0 = any profit)
-    SHARK_REVERSAL_BB_THRESHOLD = 0.95  # BB position >= 0.95 (near top) for BUY = reversal risk
-    SHARK_OPPOSITE_SIGNAL_CONFIDENCE = 0.55  # If LSTM flips to opposite with > 55% confidence, close
+    # =========================================
+    # Trading Symbol & Timeframe
+    # =========================================
+    FOREX_SYMBOL = "EURUSD"
+    TIMEFRAME = mt5.TIMEFRAME_M5        # Primary execution timeframe
+    TIMEFRAME_CONFIRM = mt5.TIMEFRAME_M15  # Confirmation timeframe
+    TIMEFRAME_TREND = mt5.TIMEFRAME_H1     # Trend timeframe
+    DATA_POINTS = 2000                   # Candles to fetch per timeframe
+
+    # =========================================
+    # LSTM Model Settings
+    # =========================================
+    SEQUENCE_LENGTH = 120
+    PREDICT_LOOKAHEAD = 5
+
+    # Decision Thresholds (Adaptive base values — adjusted by volatility at runtime)
+    PROB_THRESHOLD_BUY = 0.70
+    PROB_THRESHOLD_SELL = 0.30
+    ADAPTIVE_THRESHOLD_ENABLED = True    # If True, thresholds shift with volatility
+
+    # =========================================
+    # Risk Management
+    # =========================================
+    RISK_PERCENT_PER_TRADE = 1.0         # % of account balance risked per trade
+    MAX_DAILY_LOSS_PCT = 5.0             # Kill switch: stop trading if daily loss > X%
+    MAX_CONCURRENT_TRADES = 3            # Max open positions at any time
+
+    # Cooldown: pause after N consecutive losses
+    COOLDOWN_AFTER_LOSSES = 3
+    COOLDOWN_DURATION_MINUTES = 30       # How long to pause
+
+    # Equity Curve Protection
+    EQUITY_MA_PERIOD = 20                # Moving average window for equity curve
+    EQUITY_RISK_REDUCTION = 0.5          # Reduce risk to 50% if equity < MA
+
+    # =========================================
+    # Execution Safety
+    # =========================================
+    MAX_SPREAD_POINTS = 30               # Reject trade if spread > this
+    SLIPPAGE_TOLERANCE = 10              # MT5 deviation parameter (points)
+    MAX_RETRIES = 2                      # Retry order_send on failure
+    MAGIC_NUMBER = 121052                # Unique bot identifier
+
+    # =========================================
+    # Trade Management (Trailing / Partial)
+    # =========================================
+    # ATR Multipliers for SL/TP
+    SL_ATR_MULT = 1.5                    # Stop Loss = ATR * 1.5
+    TP1_ATR_MULT = 2.0                   # Take Profit 1 = ATR * 2.0
+    TP2_ATR_MULT = 3.0                   # Take Profit 2 (trailing target) = ATR * 3.0
+
+    # Partial Close
+    PARTIAL_CLOSE_PCT = 0.5              # Close 50% at TP1
+    MOVE_SL_TO_BE_AFTER_TP1 = True       # Move SL to breakeven after TP1 hit
+
+    # Trailing Stop
+    TRAILING_STOP_ATR_MULT = 1.0         # Trail distance = ATR * 1.0
+    TRAILING_ACTIVATE_ATR_MULT = 1.5     # Activate trailing after price moves 1.5 * ATR in profit
+
+    # =========================================
+    # Signal Deduplication
+    # =========================================
+    MIN_CANDLES_BETWEEN_TRADES = 3       # No same-direction trade within N candles
+
+    # =========================================
+    # Session Times (UTC hours)
+    # =========================================
+    # NOTE: We use mt5.symbol_info_tick().time for server time, not local clock
+    SESSION_LONDON = (7, 16)
+    SESSION_NY = (13, 22)
+    SESSION_ASIA = (0, 9)
+    TRADE_ONLY_IN_SESSIONS = True        # If True, only trade during active sessions
+
+    # =========================================
+    # News Filter
+    # =========================================
+    NEWS_FILTER_ENABLED = True
+    NEWS_BLOCK_MINUTES_BEFORE = 15       # Block trading X min before high-impact news
+    NEWS_BLOCK_MINUTES_AFTER = 15        # Block trading X min after high-impact news
+
+    # =========================================
+    # Feature Engineering
+    # =========================================
+    ATR_THRESHOLD = 0.0002               # Filter for low liquidity periods
+    ADX_RANGING_THRESHOLD = 25           # ADX < 25 = ranging market → skip
+    DXY_TICKER = "DX-Y.NYB"
+
+    # Feature Drift Detection
+    DRIFT_DETECTION_ENABLED = True
+    DRIFT_WINDOW = 100                   # Rolling window for mean/std monitoring
+    DRIFT_THRESHOLD_ZSCORE = 3.0         # Alert if feature Z-score > 3
+
+    # =========================================
+    # Memory Similarity (Probability Modifier)
+    # =========================================
+    # Memory now MODIFIES probability instead of hard-blocking
+    MEMORY_BIAS_SCALE = 0.10             # Max probability adjustment (±10%)
+    MEMORY_SIMILARITY_THRESHOLD = 60     # Only apply bias if similarity > 60%
+
+    # =========================================
+    # Logging & Persistence
+    # =========================================
+    ACTIVE_TRADES_FILE = "active_trades.json"
+    TRADING_HISTORY_FILE = "trading_history.csv"
+    EXECUTION_QUALITY_LOG = "execution_quality.log"
+    REJECTED_TRADES_LOG = "rejected_trades.log"
+    LOG_FILE = "bot.log"
+
+    # =========================================
+    # Deployment
+    # =========================================
+    HEARTBEAT_INTERVAL_SECONDS = 30      # Check MT5 connection every N seconds
+
+    # Legacy (kept for backward compatibility)
+    TRADING_MODE = "FOREX"
+    SYMBOL = "BTCUSD"
+    FOREX_RISK_PER_TRADE = 10.0
+    OTC_CANDLE_INTERVAL = 60
+    OTC_CDP_PORT = 9225
