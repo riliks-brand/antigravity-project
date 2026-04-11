@@ -1,11 +1,11 @@
 <# 
-    Elite Trading Bot v3.0 — Auto-Restart Wrapper
+    Elite Trading Bot v3.0 - Auto-Restart Wrapper
     ================================================
     Monitors the bot process and restarts on crash.
     Place this script in the same directory as main.py.
     
     Usage: 
-        Right-click → Run with PowerShell
+        Right-click -> Run with PowerShell
         OR: powershell -ExecutionPolicy Bypass -File .\run_bot.ps1
 #>
 
@@ -23,7 +23,7 @@ if (-not (Test-Path $pythonExe)) {
 
 Write-Host ""
 Write-Host "=============================================" -ForegroundColor Cyan
-Write-Host "  Elite Trading Bot v3.0 — Auto-Restart" -ForegroundColor Cyan
+Write-Host "  Elite Trading Bot v3.0 - Auto-Restart" -ForegroundColor Cyan
 Write-Host "=============================================" -ForegroundColor Cyan
 Write-Host "  Python : $pythonExe" -ForegroundColor Gray
 Write-Host "  Script : $mainScript" -ForegroundColor Gray
