@@ -1,0 +1,34 @@
+2026-04-11 14:45:34,207 [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-11 14:45:34,207 [MT5Engine] [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-11 14:45:40,941 [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-11 14:45:40,941 [MT5Engine] [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-11 14:45:41,031 [INFO] TradeManager initialized. Active trades: 0
+2026-04-11 14:45:41,031 [TradeManager] [INFO] TradeManager initialized. Active trades: 0
+2026-04-11 14:45:41,032 [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-11
+2026-04-11 14:45:41,032 [TradeManager] [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-11
+2026-04-11 14:46:00,196 [WARNING] [Market] Last tick for EURUSD is 45972s old. Market likely closed.
+2026-04-11 14:46:00,196 [DataLoader] [WARNING] [Market] Last tick for EURUSD is 45972s old. Market likely closed.
+2026-04-11 14:46:00,196 [Main] [INFO] [Market] EURUSD is closed. Waiting...
+2026-04-11 14:47:00,198 [WARNING] [Market] Last tick for EURUSD is 46032s old. Market likely closed.
+2026-04-11 14:47:00,198 [DataLoader] [WARNING] [Market] Last tick for EURUSD is 46032s old. Market likely closed.
+2026-04-11 14:47:00,198 [Main] [INFO] [Market] EURUSD is closed. Waiting...
+2026-04-11 14:48:00,208 [WARNING] [Market] Last tick for EURUSD is 46092s old. Market likely closed.
+2026-04-11 14:48:00,208 [DataLoader] [WARNING] [Market] Last tick for EURUSD is 46092s old. Market likely closed.
+2026-04-11 14:48:00,208 [Main] [INFO] [Market] EURUSD is closed. Waiting...
+2026-04-11 14:49:00,224 [WARNING] [Market] Last tick for EURUSD is 46152s old. Market likely closed.
+2026-04-11 14:49:00,224 [DataLoader] [WARNING] [Market] Last tick for EURUSD is 46152s old. Market likely closed.
+2026-04-11 14:49:00,224 [Main] [INFO] [Market] EURUSD is closed. Waiting...
+2026-04-11 14:49:35,148 [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-11 14:49:35,148 [MT5Engine] [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-11 14:49:35,158 [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-11 14:49:35,158 [MT5Engine] [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-11 14:49:35,163 [INFO] TradeManager initialized. Active trades: 0
+2026-04-11 14:49:35,163 [TradeManager] [INFO] TradeManager initialized. Active trades: 0
+2026-04-11 14:49:35,164 [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-11
+2026-04-11 14:49:35,164 [TradeManager] [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-11
+2026-04-11 14:49:39,446 [WARNING] [Market] Last tick for EURUSD is 46191s old. Market likely closed.
+2026-04-11 14:49:39,446 [DataLoader] [WARNING] [Market] Last tick for EURUSD is 46191s old. Market likely closed.
+2026-04-11 14:49:39,446 [Main] [INFO] [Market] EURUSD is closed. Waiting...
+2026-04-11 14:50:39,465 [WARNING] [Market] Last tick for EURUSD is 46251s old. Market likely closed.
+2026-04-11 14:50:39,465 [DataLoader] [WARNING] [Market] Last tick for EURUSD is 46251s old. Market likely closed.
+2026-04-11 14:50:39,466 [Main] [INFO] [Market] EURUSD is closed. Waiting...
