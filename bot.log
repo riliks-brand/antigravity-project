@@ -44,3 +44,37 @@
 2026-04-11 16:00:02,370 [WARNING] [Market] Last tick for EURUSD is 50414s old. Market likely closed.
 2026-04-11 16:00:02,370 [DataLoader] [WARNING] [Market] Last tick for EURUSD is 50414s old. Market likely closed.
 2026-04-11 16:00:02,370 [Main] [INFO] [Market] EURUSD is closed. Waiting...
+2026-04-12 14:43:52,736 [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-12 14:43:52,736 [MT5Engine] [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-12 14:44:01,237 [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-12 14:44:01,237 [MT5Engine] [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-12 14:44:01,285 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-12 14:44:01,285 [TradeManager] [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-12 14:44:01,327 [INFO] TradeManager initialized. Active trades: 0
+2026-04-12 14:44:01,327 [TradeManager] [INFO] TradeManager initialized. Active trades: 0
+2026-04-12 14:44:01,328 [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-12
+2026-04-12 14:44:01,328 [TradeManager] [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-12
+2026-04-12 14:44:19,001 [WARNING] [Market] Last tick for EURUSD is 132271s old. Market likely closed.
+2026-04-12 14:44:19,001 [DataLoader] [WARNING] [Market] Last tick for EURUSD is 132271s old. Market likely closed.
+2026-04-12 14:44:19,006 [Main] [INFO] [Market] EURUSD is closed. Waiting...
+2026-04-12 14:45:19,014 [WARNING] [Market] Last tick for EURUSD is 132331s old. Market likely closed.
+2026-04-12 14:45:19,014 [DataLoader] [WARNING] [Market] Last tick for EURUSD is 132331s old. Market likely closed.
+2026-04-12 14:45:19,017 [Main] [INFO] [Market] EURUSD is closed. Waiting...
+2026-04-12 14:46:19,036 [WARNING] [Market] Last tick for EURUSD is 132391s old. Market likely closed.
+2026-04-12 14:46:19,036 [DataLoader] [WARNING] [Market] Last tick for EURUSD is 132391s old. Market likely closed.
+2026-04-12 14:46:19,037 [Main] [INFO] [Market] EURUSD is closed. Waiting...
+2026-04-12 14:47:19,050 [WARNING] [Market] Last tick for EURUSD is 132451s old. Market likely closed.
+2026-04-12 14:47:19,050 [DataLoader] [WARNING] [Market] Last tick for EURUSD is 132451s old. Market likely closed.
+2026-04-12 14:47:19,051 [Main] [INFO] [Market] EURUSD is closed. Waiting...
+2026-04-12 14:48:19,053 [WARNING] [Market] Last tick for EURUSD is 132511s old. Market likely closed.
+2026-04-12 14:48:19,053 [DataLoader] [WARNING] [Market] Last tick for EURUSD is 132511s old. Market likely closed.
+2026-04-12 14:48:19,056 [Main] [INFO] [Market] EURUSD is closed. Waiting...
+2026-04-12 14:49:19,071 [WARNING] [Market] Last tick for EURUSD is 132571s old. Market likely closed.
+2026-04-12 14:49:19,071 [DataLoader] [WARNING] [Market] Last tick for EURUSD is 132571s old. Market likely closed.
+2026-04-12 14:49:19,073 [Main] [INFO] [Market] EURUSD is closed. Waiting...
+2026-04-12 14:50:19,074 [WARNING] [Market] Last tick for EURUSD is 132631s old. Market likely closed.
+2026-04-12 14:50:19,074 [DataLoader] [WARNING] [Market] Last tick for EURUSD is 132631s old. Market likely closed.
+2026-04-12 14:50:19,075 [Main] [INFO] [Market] EURUSD is closed. Waiting...
+2026-04-12 14:51:19,089 [WARNING] [Market] Last tick for EURUSD is 132691s old. Market likely closed.
+2026-04-12 14:51:19,089 [DataLoader] [WARNING] [Market] Last tick for EURUSD is 132691s old. Market likely closed.
+2026-04-12 14:51:19,091 [Main] [INFO] [Market] EURUSD is closed. Waiting...

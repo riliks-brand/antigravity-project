@@ -418,7 +418,21 @@ def main():
             tp2_points = int((current_atr * Config.TP2_ATR_MULT) / point)
 
             # Equity curve risk adjustment
-            risk_mult = manager.get_risk_multiplier(get_account_equity())
+            base_risk_mult = manager.get_risk_multiplier(get_account_equity())
+
+            # Confidence Weighting
+            confidence_mult = 1.0
+            if Config.CONFIDENCE_WEIGHTING_ENABLED:
+                if direction == "BUY" and adjusted_prob >= Config.CONFIDENCE_STRONG_BUY:
+                    confidence_mult = Config.CONFIDENCE_STRONG_MULTIPLIER
+                    logger.info("[CONFIDENCE] 🟢 Strong BUY Signal (%.4f >= %.2f). Risk multiplied by %.1fx",
+                                adjusted_prob, Config.CONFIDENCE_STRONG_BUY, confidence_mult)
+                elif direction == "SELL" and adjusted_prob <= Config.CONFIDENCE_STRONG_SELL:
+                    confidence_mult = Config.CONFIDENCE_STRONG_MULTIPLIER
+                    logger.info("[CONFIDENCE] 🔴 Strong SELL Signal (%.4f <= %.2f). Risk multiplied by %.1fx",
+                                adjusted_prob, Config.CONFIDENCE_STRONG_SELL, confidence_mult)
+            
+            risk_mult = base_risk_mult * confidence_mult
 
             signal_time_ms = time.time() * 1000
 

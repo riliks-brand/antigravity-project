@@ -35,9 +35,15 @@ class Config:
     # =========================================
     # Risk Management
     # =========================================
-    RISK_PERCENT_PER_TRADE = 1.0         # % of account balance risked per trade
+    RISK_PERCENT_PER_TRADE = 1.0         # Default % of account balance risked per trade
     MAX_DAILY_LOSS_PCT = 5.0             # Kill switch: stop trading if daily loss > X%
     MAX_CONCURRENT_TRADES = 3            # Max open positions at any time
+
+    # Confidence Weighting (Dynamic Risk based on LSTM Signal Strength)
+    CONFIDENCE_WEIGHTING_ENABLED = True
+    CONFIDENCE_STRONG_BUY = 0.85         # Above this = strong signal
+    CONFIDENCE_STRONG_SELL = 0.15        # Below this = strong signal
+    CONFIDENCE_STRONG_MULTIPLIER = 2.0   # Multiply RISK_PERCENT_PER_TRADE by this (e.g., 2.0 = 2% risk)
 
     # Cooldown: pause after N consecutive losses
     COOLDOWN_AFTER_LOSSES = 3
