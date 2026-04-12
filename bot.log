@@ -98,3 +98,64 @@
 2026-04-12 23:20:30,711 [TradeManager] [INFO] TradeManager initialized. Active trades: 0
 2026-04-12 23:20:30,712 [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-12
 2026-04-12 23:20:30,712 [TradeManager] [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-12
+2026-04-12 23:25:04,392 [Main] [INFO] 
+=======================================================
+2026-04-12 23:25:04,393 [Main] [INFO] [EVALUATION] Candle #1 | Server Time: 2026-04-13 00:25:01
+2026-04-12 23:25:04,393 [Main] [INFO] =======================================================
+2026-04-12 23:25:04,394 [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-12 23:25:04,394 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-12 23:25:04,697 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-12 23:25:04,697 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-12 23:25:06,254 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-12 23:25:06,254 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-12 23:25:12,735 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-12 23:25:12,735 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-12 23:25:12,736 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-12 23:25:12,736 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-12 23:25:12,740 [INFO] Starting feature engineering pipeline...
+2026-04-12 23:25:12,740 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-12 23:25:12,926 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-12 23:25:12,926 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-12 23:25:12,984 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-12 23:25:12,984 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-12 23:25:12,989 [INFO] Dropped 93 rows due to ATR liquidity filter (< 0.0002).
+2026-04-12 23:25:12,989 [Features] [INFO] Dropped 93 rows due to ATR liquidity filter (< 0.0002).
+2026-04-12 23:25:12,995 [DEBUG] [DRIFT] All features within normal range.
+2026-04-12 23:25:12,995 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-12 23:25:13,000 [INFO] Data shape: (1907, 58) → (1722, 58) (after NaN cleanup)
+2026-04-12 23:25:13,000 [Features] [INFO] Data shape: (1907, 58) → (1722, 58) (after NaN cleanup)
+2026-04-12 23:25:13,000 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-12 23:25:13,000 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-12 23:25:13,063 [INFO] Training data: X=(1281, 120, 57), Y=(1281,) | Test data: X=(321, 120, 57), Y=(321,)
+2026-04-12 23:25:13,063 [LSTM] [INFO] Training data: X=(1281, 120, 57), Y=(1281,) | Test data: X=(321, 120, 57), Y=(321,)
+2026-04-12 23:25:13,063 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-12 23:25:13,063 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-12 23:25:14,330 [INFO] Starting main model training...
+2026-04-12 23:25:14,330 [LSTM] [INFO] Starting main model training...
+2026-04-12 23:26:07,373 [INFO] FINAL TEST ACCURACY: 51.40% | LOSS: 0.6923
+2026-04-12 23:26:07,373 [LSTM] [INFO] FINAL TEST ACCURACY: 51.40% | LOSS: 0.6923
+2026-04-12 23:26:08,627 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-12 23:26:08,627 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-12 23:26:10,141 [Main] [INFO] [RF] Retraining Random Forest...
+2026-04-12 23:26:10,141 [INFO] [RF] Engineering de-correlated features...
+2026-04-12 23:26:10,141 [RF_Model] [INFO] [RF] Engineering de-correlated features...
+2026-04-12 23:26:11,581 [INFO] [RF] ✅ Training complete. Accuracy: 56.72%
+2026-04-12 23:26:11,581 [RF_Model] [INFO] [RF] ✅ Training complete. Accuracy: 56.72%
+2026-04-12 23:26:11,582 [INFO] [RF] Top 5 Features:
+2026-04-12 23:26:11,582 [RF_Model] [INFO] [RF] Top 5 Features:
+2026-04-12 23:26:11,583 [INFO] [RF]   1. close_std_50: 0.0449
+2026-04-12 23:26:11,583 [RF_Model] [INFO] [RF]   1. close_std_50: 0.0449
+2026-04-12 23:26:11,584 [INFO] [RF]   2. RSI_std_50: 0.0420
+2026-04-12 23:26:11,584 [RF_Model] [INFO] [RF]   2. RSI_std_50: 0.0420
+2026-04-12 23:26:11,585 [INFO] [RF]   3. vol_regime: 0.0374
+2026-04-12 23:26:11,585 [RF_Model] [INFO] [RF]   3. vol_regime: 0.0374
+2026-04-12 23:26:11,585 [INFO] [RF]   4. ATR_mean_10: 0.0352
+2026-04-12 23:26:11,585 [RF_Model] [INFO] [RF]   4. ATR_mean_10: 0.0352
+2026-04-12 23:26:11,587 [INFO] [RF]   5. ADX_x_Vol: 0.0348
+2026-04-12 23:26:11,587 [RF_Model] [INFO] [RF]   5. ADX_x_Vol: 0.0348
+2026-04-12 23:26:11,866 [INFO] [RF] Model saved to disk.
+2026-04-12 23:26:11,866 [RF_Model] [INFO] [RF] Model saved to disk.
+2026-04-12 23:26:11,959 [Main] [INFO] [RF] Prediction: 0.5718
+2026-04-12 23:26:11,960 [DEBUG] [Ensemble] ADX=33.5 → TRENDING | LSTM=70% RF=30%
+2026-04-12 23:26:11,960 [Ensemble] [DEBUG] [Ensemble] ADX=33.5 → TRENDING | LSTM=70% RF=30%
+2026-04-12 23:26:11,964 [Main] [INFO] [ENSEMBLE] HOLD: Final 0.5260 between BUY>0.73 and SELL<0.27
