@@ -115,27 +115,58 @@ def save_env_file(token, chat_id, env_path=".env"):
         print(f"  📝 Updated .gitignore with: {', '.join(new_entries)}")
 
 
+def auto_fetch_chat_id(token):
+    import requests
+    import time
+    print("\n  ⏳ To get your Chat ID automatically:")
+    print("  1. Open Telegram and search for your bot's username.")
+    print("  2. Click 'Start' or send any message (like 'hello').")
+    print("  3. Waiting for your message... (Polling for 60 seconds)")
+    
+    url = f"https://api.telegram.org/bot{token}/getUpdates"
+    
+    for _ in range(30):
+        try:
+            response = requests.get(url, timeout=5)
+            data = response.json()
+            if data.get("ok") and data.get("result"):
+                # Get the chat ID from the last message received
+                chat_id = data["result"][-1]["message"]["chat"]["id"]
+                return str(chat_id)
+        except Exception:
+            pass
+            
+        time.sleep(2)
+        print("  ... still waiting ...")
+        
+    return None
+
 def main():
     print_banner()
     print_instructions()
 
     # --- Bot Token ---
     while True:
-        token = input("  🔑 Paste your Bot Token: ").strip()
+        token = input("\n  🔑 Paste your Bot Token: ").strip()
         if validate_token(token):
             print("  ✅ Token format looks good!")
             break
         else:
             print("  ❌ Invalid token format. Should look like: 123456789:ABCDefGHI-jklMNO...")
 
-    # --- Chat ID ---
-    while True:
-        chat_id = input("  💬 Paste your Chat ID: ").strip()
-        if validate_chat_id(chat_id):
-            print("  ✅ Chat ID accepted!")
-            break
-        else:
-            print("  ❌ Invalid Chat ID. Should be a number (negative for groups).")
+    # --- Auto-Fetch Chat ID ---
+    chat_id = auto_fetch_chat_id(token)
+    if chat_id:
+        print(f"  ✅ Magically grabbed your Chat ID: {chat_id}")
+    else:
+        print("\n  ❌ Could not automatically fetch Chat ID (timed out).")
+        while True:
+            chat_id = input("  💬 Please manually paste your Chat ID: ").strip()
+            if validate_chat_id(chat_id):
+                print("  ✅ Chat ID accepted!")
+                break
+            else:
+                print("  ❌ Invalid Chat ID. Should be a number.")
 
     # --- Save ---
     env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
