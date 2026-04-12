@@ -1,27 +1,39 @@
 """
-Main Loop — Elite v3.0
-========================
-The master orchestrator that ties all systems together.
+Main Loop — Elite v3.1 (Ensemble Edition)
+============================================
+The master orchestrator that ties ALL systems together.
 
 Architecture:
-  Data (MT5) → Features → LSTM → Hybrid Filters → Trade Manager → Execute
+  Data (MT5) → Features → [LSTM + RF] → Ensemble Voting → Hybrid Filters
+  → Trade Manager → Execute → Notify (Telegram)
 
-Features:
-- Multi-Timeframe analysis
-- Hybrid Filter Layer (Trend, Volatility, Range, Session, News, Spread)
-- Adaptive probability thresholds
-- Memory as probability modifier
-- Candle-close confirmation
-- Heartbeat monitor
-- Comprehensive logging & monitoring
+New in v3.1:
+- Ensemble Engine (Dynamic Weighted Soft Voting)
+- Conflict Detection & Disagreement Penalty
+- RF De-correlated Features
+- Telegram Notifications (Spam-Controlled)
+- Comprehensive Ensemble Decision Logging
 """
+
+import sys
+import os
+
+# Fix Windows terminal Unicode encoding (cp1252 → utf-8)
+os.environ["PYTHONIOENCODING"] = "utf-8"
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except AttributeError:
+        # Python 3.6 fallback
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 import numpy as np
 import pandas as pd
 import time
 import datetime
-import os
-import csv
 import logging
 from config import Config
 
@@ -48,7 +60,6 @@ def compute_memory_similarity(processed_df):
 
     try:
         losses_df = pd.read_csv(log_file)
-        # Only consider losses
         losses_df = losses_df[losses_df.get('pnl', pd.Series(dtype=float)) < 0]
         if losses_df.empty:
             return 0.0, 0.0, -1
@@ -57,7 +68,6 @@ def compute_memory_similarity(processed_df):
 
     last_row = processed_df.iloc[-1]
 
-    # Current state vector
     current_state = np.array([
         last_row.get('RSI', 50),
         last_row.get('ATR', 0),
@@ -69,7 +79,6 @@ def compute_memory_similarity(processed_df):
     max_sim = 0.0
     match_idx = -1
 
-    # Build loss state vectors from features that were present at entry
     for idx, loss_row in losses_df.iterrows():
         loss_state = np.array([
             loss_row.get('RSI', 50) if 'RSI' in losses_df.columns else 50,
@@ -95,46 +104,12 @@ def compute_memory_similarity(processed_df):
             max_sim = similarity
             match_idx = idx
 
-    # Convert similarity to probability bias
-    # Only apply if above threshold
     if max_sim >= Config.MEMORY_SIMILARITY_THRESHOLD:
-        # Scale: 60% sim → small bias, 100% sim → full bias
         scale = (max_sim - Config.MEMORY_SIMILARITY_THRESHOLD) / (100 - Config.MEMORY_SIMILARITY_THRESHOLD)
-        bias = -scale * Config.MEMORY_BIAS_SCALE  # Negative = reduce confidence
+        bias = -scale * Config.MEMORY_BIAS_SCALE
         return bias, max_sim, match_idx
 
     return 0.0, max_sim, match_idx
-
-
-def get_adaptive_thresholds(current_atr, atr_series):
-    """
-    Dynamically adjust probability thresholds based on volatility.
-    High volatility → stricter thresholds (more selective)
-    Low volatility → looser thresholds
-    """
-    if not Config.ADAPTIVE_THRESHOLD_ENABLED or atr_series is None or len(atr_series) < 20:
-        return Config.PROB_THRESHOLD_BUY, Config.PROB_THRESHOLD_SELL
-
-    atr_mean = atr_series.mean()
-    atr_std = atr_series.std()
-
-    if atr_std <= 0:
-        return Config.PROB_THRESHOLD_BUY, Config.PROB_THRESHOLD_SELL
-
-    z_score = (current_atr - atr_mean) / atr_std
-
-    # High vol (z > 1): tighten thresholds by up to 5%
-    # Low vol (z < -1): loosen thresholds by up to 5%
-    adjustment = np.clip(z_score * 0.025, -0.05, 0.05)
-
-    buy_threshold = Config.PROB_THRESHOLD_BUY + adjustment
-    sell_threshold = Config.PROB_THRESHOLD_SELL - adjustment
-
-    # Clamp to sane values
-    buy_threshold = np.clip(buy_threshold, 0.55, 0.85)
-    sell_threshold = np.clip(sell_threshold, 0.15, 0.45)
-
-    return buy_threshold, sell_threshold
 
 
 def apply_hybrid_filters(processed_df, direction, symbol, server_time=None):
@@ -145,12 +120,12 @@ def apply_hybrid_filters(processed_df, direction, symbol, server_time=None):
     last = processed_df.iloc[-1]
     reasons = []
 
-    # 1. ADX Range Filter: reject if market is ranging
+    # 1. ADX Range Filter
     adx_val = last.get('ADX', 30)
     if adx_val < Config.ADX_RANGING_THRESHOLD:
         reasons.append(f"RANGING: ADX={adx_val:.1f} < {Config.ADX_RANGING_THRESHOLD}")
 
-    # 2. Trend Alignment (H1): reject if trading against H1 trend
+    # 2. Trend Alignment (H1)
     h1_trend = last.get('H1_trend', 0)
     if h1_trend != 0:
         if direction == "BUY" and h1_trend == -1:
@@ -187,16 +162,18 @@ def apply_hybrid_filters(processed_df, direction, symbol, server_time=None):
 
 def main():
     print("\n" + "=" * 65)
-    print("  🚀 ELITE TRADING BOT v3.0 — PROFESSIONAL MT5 + LSTM ENGINE")
+    print("  🚀 ELITE TRADING BOT v3.1 — ENSEMBLE EDITION")
     print("=" * 65)
     print("  📊 Data Source   : MetaTrader 5 (Native)")
-    print("  🧠 Model         : LSTM (Multi-Timeframe)")
+    print("  🧠 Intelligence : LSTM + Random Forest (Voting)")
     print("  ⚙️  Execution     : MT5 Direct (Smart Retry)")
     print("  🛡️  Risk Engine   : Equity Curve + Kill Switch + Cooldown")
     print("  📰 News Filter   : ForexFactory (High Impact)")
+    print("  📲 Alerts        : Telegram (Spam-Controlled)")
     print(f"  💹 Symbol        : {Config.FOREX_SYMBOL}")
     print(f"  📈 Risk/Trade    : {Config.RISK_PERCENT_PER_TRADE}%")
     print(f"  🔴 Daily Max Loss: {Config.MAX_DAILY_LOSS_PCT}%")
+    print(f"  🧬 Ensemble      : {'ENABLED' if Config.ENSEMBLE_ENABLED else 'DISABLED'}")
     print("=" * 65)
 
     # ===== PHASE 1: Connect to MT5 =====
@@ -215,15 +192,26 @@ def main():
     manager = TradeManager()
     manager.reset_daily_stats(get_account_balance())
 
-    # ===== PHASE 3: Import Data & Model modules =====
+    # ===== PHASE 3: Initialize Notifier =====
+    from notifier import get_notifier
+    notifier = get_notifier()
+
+    # ===== PHASE 4: Import modules =====
     from data_loader import fetch_mtf_data, fetch_tick_data, is_market_open
     from features import feature_engineering_pipeline
     from lstm_model import prepare_sequential_data, train_and_evaluate
+
+    # ===== PHASE 5: Initialize RF Model & Ensemble =====
+    from rf_model import RFModel
+    from ensemble_engine import ensemble_predict
+
+    rf_model = RFModel()
 
     # State variables
     last_eval_candle = -1
     last_heartbeat = time.time()
     candle_index = 0
+    last_daily_summary_date = None
 
     print("\n\033[92m[STARTUP] ✅ All systems online. Entering main loop.\033[0m\n")
 
@@ -235,6 +223,7 @@ def main():
             if time.time() - last_heartbeat > Config.HEARTBEAT_INTERVAL_SECONDS:
                 if not heartbeat():
                     logger.error("[Heartbeat] MT5 reconnection failed. Waiting 30s...")
+                    notifier.connection_lost()
                     time.sleep(30)
                     continue
                 last_heartbeat = time.time()
@@ -243,19 +232,33 @@ def main():
             if check_kill_switch():
                 logger.critical("[KILL SWITCH] Trading halted. Closing all positions...")
                 close_all_positions()
+
+                # Notify via Telegram
+                account_balance = get_account_balance()
+                account_equity = get_account_equity()
+                daily_loss = ((account_equity - account_balance) / account_balance * 100) if account_balance > 0 else 0
+                notifier.kill_switch_activated(abs(daily_loss), account_balance)
+
                 print("\n\033[91m⛔ KILL SWITCH ACTIVATED — Daily loss limit exceeded.\033[0m")
                 print("\033[91m⛔ All positions closed. Bot paused until next day.\033[0m\n")
-                # Wait until midnight
+
                 tomorrow = (now + datetime.timedelta(days=1)).replace(hour=0, minute=5, second=0)
                 wait_seconds = (tomorrow - now).total_seconds()
-                logger.info("[KILL SWITCH] Sleeping %.0f seconds until next day.", wait_seconds)
                 time.sleep(max(wait_seconds, 60))
                 manager.reset_daily_stats(get_account_balance())
                 continue
 
-            # ===== DAILY RESET =====
+            # ===== DAILY RESET & SUMMARY =====
+            today = now.date()
             if now.hour == 0 and now.minute < 2:
                 manager.reset_daily_stats(get_account_balance())
+
+            # Daily Summary (send at configured hour)
+            if now.hour == Config.TELEGRAM_DAILY_SUMMARY_HOUR and last_daily_summary_date != today:
+                stats = manager.get_stats()
+                top_features = rf_model.get_top_features(5) if rf_model.model else None
+                notifier.daily_summary(stats, top_features)
+                last_daily_summary_date = today
 
             # ===== MARKET OPEN CHECK =====
             if not is_market_open(Config.FOREX_SYMBOL):
@@ -266,7 +269,6 @@ def main():
             # ===== TICK MANAGEMENT (every cycle) =====
             tick_data = fetch_tick_data(Config.FOREX_SYMBOL)
             if tick_data and len(manager.active_trades) > 0:
-                # Get current ATR for trailing stop calculations
                 quick_df = None
                 try:
                     from data_loader import fetch_mt5_ohlc
@@ -294,14 +296,14 @@ def main():
             server_time = get_server_time(Config.FOREX_SYMBOL)
             server_minute = server_time.minute
 
-            # Only evaluate on M5 candle close (minute % 5 == 0) and not repeated
             is_candle_close = (server_minute % 5 == 0) and (server_minute != last_eval_candle)
 
             if not is_candle_close:
+                # Flush notifier message queue periodically
+                notifier.flush_queue()
                 time.sleep(1)
                 continue
 
-            # Mark this candle as evaluated
             last_eval_candle = server_minute
             candle_index += 1
 
@@ -355,38 +357,75 @@ def main():
             X_live = latest_features_scaled[-Config.SEQUENCE_LENGTH:]
             X_live = np.array([X_live])
 
-            raw_prob = float(model.predict(X_live)[0][0])
+            lstm_prob = float(model.predict(X_live)[0][0])
 
             # ===== MEMORY PROBABILITY MODIFIER =====
             memory_bias, sim_pct, sim_idx = compute_memory_similarity(processed_df)
-            adjusted_prob = raw_prob + memory_bias
-            adjusted_prob = np.clip(adjusted_prob, 0.0, 1.0)
+            lstm_prob_adjusted = np.clip(lstm_prob + memory_bias, 0.0, 1.0)
 
             if abs(memory_bias) > 0.001:
                 logger.info("[Memory] Similarity: %.1f%% | Bias: %+.3f | Raw: %.4f → Adjusted: %.4f",
-                            sim_pct, memory_bias, raw_prob, adjusted_prob)
+                            sim_pct, memory_bias, lstm_prob, lstm_prob_adjusted)
 
-            # ===== ADAPTIVE THRESHOLDS =====
+            # ===== RANDOM FOREST PREDICTION =====
+            rf_prob = 0.5  # Default neutral
+
+            if Config.ENSEMBLE_ENABLED:
+                # Retrain RF if needed
+                if rf_model.needs_retraining(candle_index):
+                    logger.info("[RF] Retraining Random Forest...")
+                    rf_model.train(processed_df)
+
+                # Get RF probability
+                rf_prob = rf_model.predict_proba(processed_df)
+                logger.info("[RF] Prediction: %.4f", rf_prob)
+
+            # ===== ENSEMBLE DECISION =====
             current_atr = processed_df['ATR'].iloc[-1]
-            buy_threshold, sell_threshold = get_adaptive_thresholds(
-                current_atr, processed_df['ATR']
-            )
+            current_adx = processed_df['ADX'].iloc[-1] if 'ADX' in processed_df.columns else 25.0
+            atr_series = processed_df['ATR']
 
-            # ===== DECISION =====
-            direction = None
-            if adjusted_prob > buy_threshold:
-                direction = "BUY"
-            elif adjusted_prob < sell_threshold:
-                direction = "SELL"
-            else:
-                logger.info(
-                    "[HOLD] Prob %.4f between thresholds (BUY>%.2f, SELL<%.2f). No trade.",
-                    adjusted_prob, buy_threshold, sell_threshold,
+            if Config.ENSEMBLE_ENABLED:
+                decision = ensemble_predict(
+                    lstm_prob=lstm_prob_adjusted,
+                    rf_prob=rf_prob,
+                    current_adx=current_adx,
+                    current_atr=current_atr,
+                    atr_series=atr_series,
                 )
-                continue
 
-            logger.info("[SIGNAL] %s | Prob: %.4f (raw: %.4f) | Thresholds: BUY>%.2f SELL<%.2f",
-                        direction, adjusted_prob, raw_prob, buy_threshold, sell_threshold)
+                direction = decision.direction
+                final_prob = decision.final_prob
+                penalty = decision.penalty
+
+                # Conflict → SKIP
+                if decision.conflict or direction is None:
+                    if decision.skip_reason:
+                        logger.info("[ENSEMBLE] %s", decision.skip_reason)
+                        manager.log_rejected_trade(
+                            direction or "NONE", decision.skip_reason,
+                            final_prob, sim_pct
+                        )
+                    continue
+
+            else:
+                # Fallback: LSTM-only mode (legacy)
+                from ensemble_engine import get_adaptive_thresholds as eat
+                buy_threshold, sell_threshold = eat(current_atr, atr_series)
+                final_prob = lstm_prob_adjusted
+                penalty = 0.0
+                rf_prob = 0.5
+
+                if final_prob > buy_threshold:
+                    direction = "BUY"
+                elif final_prob < sell_threshold:
+                    direction = "SELL"
+                else:
+                    logger.info("[HOLD] Prob %.4f between thresholds. No trade.", final_prob)
+                    continue
+
+            logger.info("[SIGNAL] %s | Final: %.4f (LSTM: %.4f, RF: %.4f, Penalty: %.4f)",
+                        direction, final_prob, lstm_prob_adjusted, rf_prob, penalty)
 
             # ===== HYBRID FILTER LAYER =====
             filter_passed, filter_reason = apply_hybrid_filters(
@@ -395,20 +434,20 @@ def main():
 
             if not filter_passed:
                 logger.warning("[FILTERED] %s signal REJECTED: %s", direction, filter_reason)
-                manager.log_rejected_trade(direction, filter_reason, adjusted_prob, sim_pct)
+                manager.log_rejected_trade(direction, filter_reason, final_prob, sim_pct)
+                notifier.signal_rejected(direction, filter_reason, final_prob)
                 continue
 
             # ===== TRADE MANAGER GUARD =====
             can_trade, guard_reason = manager.can_trade(direction, candle_index)
             if not can_trade:
                 logger.warning("[GUARD] Trade blocked: %s", guard_reason)
-                manager.log_rejected_trade(direction, guard_reason, adjusted_prob, sim_pct)
+                manager.log_rejected_trade(direction, guard_reason, final_prob, sim_pct)
                 continue
 
             # ===== ALL CLEAR — EXECUTE TRADE =====
             logger.info("[EXECUTING] %s %s — All filters passed ✅", direction, Config.FOREX_SYMBOL)
 
-            # Calculate SL/TP in points
             import MetaTrader5 as mt5
             info = mt5.symbol_info(Config.FOREX_SYMBOL)
             point = info.point if info else 0.00001
@@ -420,18 +459,18 @@ def main():
             # Equity curve risk adjustment
             base_risk_mult = manager.get_risk_multiplier(get_account_equity())
 
-            # Confidence Weighting
+            # Confidence Weighting (based on FINAL ensemble score)
             confidence_mult = 1.0
             if Config.CONFIDENCE_WEIGHTING_ENABLED:
-                if direction == "BUY" and adjusted_prob >= Config.CONFIDENCE_STRONG_BUY:
+                if direction == "BUY" and final_prob >= Config.CONFIDENCE_STRONG_BUY:
                     confidence_mult = Config.CONFIDENCE_STRONG_MULTIPLIER
-                    logger.info("[CONFIDENCE] 🟢 Strong BUY Signal (%.4f >= %.2f). Risk multiplied by %.1fx",
-                                adjusted_prob, Config.CONFIDENCE_STRONG_BUY, confidence_mult)
-                elif direction == "SELL" and adjusted_prob <= Config.CONFIDENCE_STRONG_SELL:
+                    logger.info("[CONFIDENCE] 🟢 Strong BUY (%.4f >= %.2f). Risk x%.1f",
+                                final_prob, Config.CONFIDENCE_STRONG_BUY, confidence_mult)
+                elif direction == "SELL" and final_prob <= Config.CONFIDENCE_STRONG_SELL:
                     confidence_mult = Config.CONFIDENCE_STRONG_MULTIPLIER
-                    logger.info("[CONFIDENCE] 🔴 Strong SELL Signal (%.4f <= %.2f). Risk multiplied by %.1fx",
-                                adjusted_prob, Config.CONFIDENCE_STRONG_SELL, confidence_mult)
-            
+                    logger.info("[CONFIDENCE] 🔴 Strong SELL (%.4f <= %.2f). Risk x%.1f",
+                                final_prob, Config.CONFIDENCE_STRONG_SELL, confidence_mult)
+
             risk_mult = base_risk_mult * confidence_mult
 
             signal_time_ms = time.time() * 1000
@@ -440,13 +479,12 @@ def main():
                 action=direction,
                 symbol=Config.FOREX_SYMBOL,
                 sl_points=sl_points,
-                tp_points=tp1_points,  # TP set to TP1 initially
+                tp_points=tp1_points,
                 risk_multiplier=risk_mult,
                 signal_time_ms=signal_time_ms,
             )
 
             if result and result.get("success"):
-                # Calculate TP2 price for trailing
                 tick = mt5.symbol_info_tick(Config.FOREX_SYMBOL)
                 if direction == "BUY":
                     tp2_price = result["filled_price"] + (tp2_points * point)
@@ -468,13 +506,26 @@ def main():
                     fill_time_ms=result["fill_time_ms"],
                 )
 
-                # Update signal tracker for deduplication
                 manager.update_signal_tracker(direction, candle_index)
+
+                # Telegram Notification
+                notifier.trade_opened(
+                    direction=direction,
+                    symbol=Config.FOREX_SYMBOL,
+                    lstm_prob=lstm_prob_adjusted,
+                    rf_prob=rf_prob,
+                    final_prob=final_prob,
+                    entry_price=result["filled_price"],
+                    sl_price=result["sl_price"],
+                    tp_price=result["tp_price"],
+                    lot_size=result["volume"],
+                    penalty=penalty,
+                )
 
                 # Print status
                 manager.print_status()
 
-                # Print stats
+                # Performance stats
                 stats = manager.get_stats()
                 if stats["total"] > 0:
                     print(f"\n\033[95m{'='*55}\033[0m")
@@ -494,6 +545,7 @@ def main():
         except KeyboardInterrupt:
             print("\n\033[93m[EXIT] Bot stopped by user. Saving state...\033[0m")
             manager._save_state()
+            notifier.flush_queue()
             print("\033[93m[EXIT] State saved. Active trades are still managed by MT5.\033[0m")
             break
 

@@ -78,3 +78,23 @@
 2026-04-12 14:51:19,089 [WARNING] [Market] Last tick for EURUSD is 132691s old. Market likely closed.
 2026-04-12 14:51:19,089 [DataLoader] [WARNING] [Market] Last tick for EURUSD is 132691s old. Market likely closed.
 2026-04-12 14:51:19,091 [Main] [INFO] [Market] EURUSD is closed. Waiting...
+2026-04-12 23:20:09,063 [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-12 23:20:09,063 [MT5Engine] [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-12 23:20:17,881 [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-12 23:20:17,881 [MT5Engine] [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-12 23:20:17,992 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-12 23:20:17,992 [TradeManager] [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-12 23:20:17,994 [INFO] TradeManager initialized. Active trades: 0
+2026-04-12 23:20:17,994 [TradeManager] [INFO] TradeManager initialized. Active trades: 0
+2026-04-12 23:20:17,995 [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-12
+2026-04-12 23:20:17,995 [TradeManager] [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-12
+2026-04-12 23:20:30,693 [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-12 23:20:30,693 [MT5Engine] [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-12 23:20:30,709 [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-12 23:20:30,709 [MT5Engine] [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-12 23:20:30,711 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-12 23:20:30,711 [TradeManager] [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-12 23:20:30,711 [INFO] TradeManager initialized. Active trades: 0
+2026-04-12 23:20:30,711 [TradeManager] [INFO] TradeManager initialized. Active trades: 0
+2026-04-12 23:20:30,712 [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-12
+2026-04-12 23:20:30,712 [TradeManager] [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-12

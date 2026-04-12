@@ -1,0 +1,2 @@
+timestamp,market_state,adx,lstm_prob,lstm_weight,rf_prob,rf_weight,weighted_avg,disagreement,penalty,final_prob,buy_threshold,sell_threshold,direction,conflict,skip_reason
+2026-04-12T21:26:11.963800,TRENDING,,0.457244,0.70,0.571800,0.30,0.491611,0.114556,0.034367,0.525978,0.7258,0.2742,HOLD,False,HOLD: Final 0.5260 between BUY>0.73 and SELL<0.27
