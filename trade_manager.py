@@ -1094,3 +1094,5 @@ class TradeManager:
             "gross_loss": gross_loss,
             "daily_pnl": self.daily_pnl,
         }
+
+
