@@ -2693,3 +2693,1138 @@
 2026-04-27 00:33:23,525 [INFO] TradeManager initialized. Active trades: 0
 2026-04-27 00:33:23,525 [INFO] [Regime] Initial regime set: TRENDING (trend_strength=0.700)
 2026-04-27 00:33:23,525 [DEBUG] [Regime] Pending switch to RANGING (1/2 confirmations, trend_strength=0.300)
+2026-04-27 00:40:55,423 [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-27 00:40:55,423 [MT5Engine] [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-27 00:41:01,444 [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-27 00:41:01,444 [MT5Engine] [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-27 00:41:01,454 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 00:41:01,454 [TradeManager] [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 00:41:01,454 [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 00:41:01,454 [TradeManager] [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 00:41:01,454 [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-27
+2026-04-27 00:41:01,454 [TradeManager] [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-27
+2026-04-27 00:41:23,294 [INFO] [RF] Loaded saved model from disk.
+2026-04-27 00:41:23,294 [RF_Model] [INFO] [RF] Loaded saved model from disk.
+2026-04-27 00:41:23,300 [WARNING] [Market] No tick for XAUUSD. Market may be closed.
+2026-04-27 00:41:23,300 [DataLoader] [WARNING] [Market] No tick for XAUUSD. Market may be closed.
+2026-04-27 00:41:23,300 [WARNING] [Market] US30 trading is disabled.
+2026-04-27 00:41:23,300 [DataLoader] [WARNING] [Market] US30 trading is disabled.
+2026-04-27 00:50:04,209 [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-27 00:50:04,209 [MT5Engine] [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-27 00:50:04,288 [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-27 00:50:04,288 [MT5Engine] [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-27 00:50:04,291 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 00:50:04,291 [TradeManager] [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 00:50:04,292 [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 00:50:04,292 [TradeManager] [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 00:50:04,292 [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-27
+2026-04-27 00:50:04,292 [TradeManager] [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-27
+2026-04-27 00:50:18,319 [INFO] [RF] Loaded saved model from disk.
+2026-04-27 00:50:18,319 [RF_Model] [INFO] [RF] Loaded saved model from disk.
+2026-04-27 00:50:18,322 [WARNING] [Market] No tick for XAUUSD. Market may be closed.
+2026-04-27 00:50:18,322 [DataLoader] [WARNING] [Market] No tick for XAUUSD. Market may be closed.
+2026-04-27 00:50:18,323 [WARNING] [Market] US30 trading is disabled.
+2026-04-27 00:50:18,323 [DataLoader] [WARNING] [Market] US30 trading is disabled.
+2026-04-27 00:50:18,324 [Main] [INFO] 
+=================================================================
+2026-04-27 00:50:18,324 [Main] [INFO] [PORTFOLIO EVALUATION] Candle #1 | Loop Trigger Time: 2026-04-26 21:50:18
+2026-04-27 00:50:18,325 [Main] [INFO] =================================================================
+2026-04-27 00:50:18,325 [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 00:50:18,325 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 00:50:18,374 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 00:50:18,374 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 00:50:18,403 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 00:50:18,403 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 00:50:18,407 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 00:50:18,407 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 00:50:18,407 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 00:50:18,407 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 00:50:18,408 [INFO] Starting feature engineering pipeline...
+2026-04-27 00:50:18,408 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 00:50:18,517 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 00:50:18,517 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 00:50:18,572 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 00:50:18,572 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 00:50:18,576 [INFO] Dropped 65 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 00:50:18,576 [Features] [INFO] Dropped 65 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 00:50:18,576 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 00:50:18,576 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 00:50:18,585 [INFO] Data shape: (1935, 58) → (1750, 58) (after NaN cleanup)
+2026-04-27 00:50:18,585 [Features] [INFO] Data shape: (1935, 58) → (1750, 58) (after NaN cleanup)
+2026-04-27 00:50:18,586 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 00:50:18,586 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 00:50:18,639 [INFO] Training data: X=(1304, 120, 57), Y=(1304,) | Test data: X=(326, 120, 57), Y=(326,)
+2026-04-27 00:50:18,639 [LSTM] [INFO] Training data: X=(1304, 120, 57), Y=(1304,) | Test data: X=(326, 120, 57), Y=(326,)
+2026-04-27 00:50:18,640 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 00:50:18,640 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 00:50:19,466 [INFO] Starting main model training...
+2026-04-27 00:50:19,466 [LSTM] [INFO] Starting main model training...
+2026-04-27 00:51:16,003 [INFO] FINAL TEST ACCURACY: 52.76% | LOSS: 0.6985
+2026-04-27 00:51:16,003 [LSTM] [INFO] FINAL TEST ACCURACY: 52.76% | LOSS: 0.6985
+2026-04-27 00:51:16,493 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 00:51:16,493 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 00:51:17,335 [INFO] [RF] Engineering de-correlated features...
+2026-04-27 00:51:17,335 [RF_Model] [INFO] [RF] Engineering de-correlated features...
+2026-04-27 00:51:18,284 [INFO] [RF] ✅ Training complete. Accuracy: 58.65%
+2026-04-27 00:51:18,284 [RF_Model] [INFO] [RF] ✅ Training complete. Accuracy: 58.65%
+2026-04-27 00:51:18,284 [INFO] [RF] Top 5 Features:
+2026-04-27 00:51:18,284 [RF_Model] [INFO] [RF] Top 5 Features:
+2026-04-27 00:51:18,284 [INFO] [RF]   1. di_ratio: 0.0408
+2026-04-27 00:51:18,284 [RF_Model] [INFO] [RF]   1. di_ratio: 0.0408
+2026-04-27 00:51:18,288 [INFO] [RF]   2. close_std_50: 0.0381
+2026-04-27 00:51:18,288 [RF_Model] [INFO] [RF]   2. close_std_50: 0.0381
+2026-04-27 00:51:18,288 [INFO] [RF]   3. returns_kurt_20: 0.0359
+2026-04-27 00:51:18,288 [RF_Model] [INFO] [RF]   3. returns_kurt_20: 0.0359
+2026-04-27 00:51:18,288 [INFO] [RF]   4. RSI_x_ATR: 0.0347
+2026-04-27 00:51:18,288 [RF_Model] [INFO] [RF]   4. RSI_x_ATR: 0.0347
+2026-04-27 00:51:18,288 [INFO] [RF]   5. ATR_delta_5: 0.0344
+2026-04-27 00:51:18,288 [RF_Model] [INFO] [RF]   5. ATR_delta_5: 0.0344
+2026-04-27 00:51:18,452 [INFO] [RF] Model saved to disk.
+2026-04-27 00:51:18,452 [RF_Model] [INFO] [RF] Model saved to disk.
+2026-04-27 00:51:18,536 [DEBUG] [Ensemble] trend_strength=0.460 → TRANSITIONING | LSTM=63.8% RF=36.2% | Session=Asia
+2026-04-27 00:51:18,536 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.460 → TRANSITIONING | LSTM=63.8% RF=36.2% | Session=Asia
+2026-04-27 00:51:18,537 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5144, distance=0.0144 < 0.02 → REJECT
+2026-04-27 00:51:18,537 [Ensemble] [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5144, distance=0.0144 < 0.02 → REJECT
+2026-04-27 00:51:18,538 [INFO] [Regime] Initial regime set: RANGING (trend_strength=0.460)
+2026-04-27 00:51:18,538 [TradeManager] [INFO] [Regime] Initial regime set: RANGING (trend_strength=0.460)
+2026-04-27 00:51:18,538 [Main] [INFO] [EURUSD] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=LOW | session=Asia
+2026-04-27 00:51:18,539 [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 00:51:18,539 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 00:51:18,574 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 00:51:18,574 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 00:51:18,669 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 00:51:18,669 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 00:51:18,688 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 00:51:18,688 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 00:51:18,688 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 00:51:18,688 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 00:51:18,688 [INFO] Starting feature engineering pipeline...
+2026-04-27 00:51:18,688 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 00:51:18,801 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 00:51:18,801 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 00:51:18,854 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 00:51:18,854 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 00:51:18,857 [INFO] Dropped 76 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 00:51:18,857 [Features] [INFO] Dropped 76 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 00:51:18,863 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 00:51:18,863 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 00:51:18,866 [INFO] Data shape: (1924, 58) → (1744, 58) (after NaN cleanup)
+2026-04-27 00:51:18,866 [Features] [INFO] Data shape: (1924, 58) → (1744, 58) (after NaN cleanup)
+2026-04-27 00:51:18,868 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 00:51:18,868 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 00:51:18,916 [INFO] Training data: X=(1299, 120, 57), Y=(1299,) | Test data: X=(325, 120, 57), Y=(325,)
+2026-04-27 00:51:18,916 [LSTM] [INFO] Training data: X=(1299, 120, 57), Y=(1299,) | Test data: X=(325, 120, 57), Y=(325,)
+2026-04-27 00:51:18,926 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 00:51:18,926 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 00:51:19,412 [INFO] Starting main model training...
+2026-04-27 00:51:19,412 [LSTM] [INFO] Starting main model training...
+2026-04-27 00:51:55,265 [INFO] FINAL TEST ACCURACY: 49.23% | LOSS: 0.6994
+2026-04-27 00:51:55,265 [LSTM] [INFO] FINAL TEST ACCURACY: 49.23% | LOSS: 0.6994
+2026-04-27 00:51:55,672 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 00:51:55,672 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 00:51:56,509 [DEBUG] [Ensemble] trend_strength=0.648 → TRENDING | LSTM=69.4% RF=30.6% | Session=Asia
+2026-04-27 00:51:56,509 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.648 → TRENDING | LSTM=69.4% RF=30.6% | Session=Asia
+2026-04-27 00:51:56,511 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5066, distance=0.0066 < 0.02 → REJECT
+2026-04-27 00:51:56,511 [Ensemble] [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5066, distance=0.0066 < 0.02 → REJECT
+2026-04-27 00:51:56,512 [DEBUG] [Regime] Pending switch to TRENDING (1/2 confirmations, trend_strength=0.648)
+2026-04-27 00:51:56,512 [TradeManager] [DEBUG] [Regime] Pending switch to TRENDING (1/2 confirmations, trend_strength=0.648)
+2026-04-27 00:51:56,513 [Main] [INFO] [GBPUSD] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=LOW | session=Asia
+2026-04-27 00:51:56,513 [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 00:51:56,513 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 00:51:56,546 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 00:51:56,546 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 00:51:56,576 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 00:51:56,576 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 00:51:56,580 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 00:51:56,580 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 00:51:56,581 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 00:51:56,581 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 00:51:56,583 [INFO] Starting feature engineering pipeline...
+2026-04-27 00:51:56,583 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 00:51:56,692 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 00:51:56,692 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 00:51:56,734 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 00:51:56,734 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 00:51:56,738 [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 00:51:56,738 [Features] [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 00:51:56,744 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 00:51:56,744 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 00:51:56,748 [INFO] Data shape: (1987, 58) → (1801, 58) (after NaN cleanup)
+2026-04-27 00:51:56,748 [Features] [INFO] Data shape: (1987, 58) → (1801, 58) (after NaN cleanup)
+2026-04-27 00:51:56,749 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 00:51:56,749 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 00:51:56,793 [INFO] Training data: X=(1344, 120, 57), Y=(1344,) | Test data: X=(337, 120, 57), Y=(337,)
+2026-04-27 00:51:56,793 [LSTM] [INFO] Training data: X=(1344, 120, 57), Y=(1344,) | Test data: X=(337, 120, 57), Y=(337,)
+2026-04-27 00:51:56,800 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 00:51:56,800 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 00:51:57,288 [INFO] Starting main model training...
+2026-04-27 00:51:57,288 [LSTM] [INFO] Starting main model training...
+2026-04-27 00:52:53,038 [INFO] FINAL TEST ACCURACY: 52.52% | LOSS: 0.6817
+2026-04-27 00:52:53,038 [LSTM] [INFO] FINAL TEST ACCURACY: 52.52% | LOSS: 0.6817
+2026-04-27 00:52:53,450 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 00:52:53,450 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 00:52:54,263 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=Asia
+2026-04-27 00:52:54,263 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=Asia
+2026-04-27 00:52:54,266 [INFO] [Ensemble] ⚠️ WEAK ZONE: base_score=0.4413, distance=0.0587 < 0.06 → NO ENTRY
+2026-04-27 00:52:54,266 [Ensemble] [INFO] [Ensemble] ⚠️ WEAK ZONE: base_score=0.4413, distance=0.0587 < 0.06 → NO ENTRY
+2026-04-27 00:52:54,269 [Main] [INFO] [USDJPY] SKIP: direction=None | reason=WEAK_ZONE | confidence=LOW | session=Asia
+2026-04-27 00:52:54,270 [Main] [INFO] No viable opportunities this cycle across portfolio.
+2026-04-27 00:55:00,513 [Main] [INFO] 
+=================================================================
+2026-04-27 00:55:00,515 [Main] [INFO] [PORTFOLIO EVALUATION] Candle #2 | Loop Trigger Time: 2026-04-26 21:55:00
+2026-04-27 00:55:00,516 [Main] [INFO] =================================================================
+2026-04-27 00:55:00,516 [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 00:55:00,516 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 00:55:00,531 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 00:55:00,531 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 00:55:00,539 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 00:55:00,539 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 00:55:00,545 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 00:55:00,545 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 00:55:00,547 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 00:55:00,547 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 00:55:00,549 [INFO] Starting feature engineering pipeline...
+2026-04-27 00:55:00,549 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 00:55:00,676 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 00:55:00,676 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 00:55:00,733 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 00:55:00,733 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 00:55:00,735 [INFO] Dropped 65 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 00:55:00,735 [Features] [INFO] Dropped 65 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 00:55:00,739 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 00:55:00,739 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 00:55:00,744 [INFO] Data shape: (1935, 58) → (1750, 58) (after NaN cleanup)
+2026-04-27 00:55:00,744 [Features] [INFO] Data shape: (1935, 58) → (1750, 58) (after NaN cleanup)
+2026-04-27 00:55:00,745 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 00:55:00,745 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 00:55:00,806 [INFO] Training data: X=(1304, 120, 57), Y=(1304,) | Test data: X=(326, 120, 57), Y=(326,)
+2026-04-27 00:55:00,806 [LSTM] [INFO] Training data: X=(1304, 120, 57), Y=(1304,) | Test data: X=(326, 120, 57), Y=(326,)
+2026-04-27 00:55:00,816 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 00:55:00,816 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 00:55:01,316 [INFO] Starting main model training...
+2026-04-27 00:55:01,316 [LSTM] [INFO] Starting main model training...
+2026-04-27 01:16:33,908 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 01:16:33,908 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.5220, distance=0.0220 < 0.04 → NO ENTRY
+2026-04-27 01:16:33,912 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=Asia
+2026-04-27 01:16:33,912 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Asia stricter): base_score=0.5370, distance=0.0370 < 0.05 → NO ENTRY
+2026-04-27 01:16:33,914 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 01:16:33,914 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.5170, distance=0.0170 < 0.04 → NO ENTRY
+2026-04-27 01:16:33,917 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 01:16:33,917 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5050, distance=0.0050 < 0.015 → REJECT
+2026-04-27 01:16:33,919 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 01:16:33,919 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5000, distance=0.0000 < 0.015 → REJECT
+2026-04-27 01:16:33,921 [DEBUG] [Ensemble] trend_strength=0.167 → RANGING | LSTM=55.0% RF=45.0% | Session=Asia
+2026-04-27 01:16:33,921 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.4950, distance=0.0050 < 0.015 → REJECT
+2026-04-27 01:16:33,923 [DEBUG] [Ensemble] trend_strength=0.580 → TRANSITIONING | LSTM=67.4% RF=32.6% | Session=Asia
+2026-04-27 01:16:33,927 [DEBUG] [Ensemble] trend_strength=0.612 → TRENDING | LSTM=68.4% RF=31.6% | Session=New York
+2026-04-27 01:16:33,928 [DEBUG] [Ensemble] trend_strength=0.075 → RANGING | LSTM=52.2% RF=47.8% | Session=New York
+2026-04-27 01:16:33,930 [DEBUG] [Ensemble] trend_strength=0.192 → RANGING | LSTM=55.8% RF=44.2% | Session=London
+2026-04-27 01:16:33,930 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.19 (ranging)
+2026-04-27 01:16:33,930 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.19 → HOLD
+2026-04-27 01:16:33,931 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=Asia
+2026-04-27 01:16:33,931 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=1.00 (strong trend)
+2026-04-27 01:16:33,931 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=1.00 → HOLD
+2026-04-27 01:16:33,932 [DEBUG] [Ensemble] trend_strength=0.282 → TRANSITIONING | LSTM=58.5% RF=41.5% | Session=New York
+2026-04-27 01:16:33,933 [DEBUG] [Ensemble] trend_strength=0.647 → TRENDING | LSTM=69.4% RF=30.6% | Session=New York
+2026-04-27 01:16:33,934 [DEBUG] [Ensemble] trend_strength=0.703 → TRENDING | LSTM=71.1% RF=28.9% | Session=Asia
+2026-04-27 01:16:33,935 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=New York
+2026-04-27 01:16:33,936 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=London
+2026-04-27 01:16:33,937 [DEBUG] [Ensemble] trend_strength=0.285 → TRANSITIONING | LSTM=58.5% RF=41.5% | Session=Asia
+2026-04-27 01:16:33,939 [DEBUG] [Ensemble] trend_strength=0.965 → TRENDING | LSTM=79.0% RF=21.0% | Session=New York
+2026-04-27 01:16:33,940 [DEBUG] [Ensemble] trend_strength=0.696 → TRENDING | LSTM=70.9% RF=29.1% | Session=Asia
+2026-04-27 01:16:33,942 [DEBUG] [Ensemble] trend_strength=0.702 → TRENDING | LSTM=71.1% RF=28.9% | Session=London
+2026-04-27 01:16:33,943 [DEBUG] [Ensemble] trend_strength=0.767 → TRENDING | LSTM=73.0% RF=27.0% | Session=London
+2026-04-27 01:16:33,948 [DEBUG] [Ensemble] trend_strength=0.566 → TRANSITIONING | LSTM=67.0% RF=33.0% | Session=London
+2026-04-27 01:16:33,978 [DEBUG] [Ensemble] trend_strength=0.581 → TRANSITIONING | LSTM=67.4% RF=32.6% | Session=New York
+2026-04-27 01:16:33,980 [DEBUG] [Ensemble] trend_strength=0.349 → TRANSITIONING | LSTM=60.5% RF=39.5% | Session=Asia
+2026-04-27 01:16:33,982 [DEBUG] [Ensemble] trend_strength=0.991 → TRENDING | LSTM=79.7% RF=20.3% | Session=Asia
+2026-04-27 01:16:33,982 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.99 (strong trend)
+2026-04-27 01:16:33,982 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.99 → HOLD
+2026-04-27 01:16:33,983 [DEBUG] [Ensemble] trend_strength=0.793 → TRENDING | LSTM=73.8% RF=26.2% | Session=New York
+2026-04-27 01:16:33,986 [DEBUG] [Ensemble] trend_strength=0.803 → TRENDING | LSTM=74.1% RF=25.9% | Session=New York
+2026-04-27 01:16:33,988 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=Asia
+2026-04-27 01:16:33,988 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=1.00 (strong trend)
+2026-04-27 01:16:33,988 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=1.00 → HOLD
+2026-04-27 01:16:34,011 [DEBUG] [Ensemble] trend_strength=0.867 → TRENDING | LSTM=76.0% RF=24.0% | Session=London
+2026-04-27 01:16:34,013 [DEBUG] [Ensemble] trend_strength=0.508 → TRANSITIONING | LSTM=65.2% RF=34.8% | Session=London
+2026-04-27 01:16:34,015 [DEBUG] [Ensemble] trend_strength=0.682 → TRENDING | LSTM=70.4% RF=29.6% | Session=London
+2026-04-27 01:16:34,017 [DEBUG] [Ensemble] trend_strength=0.439 → TRANSITIONING | LSTM=63.2% RF=36.8% | Session=New York
+2026-04-27 01:16:34,018 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=New York
+2026-04-27 01:16:34,020 [DEBUG] [Ensemble] trend_strength=0.309 → TRANSITIONING | LSTM=59.3% RF=40.7% | Session=Asia
+2026-04-27 01:16:34,021 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=New York
+2026-04-27 01:16:34,023 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=London
+2026-04-27 01:16:34,024 [DEBUG] [Ensemble] trend_strength=0.161 → RANGING | LSTM=54.8% RF=45.2% | Session=London
+2026-04-27 01:16:34,024 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.16 (ranging)
+2026-04-27 01:16:34,024 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.16 → HOLD
+2026-04-27 01:16:34,025 [DEBUG] [Ensemble] trend_strength=0.969 → TRENDING | LSTM=79.1% RF=20.9% | Session=London
+2026-04-27 01:16:34,027 [DEBUG] [Ensemble] trend_strength=0.688 → TRENDING | LSTM=70.6% RF=29.4% | Session=New York
+2026-04-27 01:16:34,029 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=Asia
+2026-04-27 01:16:34,029 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=1.00 (strong trend)
+2026-04-27 01:16:34,029 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=1.00 → HOLD
+2026-04-27 01:16:34,030 [DEBUG] [Ensemble] trend_strength=0.488 → TRANSITIONING | LSTM=64.6% RF=35.4% | Session=New York
+2026-04-27 01:16:34,032 [DEBUG] [Ensemble] trend_strength=0.591 → TRANSITIONING | LSTM=67.7% RF=32.3% | Session=Asia
+2026-04-27 01:16:34,034 [DEBUG] [Ensemble] trend_strength=0.349 → TRANSITIONING | LSTM=60.5% RF=39.5% | Session=Asia
+2026-04-27 01:16:34,036 [DEBUG] [Ensemble] trend_strength=0.719 → TRENDING | LSTM=71.6% RF=28.4% | Session=New York
+2026-04-27 01:16:34,038 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=New York
+2026-04-27 01:16:34,040 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=New York
+2026-04-27 01:16:34,042 [DEBUG] [Ensemble] trend_strength=0.578 → TRANSITIONING | LSTM=67.3% RF=32.7% | Session=London
+2026-04-27 01:16:34,045 [DEBUG] [Ensemble] trend_strength=0.061 → RANGING | LSTM=51.8% RF=48.2% | Session=Asia
+2026-04-27 01:16:34,046 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=Asia
+2026-04-27 01:16:34,047 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=1.00 (strong trend)
+2026-04-27 01:16:34,047 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=1.00 → HOLD
+2026-04-27 01:16:34,047 [DEBUG] [Ensemble] trend_strength=0.711 → TRENDING | LSTM=71.3% RF=28.7% | Session=Asia
+2026-04-27 01:16:34,049 [DEBUG] [Ensemble] trend_strength=0.391 → TRANSITIONING | LSTM=61.7% RF=38.3% | Session=Asia
+2026-04-27 01:16:34,050 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=London
+2026-04-27 01:16:34,051 [DEBUG] [Ensemble] trend_strength=0.747 → TRENDING | LSTM=72.4% RF=27.6% | Session=London
+2026-04-27 01:16:34,052 [DEBUG] [Ensemble] trend_strength=0.440 → TRANSITIONING | LSTM=63.2% RF=36.8% | Session=Asia
+2026-04-27 01:16:34,054 [DEBUG] [Ensemble] trend_strength=0.644 → TRENDING | LSTM=69.3% RF=30.7% | Session=London
+2026-04-27 01:16:34,055 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=London
+2026-04-27 01:16:34,059 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=London
+2026-04-27 01:16:34,059 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.5200, distance=0.0200 < 0.04 → NO ENTRY
+2026-04-27 01:16:34,061 [WARNING] [Ensemble] ⛔ LOW_ATR: atr_ratio=0.298, current_atr=0.003000, threshold=0.000200 → SKIP
+2026-04-27 01:16:34,063 [WARNING] [Ensemble] ⛔ LOW_ATR: atr_ratio=0.955, current_atr=0.000100, threshold=0.000200 → SKIP
+2026-04-27 01:16:34,065 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=London
+2026-04-27 01:16:34,068 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 01:16:34,068 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.00 (ranging)
+2026-04-27 01:16:34,069 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.00 → HOLD
+2026-04-27 01:16:34,070 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=Asia
+2026-04-27 01:16:34,071 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=1.00 (strong trend)
+2026-04-27 01:16:34,071 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=1.00 → HOLD
+2026-04-27 01:16:34,072 [DEBUG] [Ensemble] trend_strength=0.500 → TRANSITIONING | LSTM=65.0% RF=35.0% | Session=London
+2026-04-27 01:16:34,075 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=New York
+2026-04-27 01:16:34,078 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 01:16:34,081 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 01:16:34,084 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=New York
+2026-04-27 01:16:34,086 [DEBUG] [Ensemble] trend_strength=0.500 → TRANSITIONING | LSTM=65.0% RF=35.0% | Session=New York
+2026-04-27 01:16:34,089 [DEBUG] [Ensemble] trend_strength=0.833 → TRENDING | LSTM=75.0% RF=25.0% | Session=London
+2026-04-27 01:16:34,092 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=London
+2026-04-27 01:16:34,096 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 01:16:34,096 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5050, distance=0.0050 < 0.015 → REJECT
+2026-04-27 01:16:34,097 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 01:16:34,097 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.5220, distance=0.0220 < 0.04 → NO ENTRY
+2026-04-27 01:16:34,098 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 01:16:34,099 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.00 (ranging)
+2026-04-27 01:16:34,099 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.00 → HOLD
+2026-04-27 01:16:34,099 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=New York
+2026-04-27 01:16:34,101 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=New York
+2026-04-27 01:16:34,101 [WARNING] [Ensemble] ⚠️ MODEL CONFLICT: |LSTM(0.850) - RF(0.200)| = 0.650 >= 0.5 → HOLD
+2026-04-27 01:16:34,103 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=London
+2026-04-27 01:16:34,115 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=New York
+2026-04-27 01:16:34,116 [DEBUG] [Ensemble] trend_strength=0.500 → TRANSITIONING | LSTM=65.0% RF=35.0% | Session=New York
+2026-04-27 01:16:34,118 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 01:16:34,118 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5050, distance=0.0050 < 0.015 → REJECT
+2026-04-27 01:16:34,120 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=New York
+2026-04-27 01:16:34,122 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 01:16:34,122 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5050, distance=0.0050 < 0.015 → REJECT
+2026-04-27 01:16:34,122 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 01:16:34,123 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.5220, distance=0.0220 < 0.04 → NO ENTRY
+2026-04-27 01:16:34,123 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 01:16:34,123 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.00 (ranging)
+2026-04-27 01:16:34,124 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.00 → HOLD
+2026-04-27 01:16:34,126 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=New York
+2026-04-27 01:16:34,129 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=New York
+2026-04-27 01:16:34,132 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=London
+2026-04-27 01:16:34,133 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=Asia
+2026-04-27 01:16:34,136 [WARNING] [Ensemble] ⛔ LOW_ATR: atr_ratio=0.299, current_atr=0.003000, threshold=0.000200 → SKIP
+2026-04-27 01:16:34,138 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 01:16:34,139 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=Asia
+2026-04-27 01:16:34,139 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Asia stricter): base_score=0.5440, distance=0.0440 < 0.05 → NO ENTRY
+2026-04-27 01:16:34,141 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=Asia
+2026-04-27 01:16:34,142 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Asia stricter): base_score=0.5220, distance=0.0220 < 0.05 → NO ENTRY
+2026-04-27 01:16:34,144 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 01:16:34,148 [DEBUG] [Ensemble] trend_strength=0.632 → TRENDING | LSTM=69.0% RF=31.0% | Session=Asia
+2026-04-27 01:16:34,149 [DEBUG] [Ensemble] trend_strength=0.825 → TRENDING | LSTM=74.8% RF=25.2% | Session=London
+2026-04-27 01:16:34,150 [DEBUG] [Ensemble] trend_strength=0.495 → TRANSITIONING | LSTM=64.9% RF=35.1% | Session=Asia
+2026-04-27 01:16:34,151 [DEBUG] [Ensemble] trend_strength=0.486 → TRANSITIONING | LSTM=64.6% RF=35.4% | Session=London
+2026-04-27 01:16:34,153 [DEBUG] [Ensemble] trend_strength=0.928 → TRENDING | LSTM=77.8% RF=22.2% | Session=Asia
+2026-04-27 01:16:34,153 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.93 (strong trend)
+2026-04-27 01:16:34,153 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.93 → HOLD
+2026-04-27 01:16:34,154 [DEBUG] [Ensemble] trend_strength=0.288 → TRANSITIONING | LSTM=58.6% RF=41.4% | Session=London
+2026-04-27 01:16:34,156 [DEBUG] [Ensemble] trend_strength=0.250 → TRANSITIONING | LSTM=57.5% RF=42.5% | Session=Asia
+2026-04-27 01:16:34,157 [DEBUG] [Ensemble] trend_strength=0.439 → TRANSITIONING | LSTM=63.2% RF=36.8% | Session=New York
+2026-04-27 01:16:34,158 [DEBUG] [Ensemble] trend_strength=0.315 → TRANSITIONING | LSTM=59.4% RF=40.6% | Session=Asia
+2026-04-27 01:16:34,160 [DEBUG] [Ensemble] trend_strength=0.509 → TRANSITIONING | LSTM=65.3% RF=34.7% | Session=London
+2026-04-27 01:16:34,161 [DEBUG] [Ensemble] trend_strength=0.320 → TRANSITIONING | LSTM=59.6% RF=40.4% | Session=New York
+2026-04-27 01:16:34,163 [DEBUG] [Ensemble] trend_strength=0.698 → TRENDING | LSTM=70.9% RF=29.1% | Session=London
+2026-04-27 01:16:34,164 [DEBUG] [Ensemble] trend_strength=0.615 → TRENDING | LSTM=68.4% RF=31.6% | Session=New York
+2026-04-27 01:16:34,165 [DEBUG] [Ensemble] trend_strength=0.211 → TRANSITIONING | LSTM=56.3% RF=43.7% | Session=New York
+2026-04-27 01:16:34,166 [DEBUG] [Ensemble] trend_strength=0.738 → TRENDING | LSTM=72.1% RF=27.9% | Session=London
+2026-04-27 01:16:34,167 [DEBUG] [Ensemble] trend_strength=0.698 → TRENDING | LSTM=70.9% RF=29.1% | Session=London
+2026-04-27 01:16:34,169 [DEBUG] [Ensemble] trend_strength=0.514 → TRANSITIONING | LSTM=65.4% RF=34.6% | Session=London
+2026-04-27 01:16:34,170 [DEBUG] [Ensemble] trend_strength=0.465 → TRANSITIONING | LSTM=64.0% RF=36.0% | Session=New York
+2026-04-27 01:16:34,171 [DEBUG] [Ensemble] trend_strength=0.423 → TRANSITIONING | LSTM=62.7% RF=37.3% | Session=Asia
+2026-04-27 01:16:34,172 [DEBUG] [Ensemble] trend_strength=0.327 → TRANSITIONING | LSTM=59.8% RF=40.2% | Session=Asia
+2026-04-27 01:16:34,173 [DEBUG] [Ensemble] trend_strength=0.776 → TRENDING | LSTM=73.3% RF=26.7% | Session=London
+2026-04-27 01:16:34,174 [DEBUG] [Ensemble] trend_strength=0.919 → TRENDING | LSTM=77.6% RF=22.4% | Session=Asia
+2026-04-27 01:16:34,174 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.92 (strong trend)
+2026-04-27 01:16:34,175 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.92 → HOLD
+2026-04-27 01:16:34,175 [DEBUG] [Ensemble] trend_strength=0.233 → TRANSITIONING | LSTM=57.0% RF=43.0% | Session=Asia
+2026-04-27 01:16:34,177 [DEBUG] [Ensemble] trend_strength=0.459 → TRANSITIONING | LSTM=63.8% RF=36.2% | Session=Asia
+2026-04-27 01:16:34,178 [DEBUG] [Ensemble] trend_strength=0.877 → TRENDING | LSTM=76.3% RF=23.7% | Session=Asia
+2026-04-27 01:16:34,179 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.88 (strong trend)
+2026-04-27 01:16:34,179 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.88 → HOLD
+2026-04-27 01:16:34,179 [DEBUG] [Ensemble] trend_strength=0.342 → TRANSITIONING | LSTM=60.3% RF=39.7% | Session=London
+2026-04-27 01:16:34,181 [DEBUG] [Ensemble] trend_strength=0.547 → TRANSITIONING | LSTM=66.4% RF=33.6% | Session=London
+2026-04-27 01:16:34,182 [DEBUG] [Ensemble] trend_strength=0.622 → TRENDING | LSTM=68.7% RF=31.3% | Session=Asia
+2026-04-27 01:16:34,183 [DEBUG] [Ensemble] trend_strength=0.842 → TRENDING | LSTM=75.3% RF=24.7% | Session=Asia
+2026-04-27 01:16:34,183 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.84 (strong trend)
+2026-04-27 01:16:34,184 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.84 → HOLD
+2026-04-27 01:16:34,184 [DEBUG] [Ensemble] trend_strength=0.256 → TRANSITIONING | LSTM=57.7% RF=42.3% | Session=New York
+2026-04-27 01:16:34,185 [DEBUG] [Ensemble] trend_strength=0.927 → TRENDING | LSTM=77.8% RF=22.2% | Session=London
+2026-04-27 01:16:34,187 [DEBUG] [Ensemble] trend_strength=0.441 → TRANSITIONING | LSTM=63.2% RF=36.8% | Session=Asia
+2026-04-27 01:16:34,188 [DEBUG] [Ensemble] trend_strength=0.191 → RANGING | LSTM=55.7% RF=44.3% | Session=Asia
+2026-04-27 01:16:34,190 [DEBUG] [Ensemble] trend_strength=0.282 → TRANSITIONING | LSTM=58.5% RF=41.5% | Session=New York
+2026-04-27 01:16:34,191 [DEBUG] [Ensemble] trend_strength=0.344 → TRANSITIONING | LSTM=60.3% RF=39.7% | Session=Asia
+2026-04-27 01:16:34,192 [DEBUG] [Ensemble] trend_strength=0.547 → TRANSITIONING | LSTM=66.4% RF=33.6% | Session=New York
+2026-04-27 01:16:34,194 [DEBUG] [Ensemble] trend_strength=0.561 → TRANSITIONING | LSTM=66.8% RF=33.2% | Session=London
+2026-04-27 01:16:34,195 [DEBUG] [Ensemble] trend_strength=0.997 → TRENDING | LSTM=79.9% RF=20.1% | Session=Asia
+2026-04-27 01:16:34,196 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=1.00 (strong trend)
+2026-04-27 01:16:34,196 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=1.00 → HOLD
+2026-04-27 01:16:34,197 [DEBUG] [Ensemble] trend_strength=0.610 → TRENDING | LSTM=68.3% RF=31.7% | Session=London
+2026-04-27 01:16:34,198 [DEBUG] [Ensemble] trend_strength=0.857 → TRENDING | LSTM=75.7% RF=24.3% | Session=London
+2026-04-27 01:16:34,199 [DEBUG] [Ensemble] trend_strength=0.208 → TRANSITIONING | LSTM=56.3% RF=43.7% | Session=Asia
+2026-04-27 01:16:34,200 [DEBUG] [Ensemble] trend_strength=0.190 → RANGING | LSTM=55.7% RF=44.3% | Session=Asia
+2026-04-27 01:16:34,201 [DEBUG] [Ensemble] trend_strength=0.715 → TRENDING | LSTM=71.5% RF=28.5% | Session=New York
+2026-04-27 01:16:34,202 [DEBUG] [Ensemble] trend_strength=0.851 → TRENDING | LSTM=75.5% RF=24.5% | Session=London
+2026-04-27 01:16:34,203 [DEBUG] [Ensemble] trend_strength=0.990 → TRENDING | LSTM=79.7% RF=20.3% | Session=Asia
+2026-04-27 01:16:34,203 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.99 (strong trend)
+2026-04-27 01:16:34,203 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.99 → HOLD
+2026-04-27 01:16:34,204 [DEBUG] [Ensemble] trend_strength=0.872 → TRENDING | LSTM=76.2% RF=23.8% | Session=New York
+2026-04-27 01:16:34,205 [DEBUG] [Ensemble] trend_strength=0.525 → TRANSITIONING | LSTM=65.7% RF=34.3% | Session=London
+2026-04-27 01:16:34,207 [DEBUG] [Ensemble] trend_strength=0.266 → TRANSITIONING | LSTM=58.0% RF=42.0% | Session=New York
+2026-04-27 01:16:34,208 [DEBUG] [Ensemble] trend_strength=0.795 → TRENDING | LSTM=73.9% RF=26.1% | Session=London
+2026-04-27 01:16:34,209 [DEBUG] [Ensemble] trend_strength=0.473 → TRANSITIONING | LSTM=64.2% RF=35.8% | Session=New York
+2026-04-27 01:16:34,210 [DEBUG] [Ensemble] trend_strength=0.767 → TRENDING | LSTM=73.0% RF=27.0% | Session=New York
+2026-04-27 01:16:34,212 [DEBUG] [Ensemble] trend_strength=0.541 → TRANSITIONING | LSTM=66.2% RF=33.8% | Session=London
+2026-04-27 01:16:34,213 [DEBUG] [Ensemble] trend_strength=0.903 → TRENDING | LSTM=77.1% RF=22.9% | Session=London
+2026-04-27 01:16:34,214 [DEBUG] [Ensemble] trend_strength=0.410 → TRANSITIONING | LSTM=62.3% RF=37.7% | Session=Asia
+2026-04-27 01:16:34,215 [DEBUG] [Ensemble] trend_strength=0.283 → TRANSITIONING | LSTM=58.5% RF=41.5% | Session=New York
+2026-04-27 01:16:34,216 [DEBUG] [Ensemble] trend_strength=0.811 → TRENDING | LSTM=74.3% RF=25.7% | Session=Asia
+2026-04-27 01:16:34,216 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.81 (strong trend)
+2026-04-27 01:16:34,217 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.81 → HOLD
+2026-04-27 01:16:34,217 [DEBUG] [Ensemble] trend_strength=0.735 → TRENDING | LSTM=72.1% RF=27.9% | Session=London
+2026-04-27 01:16:34,218 [DEBUG] [Ensemble] trend_strength=0.914 → TRENDING | LSTM=77.4% RF=22.6% | Session=New York
+2026-04-27 01:16:34,219 [DEBUG] [Ensemble] trend_strength=0.373 → TRANSITIONING | LSTM=61.2% RF=38.8% | Session=Asia
+2026-04-27 01:16:34,220 [DEBUG] [Ensemble] trend_strength=0.546 → TRANSITIONING | LSTM=66.4% RF=33.6% | Session=Asia
+2026-04-27 01:16:34,221 [DEBUG] [Ensemble] trend_strength=0.861 → TRENDING | LSTM=75.8% RF=24.2% | Session=London
+2026-04-27 01:16:34,222 [DEBUG] [Ensemble] trend_strength=0.772 → TRENDING | LSTM=73.2% RF=26.8% | Session=New York
+2026-04-27 01:16:34,224 [DEBUG] [Ensemble] trend_strength=0.627 → TRENDING | LSTM=68.8% RF=31.2% | Session=London
+2026-04-27 01:16:34,225 [DEBUG] [Ensemble] trend_strength=0.916 → TRENDING | LSTM=77.5% RF=22.5% | Session=London
+2026-04-27 01:16:34,226 [DEBUG] [Ensemble] trend_strength=0.272 → TRANSITIONING | LSTM=58.2% RF=41.8% | Session=New York
+2026-04-27 01:16:34,227 [DEBUG] [Ensemble] trend_strength=0.642 → TRENDING | LSTM=69.2% RF=30.8% | Session=Asia
+2026-04-27 01:16:34,229 [DEBUG] [Ensemble] trend_strength=0.595 → TRANSITIONING | LSTM=67.8% RF=32.2% | Session=London
+2026-04-27 01:16:34,230 [DEBUG] [Ensemble] trend_strength=0.269 → TRANSITIONING | LSTM=58.1% RF=41.9% | Session=New York
+2026-04-27 01:16:34,231 [DEBUG] [Ensemble] trend_strength=0.844 → TRENDING | LSTM=75.3% RF=24.7% | Session=Asia
+2026-04-27 01:16:34,232 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.84 (strong trend)
+2026-04-27 01:16:34,232 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.84 → HOLD
+2026-04-27 01:16:34,232 [DEBUG] [Ensemble] trend_strength=0.819 → TRENDING | LSTM=74.6% RF=25.4% | Session=London
+2026-04-27 01:16:34,234 [DEBUG] [Ensemble] trend_strength=0.334 → TRANSITIONING | LSTM=60.0% RF=40.0% | Session=Asia
+2026-04-27 01:16:34,236 [DEBUG] [Ensemble] trend_strength=0.862 → TRENDING | LSTM=75.8% RF=24.2% | Session=Asia
+2026-04-27 01:16:34,236 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.86 (strong trend)
+2026-04-27 01:16:34,236 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.86 → HOLD
+2026-04-27 01:16:34,237 [DEBUG] [Ensemble] trend_strength=0.779 → TRENDING | LSTM=73.4% RF=26.6% | Session=Asia
+2026-04-27 01:16:34,239 [DEBUG] [Ensemble] trend_strength=0.348 → TRANSITIONING | LSTM=60.5% RF=39.5% | Session=London
+2026-04-27 01:16:34,240 [DEBUG] [Ensemble] trend_strength=0.846 → TRENDING | LSTM=75.4% RF=24.6% | Session=Asia
+2026-04-27 01:16:34,241 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.85 (strong trend)
+2026-04-27 01:16:34,241 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.85 → HOLD
+2026-04-27 01:16:34,242 [DEBUG] [Ensemble] trend_strength=0.927 → TRENDING | LSTM=77.8% RF=22.2% | Session=Asia
+2026-04-27 01:16:34,242 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.93 (strong trend)
+2026-04-27 01:16:34,242 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.93 → HOLD
+2026-04-27 01:16:34,243 [DEBUG] [Ensemble] trend_strength=0.801 → TRENDING | LSTM=74.0% RF=26.0% | Session=Asia
+2026-04-27 01:16:34,244 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.80 (strong trend)
+2026-04-27 01:16:34,244 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.80 → HOLD
+2026-04-27 01:16:34,245 [DEBUG] [Ensemble] trend_strength=0.173 → RANGING | LSTM=55.2% RF=44.8% | Session=New York
+2026-04-27 01:16:34,247 [DEBUG] [Ensemble] trend_strength=0.946 → TRENDING | LSTM=78.4% RF=21.6% | Session=London
+2026-04-27 01:16:34,248 [DEBUG] [Ensemble] trend_strength=0.605 → TRENDING | LSTM=68.2% RF=31.8% | Session=London
+2026-04-27 01:16:34,249 [DEBUG] [Ensemble] trend_strength=0.857 → TRENDING | LSTM=75.7% RF=24.3% | Session=Asia
+2026-04-27 01:16:34,249 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.86 (strong trend)
+2026-04-27 01:16:34,249 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.86 → HOLD
+2026-04-27 01:16:34,250 [DEBUG] [Ensemble] trend_strength=0.511 → TRANSITIONING | LSTM=65.3% RF=34.7% | Session=Asia
+2026-04-27 01:16:34,251 [DEBUG] [Ensemble] trend_strength=0.817 → TRENDING | LSTM=74.5% RF=25.5% | Session=London
+2026-04-27 01:16:34,252 [DEBUG] [Ensemble] trend_strength=0.214 → TRANSITIONING | LSTM=56.4% RF=43.6% | Session=London
+2026-04-27 01:16:34,253 [DEBUG] [Ensemble] trend_strength=0.991 → TRENDING | LSTM=79.7% RF=20.3% | Session=London
+2026-04-27 01:16:34,255 [DEBUG] [Ensemble] trend_strength=0.563 → TRANSITIONING | LSTM=66.9% RF=33.1% | Session=Asia
+2026-04-27 01:16:34,256 [DEBUG] [Ensemble] trend_strength=0.822 → TRENDING | LSTM=74.7% RF=25.3% | Session=Asia
+2026-04-27 01:16:34,256 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.82 (strong trend)
+2026-04-27 01:16:34,256 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.82 → HOLD
+2026-04-27 01:16:34,257 [DEBUG] [Ensemble] trend_strength=0.390 → TRANSITIONING | LSTM=61.7% RF=38.3% | Session=Asia
+2026-04-27 01:16:34,258 [DEBUG] [Ensemble] trend_strength=0.386 → TRANSITIONING | LSTM=61.6% RF=38.4% | Session=London
+2026-04-27 01:16:34,259 [DEBUG] [Ensemble] trend_strength=0.620 → TRENDING | LSTM=68.6% RF=31.4% | Session=London
+2026-04-27 01:16:34,261 [DEBUG] [Ensemble] trend_strength=0.706 → TRENDING | LSTM=71.2% RF=28.8% | Session=Asia
+2026-04-27 01:16:34,262 [DEBUG] [Ensemble] trend_strength=0.780 → TRENDING | LSTM=73.4% RF=26.6% | Session=Asia
+2026-04-27 01:16:34,263 [DEBUG] [Ensemble] trend_strength=0.952 → TRENDING | LSTM=78.5% RF=21.5% | Session=London
+2026-04-27 01:16:34,264 [DEBUG] [Ensemble] trend_strength=0.210 → TRANSITIONING | LSTM=56.3% RF=43.7% | Session=Asia
+2026-04-27 01:16:34,266 [DEBUG] [Ensemble] trend_strength=0.431 → TRANSITIONING | LSTM=62.9% RF=37.1% | Session=London
+2026-04-27 01:16:34,267 [DEBUG] [Ensemble] trend_strength=0.694 → TRENDING | LSTM=70.8% RF=29.2% | Session=New York
+2026-04-27 01:16:34,268 [DEBUG] [Ensemble] trend_strength=0.240 → TRANSITIONING | LSTM=57.2% RF=42.8% | Session=London
+2026-04-27 01:16:34,269 [DEBUG] [Ensemble] trend_strength=0.439 → TRANSITIONING | LSTM=63.2% RF=36.8% | Session=London
+2026-04-27 01:16:34,270 [DEBUG] [Ensemble] trend_strength=0.508 → TRANSITIONING | LSTM=65.3% RF=34.7% | Session=Asia
+2026-04-27 01:16:34,271 [DEBUG] [Ensemble] trend_strength=0.386 → TRANSITIONING | LSTM=61.6% RF=38.4% | Session=London
+2026-04-27 01:16:34,288 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 01:16:34,288 [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 01:16:34,289 [DEBUG] [AdaptiveRisk] session=London, trend=0.700, confidence=HIGH, regime_changed=False → risk=1.00%
+2026-04-27 01:16:34,291 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 01:16:34,291 [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 01:16:34,291 [DEBUG] [AdaptiveRisk] session=Asia, trend=0.300, confidence=MEDIUM, regime_changed=False → risk=0.50%
+2026-04-27 01:16:34,292 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 01:16:34,293 [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 01:16:34,293 [INFO] [AdaptiveRisk] Regime changed recently → risk reduced to 0.70%
+2026-04-27 01:16:34,293 [DEBUG] [AdaptiveRisk] session=London, trend=0.700, confidence=HIGH, regime_changed=True → risk=0.70%
+2026-04-27 01:16:34,296 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 01:16:34,296 [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 01:16:34,296 [INFO] [Regime] Initial regime set: TRENDING (trend_strength=0.700)
+2026-04-27 01:16:34,296 [DEBUG] [Regime] Pending switch to RANGING (1/2 confirmations, trend_strength=0.300)
+2026-04-27 01:16:34,297 [INFO] [Regime] SWITCH: TRENDING → RANGING (confirmed after 2 candles, trend_strength=0.300)
+2026-04-27 01:16:34,299 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 01:16:34,299 [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 01:16:34,300 [INFO] [Regime] Initial regime set: TRENDING (trend_strength=0.700)
+2026-04-27 01:16:34,300 [DEBUG] [Regime] Pending switch to RANGING (1/2 confirmations, trend_strength=0.300)
+2026-04-27 01:20:02,052 [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-27 01:20:02,052 [MT5Engine] [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-27 01:20:02,064 [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-27 01:20:02,064 [MT5Engine] [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-27 01:20:02,066 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 01:20:02,066 [TradeManager] [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 01:20:02,066 [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 01:20:02,066 [TradeManager] [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 01:20:02,066 [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-27
+2026-04-27 01:20:02,066 [TradeManager] [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-27
+2026-04-27 01:20:06,934 [INFO] [RF] Loaded saved model from disk.
+2026-04-27 01:20:06,934 [RF_Model] [INFO] [RF] Loaded saved model from disk.
+2026-04-27 01:20:06,938 [WARNING] [Market] No tick for XAUUSD. Market may be closed.
+2026-04-27 01:20:06,938 [DataLoader] [WARNING] [Market] No tick for XAUUSD. Market may be closed.
+2026-04-27 01:20:06,938 [WARNING] [Market] US30 trading is disabled.
+2026-04-27 01:20:06,938 [DataLoader] [WARNING] [Market] US30 trading is disabled.
+2026-04-27 01:20:06,938 [Main] [INFO] 
+=================================================================
+2026-04-27 01:20:06,938 [Main] [INFO] [PORTFOLIO EVALUATION] Candle #1 | Loop Trigger Time: 2026-04-26 22:20:06
+2026-04-27 01:20:06,938 [Main] [INFO] =================================================================
+2026-04-27 01:20:06,938 [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 01:20:06,938 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 01:20:07,108 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 01:20:07,108 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 01:20:07,135 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 01:20:07,135 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 01:20:07,155 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 01:20:07,155 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 01:20:07,156 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 01:20:07,156 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 01:20:07,157 [INFO] Starting feature engineering pipeline...
+2026-04-27 01:20:07,157 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 01:20:07,302 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 01:20:07,302 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 01:20:07,352 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 01:20:07,352 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 01:20:07,356 [INFO] Dropped 65 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 01:20:07,356 [Features] [INFO] Dropped 65 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 01:20:07,360 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 01:20:07,360 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 01:20:07,364 [INFO] Data shape: (1935, 58) → (1750, 58) (after NaN cleanup)
+2026-04-27 01:20:07,364 [Features] [INFO] Data shape: (1935, 58) → (1750, 58) (after NaN cleanup)
+2026-04-27 01:20:07,364 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 01:20:07,364 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 01:20:07,407 [INFO] Training data: X=(1304, 120, 57), Y=(1304,) | Test data: X=(326, 120, 57), Y=(326,)
+2026-04-27 01:20:07,407 [LSTM] [INFO] Training data: X=(1304, 120, 57), Y=(1304,) | Test data: X=(326, 120, 57), Y=(326,)
+2026-04-27 01:20:07,409 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 01:20:07,409 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 01:20:07,995 [INFO] Starting main model training...
+2026-04-27 01:20:07,995 [LSTM] [INFO] Starting main model training...
+2026-04-27 01:20:47,805 [INFO] FINAL TEST ACCURACY: 49.08% | LOSS: 0.6969
+2026-04-27 01:20:47,805 [LSTM] [INFO] FINAL TEST ACCURACY: 49.08% | LOSS: 0.6969
+2026-04-27 01:20:48,238 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 01:20:48,238 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 01:20:48,996 [INFO] [RF] Engineering de-correlated features...
+2026-04-27 01:20:48,996 [RF_Model] [INFO] [RF] Engineering de-correlated features...
+2026-04-27 01:20:49,959 [INFO] [RF] ✅ Training complete. Accuracy: 58.65%
+2026-04-27 01:20:49,959 [RF_Model] [INFO] [RF] ✅ Training complete. Accuracy: 58.65%
+2026-04-27 01:20:49,960 [INFO] [RF] Top 5 Features:
+2026-04-27 01:20:49,960 [RF_Model] [INFO] [RF] Top 5 Features:
+2026-04-27 01:20:49,961 [INFO] [RF]   1. di_ratio: 0.0408
+2026-04-27 01:20:49,961 [RF_Model] [INFO] [RF]   1. di_ratio: 0.0408
+2026-04-27 01:20:49,961 [INFO] [RF]   2. close_std_50: 0.0381
+2026-04-27 01:20:49,961 [RF_Model] [INFO] [RF]   2. close_std_50: 0.0381
+2026-04-27 01:20:49,962 [INFO] [RF]   3. returns_kurt_20: 0.0359
+2026-04-27 01:20:49,962 [RF_Model] [INFO] [RF]   3. returns_kurt_20: 0.0359
+2026-04-27 01:20:49,962 [INFO] [RF]   4. RSI_x_ATR: 0.0347
+2026-04-27 01:20:49,962 [RF_Model] [INFO] [RF]   4. RSI_x_ATR: 0.0347
+2026-04-27 01:20:49,963 [INFO] [RF]   5. ATR_delta_5: 0.0344
+2026-04-27 01:20:49,963 [RF_Model] [INFO] [RF]   5. ATR_delta_5: 0.0344
+2026-04-27 01:20:50,089 [INFO] [RF] Model saved to disk.
+2026-04-27 01:20:50,089 [RF_Model] [INFO] [RF] Model saved to disk.
+2026-04-27 01:20:50,167 [DEBUG] [Ensemble] trend_strength=0.443 → TRANSITIONING | LSTM=63.3% RF=36.7% | Session=Asia
+2026-04-27 01:20:50,167 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.443 → TRANSITIONING | LSTM=63.3% RF=36.7% | Session=Asia
+2026-04-27 01:20:50,169 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5025, distance=0.0025 < 0.015 → REJECT
+2026-04-27 01:20:50,169 [Ensemble] [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5025, distance=0.0025 < 0.015 → REJECT
+2026-04-27 01:20:50,172 [ERROR] [Ensemble] Failed to log decision: module 'datetime' has no attribute 'UTC'
+2026-04-27 01:20:50,172 [Ensemble] [ERROR] [Ensemble] Failed to log decision: module 'datetime' has no attribute 'UTC'
+2026-04-27 01:20:50,174 [INFO] [Regime] Initial regime set: RANGING (trend_strength=0.443)
+2026-04-27 01:20:50,174 [TradeManager] [INFO] [Regime] Initial regime set: RANGING (trend_strength=0.443)
+2026-04-27 01:20:50,177 [Main] [INFO] [EURUSD] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=LOW | session=Asia
+2026-04-27 01:20:50,178 [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 01:20:50,178 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 01:20:50,216 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 01:20:50,216 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 01:20:50,234 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 01:20:50,234 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 01:20:50,256 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 01:20:50,256 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 01:20:50,257 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 01:20:50,257 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 01:20:50,259 [INFO] Starting feature engineering pipeline...
+2026-04-27 01:20:50,259 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 01:20:50,365 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 01:20:50,365 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 01:20:50,407 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 01:20:50,407 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 01:20:50,411 [INFO] Dropped 76 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 01:20:50,411 [Features] [INFO] Dropped 76 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 01:20:50,416 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 01:20:50,416 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 01:20:50,422 [INFO] Data shape: (1924, 58) → (1744, 58) (after NaN cleanup)
+2026-04-27 01:20:50,422 [Features] [INFO] Data shape: (1924, 58) → (1744, 58) (after NaN cleanup)
+2026-04-27 01:20:50,422 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 01:20:50,422 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 01:20:50,498 [INFO] Training data: X=(1299, 120, 57), Y=(1299,) | Test data: X=(325, 120, 57), Y=(325,)
+2026-04-27 01:20:50,498 [LSTM] [INFO] Training data: X=(1299, 120, 57), Y=(1299,) | Test data: X=(325, 120, 57), Y=(325,)
+2026-04-27 01:20:50,507 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 01:20:50,507 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 01:20:50,976 [INFO] Starting main model training...
+2026-04-27 01:20:50,976 [LSTM] [INFO] Starting main model training...
+2026-04-27 01:21:26,311 [INFO] FINAL TEST ACCURACY: 46.77% | LOSS: 0.6991
+2026-04-27 01:21:26,311 [LSTM] [INFO] FINAL TEST ACCURACY: 46.77% | LOSS: 0.6991
+2026-04-27 01:21:26,880 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 01:21:26,880 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 01:21:27,672 [DEBUG] [Ensemble] trend_strength=0.654 → TRENDING | LSTM=69.6% RF=30.4% | Session=Asia
+2026-04-27 01:21:27,672 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.654 → TRENDING | LSTM=69.6% RF=30.4% | Session=Asia
+2026-04-27 01:21:27,673 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Asia stricter): base_score=0.5224, distance=0.0224 < 0.05 → NO ENTRY
+2026-04-27 01:21:27,673 [Ensemble] [INFO] [Ensemble] ⚠️ WEAK_ZONE (Asia stricter): base_score=0.5224, distance=0.0224 < 0.05 → NO ENTRY
+2026-04-27 01:21:27,674 [ERROR] [Ensemble] Failed to log decision: module 'datetime' has no attribute 'UTC'
+2026-04-27 01:21:27,674 [Ensemble] [ERROR] [Ensemble] Failed to log decision: module 'datetime' has no attribute 'UTC'
+2026-04-27 01:21:27,675 [DEBUG] [Regime] Pending switch to TRENDING (1/2 confirmations, trend_strength=0.654)
+2026-04-27 01:21:27,675 [TradeManager] [DEBUG] [Regime] Pending switch to TRENDING (1/2 confirmations, trend_strength=0.654)
+2026-04-27 01:21:27,675 [Main] [INFO] [GBPUSD] SKIP: direction=None | reason=WEAK_ZONE (Asia stricter) | confidence=LOW | session=Asia
+2026-04-27 01:21:27,676 [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 01:21:27,676 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 01:21:27,706 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 01:21:27,706 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 01:21:27,724 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 01:21:27,724 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 01:21:27,740 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 01:21:27,740 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 01:21:27,741 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 01:21:27,741 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 01:21:27,743 [INFO] Starting feature engineering pipeline...
+2026-04-27 01:21:27,743 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 01:21:27,844 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 01:21:27,844 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 01:21:27,909 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 01:21:27,909 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 01:21:27,915 [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 01:21:27,915 [Features] [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 01:21:27,919 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 01:21:27,919 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 01:21:27,924 [INFO] Data shape: (1987, 58) → (1801, 58) (after NaN cleanup)
+2026-04-27 01:21:27,924 [Features] [INFO] Data shape: (1987, 58) → (1801, 58) (after NaN cleanup)
+2026-04-27 01:21:27,924 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 01:21:27,924 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 01:21:27,985 [INFO] Training data: X=(1344, 120, 57), Y=(1344,) | Test data: X=(337, 120, 57), Y=(337,)
+2026-04-27 01:21:27,985 [LSTM] [INFO] Training data: X=(1344, 120, 57), Y=(1344,) | Test data: X=(337, 120, 57), Y=(337,)
+2026-04-27 01:21:27,996 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 01:21:27,996 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 01:21:28,520 [INFO] Starting main model training...
+2026-04-27 01:21:28,520 [LSTM] [INFO] Starting main model training...
+2026-04-27 01:22:00,169 [INFO] FINAL TEST ACCURACY: 55.79% | LOSS: 0.6910
+2026-04-27 01:22:00,169 [LSTM] [INFO] FINAL TEST ACCURACY: 55.79% | LOSS: 0.6910
+2026-04-27 01:22:00,576 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 01:22:00,576 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 01:22:01,428 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=Asia
+2026-04-27 01:22:01,428 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=Asia
+2026-04-27 01:22:01,429 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.4967, distance=0.0033 < 0.015 → REJECT
+2026-04-27 01:22:01,429 [Ensemble] [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.4967, distance=0.0033 < 0.015 → REJECT
+2026-04-27 01:22:01,430 [ERROR] [Ensemble] Failed to log decision: module 'datetime' has no attribute 'UTC'
+2026-04-27 01:22:01,430 [Ensemble] [ERROR] [Ensemble] Failed to log decision: module 'datetime' has no attribute 'UTC'
+2026-04-27 01:22:01,431 [Main] [INFO] [USDJPY] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=LOW | session=Asia
+2026-04-27 01:22:01,432 [Main] [INFO] No viable opportunities this cycle across portfolio.
+2026-04-27 01:25:00,444 [Main] [INFO] 
+=================================================================
+2026-04-27 01:25:00,447 [Main] [INFO] [PORTFOLIO EVALUATION] Candle #2 | Loop Trigger Time: 2026-04-26 22:25:00
+2026-04-27 01:25:00,447 [Main] [INFO] =================================================================
+2026-04-27 01:25:00,447 [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 01:25:00,447 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 01:25:00,474 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 01:25:00,474 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 01:25:00,498 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 01:25:00,498 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 01:25:00,527 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 01:25:00,527 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 01:25:00,527 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 01:25:00,527 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 01:25:00,539 [INFO] Starting feature engineering pipeline...
+2026-04-27 01:25:00,539 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 01:25:00,899 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 01:25:00,899 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 01:25:01,021 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 01:25:01,021 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 01:25:01,029 [INFO] Dropped 64 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 01:25:01,029 [Features] [INFO] Dropped 64 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 01:25:01,038 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 01:25:01,038 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 01:25:01,047 [INFO] Data shape: (1936, 58) → (1750, 58) (after NaN cleanup)
+2026-04-27 01:25:01,047 [Features] [INFO] Data shape: (1936, 58) → (1750, 58) (after NaN cleanup)
+2026-04-27 01:25:01,049 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 01:25:01,049 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 01:25:01,149 [INFO] Training data: X=(1304, 120, 57), Y=(1304,) | Test data: X=(326, 120, 57), Y=(326,)
+2026-04-27 01:25:01,149 [LSTM] [INFO] Training data: X=(1304, 120, 57), Y=(1304,) | Test data: X=(326, 120, 57), Y=(326,)
+2026-04-27 01:25:01,165 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 01:25:01,165 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 01:25:02,263 [INFO] Starting main model training...
+2026-04-27 01:25:02,263 [LSTM] [INFO] Starting main model training...
+2026-04-27 01:26:14,161 [INFO] FINAL TEST ACCURACY: 49.39% | LOSS: 0.7065
+2026-04-27 01:26:14,161 [LSTM] [INFO] FINAL TEST ACCURACY: 49.39% | LOSS: 0.7065
+2026-04-27 01:26:14,963 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 01:26:14,963 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 01:26:15,952 [DEBUG] [Ensemble] trend_strength=0.199 → RANGING | LSTM=56.0% RF=44.0% | Session=Asia
+2026-04-27 01:26:15,952 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.199 → RANGING | LSTM=56.0% RF=44.0% | Session=Asia
+2026-04-27 01:26:15,953 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Asia stricter): base_score=0.4710, distance=0.0290 < 0.05 → NO ENTRY
+2026-04-27 01:26:15,953 [Ensemble] [INFO] [Ensemble] ⚠️ WEAK_ZONE (Asia stricter): base_score=0.4710, distance=0.0290 < 0.05 → NO ENTRY
+2026-04-27 01:26:15,955 [ERROR] [Ensemble] Failed to log decision: module 'datetime' has no attribute 'UTC'
+2026-04-27 01:26:15,955 [Ensemble] [ERROR] [Ensemble] Failed to log decision: module 'datetime' has no attribute 'UTC'
+2026-04-27 01:26:15,955 [Main] [INFO] [EURUSD] SKIP: direction=None | reason=WEAK_ZONE (Asia stricter) | confidence=LOW | session=Asia
+2026-04-27 01:26:15,956 [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 01:26:15,956 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 01:26:15,969 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 01:26:15,969 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 01:26:15,986 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 01:26:15,986 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 01:26:15,996 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 01:26:15,996 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 01:26:15,997 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 01:26:15,997 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 01:26:15,999 [INFO] Starting feature engineering pipeline...
+2026-04-27 01:26:15,999 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 01:26:16,211 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 01:26:16,211 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 01:26:16,285 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 01:26:16,285 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 01:26:16,291 [INFO] Dropped 70 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 01:26:16,291 [Features] [INFO] Dropped 70 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 01:26:16,298 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 01:26:16,298 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 01:26:16,305 [INFO] Data shape: (1930, 58) → (1744, 58) (after NaN cleanup)
+2026-04-27 01:26:16,305 [Features] [INFO] Data shape: (1930, 58) → (1744, 58) (after NaN cleanup)
+2026-04-27 01:26:16,306 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 01:26:16,306 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 01:26:16,464 [INFO] Training data: X=(1299, 120, 57), Y=(1299,) | Test data: X=(325, 120, 57), Y=(325,)
+2026-04-27 01:26:16,464 [LSTM] [INFO] Training data: X=(1299, 120, 57), Y=(1299,) | Test data: X=(325, 120, 57), Y=(325,)
+2026-04-27 01:26:16,484 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 01:26:16,484 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 01:26:17,347 [INFO] Starting main model training...
+2026-04-27 01:26:17,347 [LSTM] [INFO] Starting main model training...
+2026-04-27 01:27:10,081 [INFO] FINAL TEST ACCURACY: 52.31% | LOSS: 0.7004
+2026-04-27 01:27:10,081 [LSTM] [INFO] FINAL TEST ACCURACY: 52.31% | LOSS: 0.7004
+2026-04-27 01:27:11,266 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 01:27:11,266 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 01:27:12,493 [tensorflow] [WARNING] 5 out of the last 5 calls to <function Model.make_predict_function.<locals>.predict_function at 0x00000216CB4290D0> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+2026-04-27 01:27:12,611 [DEBUG] [Ensemble] trend_strength=0.213 → TRANSITIONING | LSTM=56.4% RF=43.6% | Session=Asia
+2026-04-27 01:27:12,611 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.213 → TRANSITIONING | LSTM=56.4% RF=43.6% | Session=Asia
+2026-04-27 01:27:12,613 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.4873, distance=0.0127 < 0.015 → REJECT
+2026-04-27 01:27:12,613 [Ensemble] [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.4873, distance=0.0127 < 0.015 → REJECT
+2026-04-27 01:27:12,615 [ERROR] [Ensemble] Failed to log decision: module 'datetime' has no attribute 'UTC'
+2026-04-27 01:27:12,615 [Ensemble] [ERROR] [Ensemble] Failed to log decision: module 'datetime' has no attribute 'UTC'
+2026-04-27 01:27:12,615 [Main] [INFO] [GBPUSD] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=LOW | session=Asia
+2026-04-27 01:27:12,616 [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 01:27:12,616 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 01:27:12,644 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 01:27:12,644 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 01:27:12,669 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 01:27:12,669 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 01:27:12,696 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 01:27:12,696 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 01:27:12,698 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 01:27:12,698 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 01:27:12,703 [INFO] Starting feature engineering pipeline...
+2026-04-27 01:27:12,703 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 01:27:12,957 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 01:27:12,957 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 01:27:13,034 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 01:27:13,034 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 01:27:13,040 [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 01:27:13,040 [Features] [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 01:27:13,050 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 01:27:13,050 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 01:27:13,057 [INFO] Data shape: (1987, 58) → (1801, 58) (after NaN cleanup)
+2026-04-27 01:27:13,057 [Features] [INFO] Data shape: (1987, 58) → (1801, 58) (after NaN cleanup)
+2026-04-27 01:27:13,059 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 01:27:13,059 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 01:27:13,147 [INFO] Training data: X=(1344, 120, 57), Y=(1344,) | Test data: X=(337, 120, 57), Y=(337,)
+2026-04-27 01:27:13,147 [LSTM] [INFO] Training data: X=(1344, 120, 57), Y=(1344,) | Test data: X=(337, 120, 57), Y=(337,)
+2026-04-27 01:27:13,162 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 01:27:13,162 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 01:27:14,030 [INFO] Starting main model training...
+2026-04-27 01:27:14,030 [LSTM] [INFO] Starting main model training...
+2026-04-27 01:28:28,758 [INFO] FINAL TEST ACCURACY: 50.45% | LOSS: 0.6866
+2026-04-27 01:28:28,758 [LSTM] [INFO] FINAL TEST ACCURACY: 50.45% | LOSS: 0.6866
+2026-04-27 01:28:30,254 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 01:28:30,254 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 01:28:32,314 [tensorflow] [WARNING] 6 out of the last 6 calls to <function Model.make_predict_function.<locals>.predict_function at 0x00000216CC581280> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+2026-04-27 01:28:32,505 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=Asia
+2026-04-27 01:28:32,505 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=Asia
+2026-04-27 01:28:32,507 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Asia stricter): base_score=0.4817, distance=0.0183 < 0.05 → NO ENTRY
+2026-04-27 01:28:32,507 [Ensemble] [INFO] [Ensemble] ⚠️ WEAK_ZONE (Asia stricter): base_score=0.4817, distance=0.0183 < 0.05 → NO ENTRY
+2026-04-27 01:28:32,509 [ERROR] [Ensemble] Failed to log decision: module 'datetime' has no attribute 'UTC'
+2026-04-27 01:28:32,509 [Ensemble] [ERROR] [Ensemble] Failed to log decision: module 'datetime' has no attribute 'UTC'
+2026-04-27 01:28:32,509 [Main] [INFO] [USDJPY] SKIP: direction=None | reason=WEAK_ZONE (Asia stricter) | confidence=LOW | session=Asia
+2026-04-27 01:28:32,511 [Main] [INFO] No viable opportunities this cycle across portfolio.
+2026-04-27 01:30:54,344 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 01:30:54,345 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.5220, distance=0.0220 < 0.04 → NO ENTRY
+2026-04-27 01:30:54,353 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=Asia
+2026-04-27 01:30:54,354 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Asia stricter): base_score=0.5370, distance=0.0370 < 0.05 → NO ENTRY
+2026-04-27 01:30:54,360 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 01:30:54,361 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.5170, distance=0.0170 < 0.04 → NO ENTRY
+2026-04-27 01:30:54,369 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 01:30:54,369 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5050, distance=0.0050 < 0.015 → REJECT
+2026-04-27 01:30:54,376 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 01:30:54,377 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5000, distance=0.0000 < 0.015 → REJECT
+2026-04-27 01:30:54,385 [DEBUG] [Ensemble] trend_strength=0.167 → RANGING | LSTM=55.0% RF=45.0% | Session=Asia
+2026-04-27 01:30:54,385 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.4950, distance=0.0050 < 0.015 → REJECT
+2026-04-27 01:30:54,393 [DEBUG] [Ensemble] trend_strength=0.038 → RANGING | LSTM=51.1% RF=48.9% | Session=London
+2026-04-27 01:30:54,393 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.04 (ranging)
+2026-04-27 01:30:54,394 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.04 → HOLD
+2026-04-27 01:30:54,396 [DEBUG] [Ensemble] trend_strength=0.230 → TRANSITIONING | LSTM=56.9% RF=43.1% | Session=New York
+2026-04-27 01:30:54,404 [DEBUG] [Ensemble] trend_strength=0.987 → TRENDING | LSTM=79.6% RF=20.4% | Session=New York
+2026-04-27 01:30:54,408 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=New York
+2026-04-27 01:30:54,413 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=London
+2026-04-27 01:30:54,418 [DEBUG] [Ensemble] trend_strength=0.337 → TRANSITIONING | LSTM=60.1% RF=39.9% | Session=London
+2026-04-27 01:30:54,424 [DEBUG] [Ensemble] trend_strength=0.924 → TRENDING | LSTM=77.7% RF=22.3% | Session=New York
+2026-04-27 01:30:54,428 [DEBUG] [Ensemble] trend_strength=0.355 → TRANSITIONING | LSTM=60.7% RF=39.3% | Session=Asia
+2026-04-27 01:30:54,434 [DEBUG] [Ensemble] trend_strength=0.005 → RANGING | LSTM=50.2% RF=49.8% | Session=London
+2026-04-27 01:30:54,435 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.01 (ranging)
+2026-04-27 01:30:54,435 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.01 → HOLD
+2026-04-27 01:30:54,438 [DEBUG] [Ensemble] trend_strength=0.419 → TRANSITIONING | LSTM=62.6% RF=37.4% | Session=New York
+2026-04-27 01:30:54,444 [DEBUG] [Ensemble] trend_strength=0.383 → TRANSITIONING | LSTM=61.5% RF=38.5% | Session=Asia
+2026-04-27 01:30:54,450 [DEBUG] [Ensemble] trend_strength=0.663 → TRENDING | LSTM=69.9% RF=30.1% | Session=New York
+2026-04-27 01:30:54,455 [DEBUG] [Ensemble] trend_strength=0.497 → TRANSITIONING | LSTM=64.9% RF=35.1% | Session=New York
+2026-04-27 01:30:54,459 [DEBUG] [Ensemble] trend_strength=0.690 → TRENDING | LSTM=70.7% RF=29.3% | Session=Asia
+2026-04-27 01:30:54,463 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=Asia
+2026-04-27 01:30:54,464 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=1.00 (strong trend)
+2026-04-27 01:30:54,465 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=1.00 → HOLD
+2026-04-27 01:30:54,468 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=New York
+2026-04-27 01:30:54,474 [DEBUG] [Ensemble] trend_strength=0.422 → TRANSITIONING | LSTM=62.7% RF=37.3% | Session=London
+2026-04-27 01:30:54,480 [DEBUG] [Ensemble] trend_strength=0.012 → RANGING | LSTM=50.4% RF=49.6% | Session=London
+2026-04-27 01:30:54,480 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.01 (ranging)
+2026-04-27 01:30:54,481 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.01 → HOLD
+2026-04-27 01:30:54,484 [DEBUG] [Ensemble] trend_strength=0.403 → TRANSITIONING | LSTM=62.1% RF=37.9% | Session=New York
+2026-04-27 01:30:54,488 [DEBUG] [Ensemble] trend_strength=0.166 → RANGING | LSTM=55.0% RF=45.0% | Session=London
+2026-04-27 01:30:54,489 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.17 (ranging)
+2026-04-27 01:30:54,489 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.17 → HOLD
+2026-04-27 01:30:54,492 [DEBUG] [Ensemble] trend_strength=0.007 → RANGING | LSTM=50.2% RF=49.8% | Session=London
+2026-04-27 01:30:54,493 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.01 (ranging)
+2026-04-27 01:30:54,494 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.01 → HOLD
+2026-04-27 01:30:54,497 [DEBUG] [Ensemble] trend_strength=0.926 → TRENDING | LSTM=77.8% RF=22.2% | Session=London
+2026-04-27 01:30:54,503 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=London
+2026-04-27 01:30:54,509 [DEBUG] [Ensemble] trend_strength=0.019 → RANGING | LSTM=50.6% RF=49.4% | Session=London
+2026-04-27 01:30:54,510 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.02 (ranging)
+2026-04-27 01:30:54,511 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.02 → HOLD
+2026-04-27 01:30:54,514 [DEBUG] [Ensemble] trend_strength=0.941 → TRENDING | LSTM=78.2% RF=21.8% | Session=Asia
+2026-04-27 01:30:54,515 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.94 (strong trend)
+2026-04-27 01:30:54,515 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.94 → HOLD
+2026-04-27 01:30:54,518 [DEBUG] [Ensemble] trend_strength=0.401 → TRANSITIONING | LSTM=62.0% RF=38.0% | Session=New York
+2026-04-27 01:30:54,523 [DEBUG] [Ensemble] trend_strength=0.682 → TRENDING | LSTM=70.5% RF=29.5% | Session=Asia
+2026-04-27 01:30:54,528 [DEBUG] [Ensemble] trend_strength=0.361 → TRANSITIONING | LSTM=60.8% RF=39.2% | Session=New York
+2026-04-27 01:30:54,533 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=New York
+2026-04-27 01:30:54,537 [DEBUG] [Ensemble] trend_strength=0.144 → RANGING | LSTM=54.3% RF=45.7% | Session=Asia
+2026-04-27 01:30:54,541 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=Asia
+2026-04-27 01:30:54,542 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=1.00 (strong trend)
+2026-04-27 01:30:54,542 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=1.00 → HOLD
+2026-04-27 01:30:54,544 [DEBUG] [Ensemble] trend_strength=0.389 → TRANSITIONING | LSTM=61.7% RF=38.3% | Session=New York
+2026-04-27 01:30:54,549 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=New York
+2026-04-27 01:30:54,553 [DEBUG] [Ensemble] trend_strength=0.098 → RANGING | LSTM=52.9% RF=47.1% | Session=London
+2026-04-27 01:30:54,553 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.10 (ranging)
+2026-04-27 01:30:54,554 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.10 → HOLD
+2026-04-27 01:30:54,556 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=Asia
+2026-04-27 01:30:54,556 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=1.00 (strong trend)
+2026-04-27 01:30:54,557 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=1.00 → HOLD
+2026-04-27 01:30:54,559 [DEBUG] [Ensemble] trend_strength=0.612 → TRENDING | LSTM=68.4% RF=31.6% | Session=New York
+2026-04-27 01:30:54,562 [DEBUG] [Ensemble] trend_strength=0.814 → TRENDING | LSTM=74.4% RF=25.6% | Session=New York
+2026-04-27 01:30:54,568 [DEBUG] [Ensemble] trend_strength=0.933 → TRENDING | LSTM=78.0% RF=22.0% | Session=London
+2026-04-27 01:30:54,571 [DEBUG] [Ensemble] trend_strength=0.312 → TRANSITIONING | LSTM=59.3% RF=40.7% | Session=London
+2026-04-27 01:30:54,575 [DEBUG] [Ensemble] trend_strength=0.205 → TRANSITIONING | LSTM=56.1% RF=43.9% | Session=Asia
+2026-04-27 01:30:54,579 [DEBUG] [Ensemble] trend_strength=0.936 → TRENDING | LSTM=78.1% RF=21.9% | Session=New York
+2026-04-27 01:30:54,584 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=London
+2026-04-27 01:30:54,587 [DEBUG] [Ensemble] trend_strength=0.155 → RANGING | LSTM=54.6% RF=45.4% | Session=New York
+2026-04-27 01:30:54,591 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=New York
+2026-04-27 01:30:54,595 [DEBUG] [Ensemble] trend_strength=0.640 → TRENDING | LSTM=69.2% RF=30.8% | Session=London
+2026-04-27 01:30:54,599 [DEBUG] [Ensemble] trend_strength=0.480 → TRANSITIONING | LSTM=64.4% RF=35.6% | Session=Asia
+2026-04-27 01:30:54,604 [DEBUG] [Ensemble] trend_strength=0.240 → TRANSITIONING | LSTM=57.2% RF=42.8% | Session=Asia
+2026-04-27 01:30:54,608 [DEBUG] [Ensemble] trend_strength=0.672 → TRENDING | LSTM=70.1% RF=29.9% | Session=Asia
+2026-04-27 01:30:54,611 [DEBUG] [Ensemble] trend_strength=0.874 → TRENDING | LSTM=76.2% RF=23.8% | Session=Asia
+2026-04-27 01:30:54,612 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.87 (strong trend)
+2026-04-27 01:30:54,612 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.87 → HOLD
+2026-04-27 01:30:54,614 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=New York
+2026-04-27 01:30:54,624 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=London
+2026-04-27 01:30:54,625 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.5200, distance=0.0200 < 0.04 → NO ENTRY
+2026-04-27 01:30:54,633 [WARNING] [Ensemble] ⛔ LOW_ATR: atr_ratio=0.297, current_atr=0.003000, threshold=0.000200 → SKIP
+2026-04-27 01:30:54,642 [WARNING] [Ensemble] ⛔ LOW_ATR: atr_ratio=0.956, current_atr=0.000100, threshold=0.000200 → SKIP
+2026-04-27 01:30:54,649 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=London
+2026-04-27 01:30:54,662 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 01:30:54,664 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.00 (ranging)
+2026-04-27 01:30:54,664 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.00 → HOLD
+2026-04-27 01:30:54,674 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=Asia
+2026-04-27 01:30:54,675 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=1.00 (strong trend)
+2026-04-27 01:30:54,676 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=1.00 → HOLD
+2026-04-27 01:30:54,686 [DEBUG] [Ensemble] trend_strength=0.500 → TRANSITIONING | LSTM=65.0% RF=35.0% | Session=London
+2026-04-27 01:30:54,695 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=New York
+2026-04-27 01:30:54,706 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 01:30:54,717 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 01:30:54,727 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=New York
+2026-04-27 01:30:54,738 [DEBUG] [Ensemble] trend_strength=0.500 → TRANSITIONING | LSTM=65.0% RF=35.0% | Session=New York
+2026-04-27 01:30:54,748 [DEBUG] [Ensemble] trend_strength=0.833 → TRENDING | LSTM=75.0% RF=25.0% | Session=London
+2026-04-27 01:30:54,760 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=London
+2026-04-27 01:30:54,770 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 01:30:54,771 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5050, distance=0.0050 < 0.015 → REJECT
+2026-04-27 01:30:54,773 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 01:30:54,774 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.5220, distance=0.0220 < 0.04 → NO ENTRY
+2026-04-27 01:30:54,775 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 01:30:54,776 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.00 (ranging)
+2026-04-27 01:30:54,777 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.00 → HOLD
+2026-04-27 01:30:54,778 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=New York
+2026-04-27 01:30:54,783 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=New York
+2026-04-27 01:30:54,783 [WARNING] [Ensemble] ⚠️ MODEL CONFLICT: |LSTM(0.850) - RF(0.200)| = 0.650 >= 0.5 → HOLD
+2026-04-27 01:30:54,794 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=London
+2026-04-27 01:30:54,834 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=New York
+2026-04-27 01:30:54,841 [DEBUG] [Ensemble] trend_strength=0.500 → TRANSITIONING | LSTM=65.0% RF=35.0% | Session=New York
+2026-04-27 01:30:54,844 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 01:30:54,845 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5050, distance=0.0050 < 0.015 → REJECT
+2026-04-27 01:30:54,853 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=New York
+2026-04-27 01:30:54,858 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 01:30:54,858 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5050, distance=0.0050 < 0.015 → REJECT
+2026-04-27 01:30:54,861 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 01:30:54,861 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.5220, distance=0.0220 < 0.04 → NO ENTRY
+2026-04-27 01:30:54,863 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 01:30:54,864 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.00 (ranging)
+2026-04-27 01:30:54,864 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.00 → HOLD
+2026-04-27 01:30:54,872 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=New York
+2026-04-27 01:30:54,884 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=New York
+2026-04-27 01:30:54,897 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=London
+2026-04-27 01:30:54,902 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=Asia
+2026-04-27 01:30:54,911 [WARNING] [Ensemble] ⛔ LOW_ATR: atr_ratio=0.298, current_atr=0.003000, threshold=0.000200 → SKIP
+2026-04-27 01:30:54,919 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 01:30:54,923 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=Asia
+2026-04-27 01:30:54,924 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Asia stricter): base_score=0.5440, distance=0.0440 < 0.05 → NO ENTRY
+2026-04-27 01:30:54,931 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=Asia
+2026-04-27 01:30:54,931 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Asia stricter): base_score=0.5220, distance=0.0220 < 0.05 → NO ENTRY
+2026-04-27 01:30:54,941 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 01:30:54,952 [DEBUG] [Ensemble] trend_strength=0.685 → TRENDING | LSTM=70.6% RF=29.4% | Session=New York
+2026-04-27 01:30:54,956 [DEBUG] [Ensemble] trend_strength=0.456 → TRANSITIONING | LSTM=63.7% RF=36.3% | Session=London
+2026-04-27 01:30:54,960 [DEBUG] [Ensemble] trend_strength=0.379 → TRANSITIONING | LSTM=61.4% RF=38.6% | Session=New York
+2026-04-27 01:30:54,965 [DEBUG] [Ensemble] trend_strength=0.754 → TRENDING | LSTM=72.6% RF=27.4% | Session=Asia
+2026-04-27 01:30:54,970 [DEBUG] [Ensemble] trend_strength=0.252 → TRANSITIONING | LSTM=57.6% RF=42.4% | Session=Asia
+2026-04-27 01:30:54,974 [DEBUG] [Ensemble] trend_strength=0.900 → TRENDING | LSTM=77.0% RF=23.0% | Session=Asia
+2026-04-27 01:30:54,975 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.90 (strong trend)
+2026-04-27 01:30:54,975 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.90 → HOLD
+2026-04-27 01:30:54,978 [DEBUG] [Ensemble] trend_strength=0.760 → TRENDING | LSTM=72.8% RF=27.2% | Session=Asia
+2026-04-27 01:30:54,982 [DEBUG] [Ensemble] trend_strength=0.214 → TRANSITIONING | LSTM=56.4% RF=43.6% | Session=London
+2026-04-27 01:30:54,986 [DEBUG] [Ensemble] trend_strength=0.277 → TRANSITIONING | LSTM=58.3% RF=41.7% | Session=New York
+2026-04-27 01:30:54,990 [DEBUG] [Ensemble] trend_strength=0.226 → TRANSITIONING | LSTM=56.8% RF=43.2% | Session=New York
+2026-04-27 01:30:54,994 [DEBUG] [Ensemble] trend_strength=0.216 → TRANSITIONING | LSTM=56.5% RF=43.5% | Session=London
+2026-04-27 01:30:54,998 [DEBUG] [Ensemble] trend_strength=0.982 → TRENDING | LSTM=79.5% RF=20.5% | Session=Asia
+2026-04-27 01:30:54,999 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.98 (strong trend)
+2026-04-27 01:30:54,999 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.98 → HOLD
+2026-04-27 01:30:55,002 [DEBUG] [Ensemble] trend_strength=0.308 → TRANSITIONING | LSTM=59.2% RF=40.8% | Session=New York
+2026-04-27 01:30:55,006 [DEBUG] [Ensemble] trend_strength=0.403 → TRANSITIONING | LSTM=62.1% RF=37.9% | Session=New York
+2026-04-27 01:30:55,010 [DEBUG] [Ensemble] trend_strength=0.697 → TRENDING | LSTM=70.9% RF=29.1% | Session=Asia
+2026-04-27 01:30:55,015 [DEBUG] [Ensemble] trend_strength=0.951 → TRENDING | LSTM=78.5% RF=21.5% | Session=New York
+2026-04-27 01:30:55,020 [DEBUG] [Ensemble] trend_strength=0.471 → TRANSITIONING | LSTM=64.1% RF=35.9% | Session=London
+2026-04-27 01:30:55,024 [DEBUG] [Ensemble] trend_strength=0.433 → TRANSITIONING | LSTM=63.0% RF=37.0% | Session=London
+2026-04-27 01:30:55,028 [DEBUG] [Ensemble] trend_strength=0.500 → TRANSITIONING | LSTM=65.0% RF=35.0% | Session=Asia
+2026-04-27 01:30:55,034 [DEBUG] [Ensemble] trend_strength=0.663 → TRENDING | LSTM=69.9% RF=30.1% | Session=Asia
+2026-04-27 01:30:55,038 [DEBUG] [Ensemble] trend_strength=0.799 → TRENDING | LSTM=74.0% RF=26.0% | Session=New York
+2026-04-27 01:30:55,043 [DEBUG] [Ensemble] trend_strength=0.179 → RANGING | LSTM=55.4% RF=44.6% | Session=London
+2026-04-27 01:30:55,043 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.18 (ranging)
+2026-04-27 01:30:55,044 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.18 → HOLD
+2026-04-27 01:30:55,046 [DEBUG] [Ensemble] trend_strength=0.585 → TRANSITIONING | LSTM=67.5% RF=32.5% | Session=Asia
+2026-04-27 01:30:55,050 [DEBUG] [Ensemble] trend_strength=0.687 → TRENDING | LSTM=70.6% RF=29.4% | Session=London
+2026-04-27 01:30:55,054 [DEBUG] [Ensemble] trend_strength=0.396 → TRANSITIONING | LSTM=61.9% RF=38.1% | Session=Asia
+2026-04-27 01:30:55,057 [DEBUG] [Ensemble] trend_strength=0.916 → TRENDING | LSTM=77.5% RF=22.5% | Session=New York
+2026-04-27 01:30:55,059 [DEBUG] [Ensemble] trend_strength=0.278 → TRANSITIONING | LSTM=58.4% RF=41.6% | Session=Asia
+2026-04-27 01:30:55,062 [DEBUG] [Ensemble] trend_strength=0.376 → TRANSITIONING | LSTM=61.3% RF=38.7% | Session=London
+2026-04-27 01:30:55,064 [DEBUG] [Ensemble] trend_strength=0.801 → TRENDING | LSTM=74.0% RF=26.0% | Session=Asia
+2026-04-27 01:30:55,065 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.80 (strong trend)
+2026-04-27 01:30:55,065 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.80 → HOLD
+2026-04-27 01:30:55,067 [DEBUG] [Ensemble] trend_strength=0.221 → TRANSITIONING | LSTM=56.6% RF=43.4% | Session=London
+2026-04-27 01:30:55,069 [DEBUG] [Ensemble] trend_strength=0.223 → TRANSITIONING | LSTM=56.7% RF=43.3% | Session=New York
+2026-04-27 01:30:55,071 [DEBUG] [Ensemble] trend_strength=0.423 → TRANSITIONING | LSTM=62.7% RF=37.3% | Session=Asia
+2026-04-27 01:30:55,073 [DEBUG] [Ensemble] trend_strength=0.188 → RANGING | LSTM=55.6% RF=44.4% | Session=Asia
+2026-04-27 01:30:55,075 [DEBUG] [Ensemble] trend_strength=0.398 → TRANSITIONING | LSTM=61.9% RF=38.1% | Session=New York
+2026-04-27 01:30:55,077 [DEBUG] [Ensemble] trend_strength=0.352 → TRANSITIONING | LSTM=60.6% RF=39.4% | Session=New York
+2026-04-27 01:30:55,078 [DEBUG] [Ensemble] trend_strength=0.746 → TRENDING | LSTM=72.4% RF=27.6% | Session=London
+2026-04-27 01:30:55,080 [DEBUG] [Ensemble] trend_strength=0.378 → TRANSITIONING | LSTM=61.3% RF=38.7% | Session=London
+2026-04-27 01:30:55,082 [DEBUG] [Ensemble] trend_strength=0.904 → TRENDING | LSTM=77.1% RF=22.9% | Session=Asia
+2026-04-27 01:30:55,082 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.90 (strong trend)
+2026-04-27 01:30:55,082 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.90 → HOLD
+2026-04-27 01:30:55,083 [DEBUG] [Ensemble] trend_strength=0.779 → TRENDING | LSTM=73.4% RF=26.6% | Session=Asia
+2026-04-27 01:30:55,085 [DEBUG] [Ensemble] trend_strength=0.759 → TRENDING | LSTM=72.8% RF=27.2% | Session=Asia
+2026-04-27 01:30:55,086 [DEBUG] [Ensemble] trend_strength=0.828 → TRENDING | LSTM=74.8% RF=25.2% | Session=London
+2026-04-27 01:30:55,088 [DEBUG] [Ensemble] trend_strength=0.339 → TRANSITIONING | LSTM=60.2% RF=39.8% | Session=New York
+2026-04-27 01:30:55,090 [DEBUG] [Ensemble] trend_strength=0.796 → TRENDING | LSTM=73.9% RF=26.1% | Session=London
+2026-04-27 01:30:55,091 [DEBUG] [Ensemble] trend_strength=0.249 → TRANSITIONING | LSTM=57.5% RF=42.5% | Session=New York
+2026-04-27 01:30:55,093 [DEBUG] [Ensemble] trend_strength=0.294 → TRANSITIONING | LSTM=58.8% RF=41.2% | Session=London
+2026-04-27 01:30:55,094 [DEBUG] [Ensemble] trend_strength=0.197 → RANGING | LSTM=55.9% RF=44.1% | Session=London
+2026-04-27 01:30:55,094 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.20 (ranging)
+2026-04-27 01:30:55,094 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.20 → HOLD
+2026-04-27 01:30:55,095 [DEBUG] [Ensemble] trend_strength=0.576 → TRANSITIONING | LSTM=67.3% RF=32.7% | Session=New York
+2026-04-27 01:30:55,097 [DEBUG] [Ensemble] trend_strength=0.502 → TRANSITIONING | LSTM=65.1% RF=34.9% | Session=London
+2026-04-27 01:30:55,099 [DEBUG] [Ensemble] trend_strength=0.400 → TRANSITIONING | LSTM=62.0% RF=38.0% | Session=Asia
+2026-04-27 01:30:55,101 [DEBUG] [Ensemble] trend_strength=0.466 → TRANSITIONING | LSTM=64.0% RF=36.0% | Session=London
+2026-04-27 01:30:55,104 [DEBUG] [Ensemble] trend_strength=0.358 → TRANSITIONING | LSTM=60.7% RF=39.3% | Session=Asia
+2026-04-27 01:30:55,106 [DEBUG] [Ensemble] trend_strength=0.342 → TRANSITIONING | LSTM=60.3% RF=39.7% | Session=Asia
+2026-04-27 01:30:55,109 [DEBUG] [Ensemble] trend_strength=0.291 → TRANSITIONING | LSTM=58.7% RF=41.3% | Session=New York
+2026-04-27 01:30:55,112 [DEBUG] [Ensemble] trend_strength=0.263 → TRANSITIONING | LSTM=57.9% RF=42.1% | Session=London
+2026-04-27 01:30:55,116 [DEBUG] [Ensemble] trend_strength=0.805 → TRENDING | LSTM=74.2% RF=25.8% | Session=Asia
+2026-04-27 01:30:55,117 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.81 (strong trend)
+2026-04-27 01:30:55,117 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.81 → HOLD
+2026-04-27 01:30:55,118 [DEBUG] [Ensemble] trend_strength=0.265 → TRANSITIONING | LSTM=57.9% RF=42.1% | Session=London
+2026-04-27 01:30:55,120 [DEBUG] [Ensemble] trend_strength=0.353 → TRANSITIONING | LSTM=60.6% RF=39.4% | Session=Asia
+2026-04-27 01:30:55,123 [DEBUG] [Ensemble] trend_strength=0.930 → TRENDING | LSTM=77.9% RF=22.1% | Session=Asia
+2026-04-27 01:30:55,123 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.93 (strong trend)
+2026-04-27 01:30:55,123 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.93 → HOLD
+2026-04-27 01:30:55,124 [DEBUG] [Ensemble] trend_strength=0.528 → TRANSITIONING | LSTM=65.8% RF=34.2% | Session=London
+2026-04-27 01:30:55,126 [DEBUG] [Ensemble] trend_strength=0.466 → TRANSITIONING | LSTM=64.0% RF=36.0% | Session=New York
+2026-04-27 01:30:55,128 [DEBUG] [Ensemble] trend_strength=0.375 → TRANSITIONING | LSTM=61.3% RF=38.7% | Session=London
+2026-04-27 01:30:55,131 [DEBUG] [Ensemble] trend_strength=0.397 → TRANSITIONING | LSTM=61.9% RF=38.1% | Session=London
+2026-04-27 01:30:55,140 [DEBUG] [Ensemble] trend_strength=0.986 → TRENDING | LSTM=79.6% RF=20.4% | Session=Asia
+2026-04-27 01:30:55,141 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.99 (strong trend)
+2026-04-27 01:30:55,141 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.99 → HOLD
+2026-04-27 01:30:55,142 [DEBUG] [Ensemble] trend_strength=0.323 → TRANSITIONING | LSTM=59.7% RF=40.3% | Session=London
+2026-04-27 01:30:55,144 [DEBUG] [Ensemble] trend_strength=0.302 → TRANSITIONING | LSTM=59.1% RF=40.9% | Session=London
+2026-04-27 01:30:55,147 [DEBUG] [Ensemble] trend_strength=0.577 → TRANSITIONING | LSTM=67.3% RF=32.7% | Session=New York
+2026-04-27 01:30:55,150 [DEBUG] [Ensemble] trend_strength=0.369 → TRANSITIONING | LSTM=61.1% RF=38.9% | Session=London
+2026-04-27 01:30:55,152 [DEBUG] [Ensemble] trend_strength=0.869 → TRENDING | LSTM=76.1% RF=23.9% | Session=New York
+2026-04-27 01:30:55,155 [DEBUG] [Ensemble] trend_strength=0.877 → TRENDING | LSTM=76.3% RF=23.7% | Session=New York
+2026-04-27 01:30:55,157 [DEBUG] [Ensemble] trend_strength=0.472 → TRANSITIONING | LSTM=64.2% RF=35.8% | Session=Asia
+2026-04-27 01:30:55,159 [DEBUG] [Ensemble] trend_strength=0.410 → TRANSITIONING | LSTM=62.3% RF=37.7% | Session=London
+2026-04-27 01:30:55,161 [DEBUG] [Ensemble] trend_strength=0.248 → TRANSITIONING | LSTM=57.4% RF=42.6% | Session=Asia
+2026-04-27 01:30:55,163 [DEBUG] [Ensemble] trend_strength=0.950 → TRENDING | LSTM=78.5% RF=21.5% | Session=Asia
+2026-04-27 01:30:55,164 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.95 (strong trend)
+2026-04-27 01:30:55,165 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.95 → HOLD
+2026-04-27 01:30:55,167 [DEBUG] [Ensemble] trend_strength=0.864 → TRENDING | LSTM=75.9% RF=24.1% | Session=Asia
+2026-04-27 01:30:55,167 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.86 (strong trend)
+2026-04-27 01:30:55,167 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.86 → HOLD
+2026-04-27 01:30:55,168 [DEBUG] [Ensemble] trend_strength=0.695 → TRENDING | LSTM=70.8% RF=29.2% | Session=New York
+2026-04-27 01:30:55,170 [DEBUG] [Ensemble] trend_strength=0.624 → TRENDING | LSTM=68.7% RF=31.3% | Session=New York
+2026-04-27 01:30:55,173 [DEBUG] [Ensemble] trend_strength=0.505 → TRANSITIONING | LSTM=65.2% RF=34.8% | Session=New York
+2026-04-27 01:30:55,175 [DEBUG] [Ensemble] trend_strength=0.588 → TRANSITIONING | LSTM=67.6% RF=32.4% | Session=New York
+2026-04-27 01:30:55,177 [DEBUG] [Ensemble] trend_strength=0.467 → TRANSITIONING | LSTM=64.0% RF=36.0% | Session=New York
+2026-04-27 01:30:55,179 [DEBUG] [Ensemble] trend_strength=0.293 → TRANSITIONING | LSTM=58.8% RF=41.2% | Session=Asia
+2026-04-27 01:30:55,183 [DEBUG] [Ensemble] trend_strength=0.217 → TRANSITIONING | LSTM=56.5% RF=43.5% | Session=London
+2026-04-27 01:30:55,185 [DEBUG] [Ensemble] trend_strength=0.487 → TRANSITIONING | LSTM=64.6% RF=35.4% | Session=London
+2026-04-27 01:30:55,187 [DEBUG] [Ensemble] trend_strength=0.186 → RANGING | LSTM=55.6% RF=44.4% | Session=New York
+2026-04-27 01:30:55,189 [DEBUG] [Ensemble] trend_strength=0.330 → TRANSITIONING | LSTM=59.9% RF=40.1% | Session=New York
+2026-04-27 01:30:55,191 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=New York
+2026-04-27 01:30:55,193 [DEBUG] [Ensemble] trend_strength=0.569 → TRANSITIONING | LSTM=67.1% RF=32.9% | Session=New York
+2026-04-27 01:30:55,194 [DEBUG] [Ensemble] trend_strength=0.210 → TRANSITIONING | LSTM=56.3% RF=43.7% | Session=Asia
+2026-04-27 01:30:55,196 [DEBUG] [Ensemble] trend_strength=0.542 → TRANSITIONING | LSTM=66.3% RF=33.7% | Session=Asia
+2026-04-27 01:30:55,198 [DEBUG] [Ensemble] trend_strength=0.172 → RANGING | LSTM=55.2% RF=44.8% | Session=New York
+2026-04-27 01:30:55,200 [DEBUG] [Ensemble] trend_strength=0.433 → TRANSITIONING | LSTM=63.0% RF=37.0% | Session=London
+2026-04-27 01:30:55,202 [DEBUG] [Ensemble] trend_strength=0.819 → TRENDING | LSTM=74.6% RF=25.4% | Session=New York
+2026-04-27 01:30:55,204 [DEBUG] [Ensemble] trend_strength=0.632 → TRENDING | LSTM=68.9% RF=31.1% | Session=New York
+2026-04-27 01:30:55,207 [DEBUG] [Ensemble] trend_strength=0.421 → TRANSITIONING | LSTM=62.6% RF=37.4% | Session=London
+2026-04-27 01:30:55,210 [DEBUG] [Ensemble] trend_strength=0.831 → TRENDING | LSTM=74.9% RF=25.1% | Session=Asia
+2026-04-27 01:30:55,210 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=0.83 (strong trend)
+2026-04-27 01:30:55,211 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=0.83 → HOLD
+2026-04-27 01:30:55,212 [DEBUG] [Ensemble] trend_strength=0.424 → TRANSITIONING | LSTM=62.7% RF=37.3% | Session=New York
+2026-04-27 01:30:55,216 [DEBUG] [Ensemble] trend_strength=0.482 → TRANSITIONING | LSTM=64.5% RF=35.5% | Session=New York
+2026-04-27 01:30:55,218 [DEBUG] [Ensemble] trend_strength=0.943 → TRENDING | LSTM=78.3% RF=21.7% | Session=London
+2026-04-27 01:30:55,221 [DEBUG] [Ensemble] trend_strength=0.686 → TRENDING | LSTM=70.6% RF=29.4% | Session=London
+2026-04-27 01:30:55,223 [DEBUG] [Ensemble] trend_strength=0.843 → TRENDING | LSTM=75.3% RF=24.7% | Session=London
+2026-04-27 01:30:55,225 [DEBUG] [Ensemble] trend_strength=0.624 → TRENDING | LSTM=68.7% RF=31.3% | Session=London
+2026-04-27 01:30:55,229 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 01:30:55,230 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5050, distance=0.0050 < 0.015 → REJECT
+2026-04-27 01:30:55,230 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 01:30:55,231 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.5220, distance=0.0220 < 0.04 → NO ENTRY
+2026-04-27 01:30:55,232 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 01:30:55,232 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.00 (ranging)
+2026-04-27 01:30:55,232 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.00 → HOLD
+2026-04-27 01:30:55,233 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=New York
+2026-04-27 01:30:55,235 [DEBUG] [Ensemble] trend_strength=0.500 → TRANSITIONING | LSTM=65.0% RF=35.0% | Session=New York
+2026-04-27 01:30:55,237 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 01:30:55,240 [WARNING] [Ensemble] ⛔ LOW_ATR: atr_ratio=0.295, current_atr=0.003000, threshold=0.000200 → SKIP
+2026-04-27 01:30:55,243 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 01:30:55,245 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=Asia
+2026-04-27 01:30:55,245 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=1.00 (strong trend)
+2026-04-27 01:30:55,245 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=1.00 → HOLD
+2026-04-27 01:30:55,246 [DEBUG] [Ensemble] trend_strength=0.115 → RANGING | LSTM=53.4% RF=46.6% | Session=Asia
+2026-04-27 01:30:55,246 [WARNING] [Ensemble] ⚠️ MODEL CONFLICT: |LSTM(0.804) - RF(0.236)| = 0.568 >= 0.5 → HOLD
+2026-04-27 01:30:55,247 [DEBUG] [Ensemble] trend_strength=0.186 → RANGING | LSTM=55.6% RF=44.4% | Session=Asia
+2026-04-27 01:30:55,247 [WARNING] [Ensemble] ⚠️ MODEL CONFLICT: |LSTM(0.862) - RF(0.102)| = 0.761 >= 0.5 → HOLD
+2026-04-27 01:30:55,248 [DEBUG] [Ensemble] trend_strength=0.569 → TRANSITIONING | LSTM=67.1% RF=32.9% | Session=London
+2026-04-27 01:30:55,249 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.4707, distance=0.0293 < 0.04 → NO ENTRY
+2026-04-27 01:30:55,250 [DEBUG] [Ensemble] trend_strength=0.426 → TRANSITIONING | LSTM=62.8% RF=37.2% | Session=Asia
+2026-04-27 01:30:55,251 [DEBUG] [Ensemble] trend_strength=0.062 → RANGING | LSTM=51.9% RF=48.1% | Session=London
+2026-04-27 01:30:55,251 [WARNING] [Ensemble] ⚠️ MODEL CONFLICT: |LSTM(0.158) - RF(0.822)| = 0.664 >= 0.5 → HOLD
+2026-04-27 01:30:55,252 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=New York
+2026-04-27 01:30:55,252 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.5367, distance=0.0367 < 0.04 → NO ENTRY
+2026-04-27 01:30:55,253 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=New York
+2026-04-27 01:30:55,255 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=Asia
+2026-04-27 01:30:55,257 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=Asia
+2026-04-27 01:30:55,257 [WARNING] [Ensemble] ⚠️ MODEL CONFLICT: |LSTM(0.807) - RF(0.266)| = 0.541 >= 0.5 → HOLD
+2026-04-27 01:30:55,258 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=London
+2026-04-27 01:30:55,258 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.4675, distance=0.0325 < 0.04 → NO ENTRY
+2026-04-27 01:30:55,259 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=Asia
+2026-04-27 01:30:55,259 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=1.00 (strong trend)
+2026-04-27 01:30:55,259 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=1.00 → HOLD
+2026-04-27 01:30:55,260 [DEBUG] [Ensemble] trend_strength=0.164 → RANGING | LSTM=54.9% RF=45.1% | Session=London
+2026-04-27 01:30:55,260 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.16 (ranging)
+2026-04-27 01:30:55,260 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.16 → HOLD
+2026-04-27 01:30:55,261 [DEBUG] [Ensemble] trend_strength=0.129 → RANGING | LSTM=53.9% RF=46.1% | Session=London
+2026-04-27 01:30:55,261 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5051, distance=0.0051 < 0.015 → REJECT
+2026-04-27 01:30:55,262 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=Asia
+2026-04-27 01:30:55,262 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=1.00 (strong trend)
+2026-04-27 01:30:55,263 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=Asia, trend_strength=1.00 → HOLD
+2026-04-27 01:30:55,263 [DEBUG] [Ensemble] trend_strength=1.000 → TRENDING | LSTM=80.0% RF=20.0% | Session=New York
+2026-04-27 01:30:55,265 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 01:30:55,265 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.00 (ranging)
+2026-04-27 01:30:55,266 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.00 → HOLD
+2026-04-27 01:30:55,267 [DEBUG] [Ensemble] trend_strength=0.234 → TRANSITIONING | LSTM=57.0% RF=43.0% | Session=London
+2026-04-27 01:30:55,267 [WARNING] [Ensemble] ⚠️ MODEL CONFLICT: |LSTM(0.851) - RF(0.288)| = 0.563 >= 0.5 → HOLD
+2026-04-27 01:30:55,268 [DEBUG] [Ensemble] trend_strength=0.263 → TRANSITIONING | LSTM=57.9% RF=42.1% | Session=London
+2026-04-27 01:30:55,268 [WARNING] [Ensemble] ⚠️ MODEL CONFLICT: |LSTM(0.144) - RF(0.760)| = 0.616 >= 0.5 → HOLD
+2026-04-27 01:30:55,271 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=London
+2026-04-27 01:30:55,278 [DEBUG] [Ensemble] trend_strength=0.667 → TRENDING | LSTM=70.0% RF=30.0% | Session=New York
+2026-04-27 01:30:55,280 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 01:30:55,280 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5050, distance=0.0050 < 0.015 → REJECT
+2026-04-27 01:30:55,293 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 01:30:55,293 [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 01:30:55,293 [DEBUG] [AdaptiveRisk] session=London, trend=0.700, confidence=HIGH, regime_changed=False → risk=1.00%
+2026-04-27 01:30:55,297 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 01:30:55,297 [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 01:30:55,297 [DEBUG] [AdaptiveRisk] session=Asia, trend=0.300, confidence=MEDIUM, regime_changed=False → risk=0.50%
+2026-04-27 01:30:55,301 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 01:30:55,301 [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 01:30:55,301 [INFO] [AdaptiveRisk] Regime changed recently → risk reduced to 0.70%
+2026-04-27 01:30:55,301 [DEBUG] [AdaptiveRisk] session=London, trend=0.700, confidence=HIGH, regime_changed=True → risk=0.70%
+2026-04-27 01:30:55,305 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 01:30:55,305 [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 01:30:55,305 [INFO] [Regime] Initial regime set: TRENDING (trend_strength=0.700)
+2026-04-27 01:30:55,306 [DEBUG] [Regime] Pending switch to RANGING (1/2 confirmations, trend_strength=0.300)
+2026-04-27 01:30:55,306 [INFO] [Regime] SWITCH: TRENDING → RANGING (confirmed after 2 candles, trend_strength=0.300)
+2026-04-27 01:30:55,310 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 01:30:55,310 [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 01:30:55,311 [INFO] [Regime] Initial regime set: TRENDING (trend_strength=0.700)
+2026-04-27 01:30:55,311 [DEBUG] [Regime] Pending switch to RANGING (1/2 confirmations, trend_strength=0.300)
+2026-04-27 01:31:46,909 [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-27 01:31:46,909 [MT5Engine] [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-27 01:31:46,944 [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-27 01:31:46,944 [MT5Engine] [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-27 01:31:46,952 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 01:31:46,952 [TradeManager] [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 01:31:46,955 [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 01:31:46,955 [TradeManager] [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 01:31:46,958 [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-27
+2026-04-27 01:31:46,958 [TradeManager] [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-27
+2026-04-27 01:32:00,157 [INFO] [RF] Loaded saved model from disk.
+2026-04-27 01:32:00,157 [RF_Model] [INFO] [RF] Loaded saved model from disk.
+2026-04-27 01:32:00,160 [WARNING] [Market] No tick for XAUUSD. Market may be closed.
+2026-04-27 01:32:00,160 [DataLoader] [WARNING] [Market] No tick for XAUUSD. Market may be closed.
+2026-04-27 01:32:00,162 [WARNING] [Market] US30 trading is disabled.
+2026-04-27 01:32:00,162 [DataLoader] [WARNING] [Market] US30 trading is disabled.

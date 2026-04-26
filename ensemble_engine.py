@@ -1,7 +1,7 @@
 """
-Ensemble Engine — Elite v4.0
+Ensemble Engine — Elite v4.1
 ==============================
-The Brain: Session-Aware, Market-Adaptive Decision Engine.
+The Brain: Session-Aware, Market-Adaptive, Fully Traceable Decision Engine.
 
 Architecture:
   Session Context + Market Regime + Model Ensemble = Final Decision
@@ -11,12 +11,13 @@ Features:
 - Session-Aware Strategy Behavior (London/NY/Asia)
 - Additive Scoring Model (Base + Session_Bonus + Volatility_Adjustment)
 - Adjustment-to-Base Ratio Control (max 10% of base)
-- Weak Zone Hysteresis (0.52–0.56 = NO ENTRY)
-- Score Floor (< 0.52 = REJECT)
+- Session-Aware Weak Zone (Asia=0.05, others=0.04)
+- Symmetric Score Floor (distance < 0.015 = REJECT)
 - Regime Conflict Detection (session vs trend mismatch → HOLD)
 - ATR Double Filter (ratio + absolute)
 - Confidence Classification (HIGH / MEDIUM / LOW)
 - Decision Reason on every path (explainability)
+- Full Diagnostics: side, stage_reached, distance_from_neutral, edge_case
 - Comprehensive CSV Logging with all fields
 """
 
@@ -39,7 +40,7 @@ if not logger.handlers:
 
 
 class EnsembleDecision:
-    """Container for ensemble prediction results — fully explainable."""
+    """Container for ensemble prediction results — fully explainable and traceable."""
 
     def __init__(self):
         self.lstm_prob = 0.5
@@ -57,7 +58,7 @@ class EnsembleDecision:
         self.market_state = "UNKNOWN"
         self.conflict = False
 
-        # --- New v4.0 Fields ---
+        # --- v4.0 Core Fields ---
         self.session = "UNKNOWN"
         self.trend_strength = 0.0
         self.session_bonus = 0.0
@@ -66,13 +67,21 @@ class EnsembleDecision:
         self.decision_reason = ""
         self.confidence_level = "LOW"
 
+        # --- v4.1 Diagnostics Fields ---
+        self.distance_from_neutral = 0.0    # abs(base_score - 0.5)
+        self.weak_zone_threshold_used = 0.0 # 0.04 or 0.05 (session-dependent)
+        self.edge_case = False              # True if borderline decision
+        self.side = "NONE"                  # Pre-filter intent: BUY/SELL/NONE
+        self.stage_reached = "INIT"         # Deepest pipeline stage reached
+
     def __repr__(self):
         return (
             f"EnsembleDecision(LSTM={self.lstm_prob:.4f} x{self.lstm_weight:.0%}, "
             f"RF={self.rf_prob:.4f} x{self.rf_weight:.0%}, "
             f"Penalty={self.penalty:.4f}, Raw={self.raw_score:.4f}, Final={self.final_prob:.4f}, "
             f"Dir={self.direction}, Session={self.session}, Trend={self.trend_strength:.2f}, "
-            f"Confidence={self.confidence_level}, Reason={self.decision_reason})"
+            f"Confidence={self.confidence_level}, Reason={self.decision_reason}, "
+            f"Side={self.side}, Stage={self.stage_reached})"
         )
 
 
@@ -272,6 +281,7 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
     if atr_ratio < 0.5 or current_atr < Config.ATR_THRESHOLD:
         decision.direction = None
         decision.decision_reason = "LOW_ATR"
+        decision.stage_reached = "ATR_FILTER"
         decision.final_prob = 0.5
         decision.confidence_level = "LOW"
         logger.warning(
@@ -307,6 +317,7 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
         decision.direction = None
         decision.final_prob = weighted_avg
         decision.decision_reason = "CONFLICT"
+        decision.stage_reached = "CONFLICT"
         decision.confidence_level = "LOW"
         decision.skip_reason = (
             f"MODEL CONFLICT: |LSTM({lstm_prob:.3f}) - RF({rf_prob:.3f})| = "
@@ -331,43 +342,69 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
     base_score = float(np.clip(base_score, 0.0, 1.0))
 
     # =========================================
-    # Step 7: Score Floor — signal too weak → REJECT
-    # Applied SYMMETRICALLY: distance from 0.5 < 0.02 means no signal
-    # For BUY: base_score < 0.52 → reject
-    # For SELL: base_score > 0.48 → reject (mirror)
+    # Step 7: Side Tracking + Distance Calculation
+    # side = pre-filter intent based on base_score position
     # =========================================
     distance_from_neutral = abs(base_score - 0.5)
-    if distance_from_neutral < 0.02:
+    decision.distance_from_neutral = distance_from_neutral
+
+    if base_score > 0.5:
+        decision.side = "BUY"
+    elif base_score < 0.5:
+        decision.side = "SELL"
+    else:
+        decision.side = "NONE"
+
+    # =========================================
+    # Step 8: Weak Zone Threshold (Session-Aware)
+    # Asia = stricter (0.05), London/NY = normal (0.04)
+    # =========================================
+    weak_zone_threshold = 0.05 if session == "Asia" else 0.04
+    decision.weak_zone_threshold_used = weak_zone_threshold
+
+    # Edge case detection: borderline decisions within 0.005 of threshold
+    decision.edge_case = abs(distance_from_neutral - weak_zone_threshold) < 0.005
+
+    # =========================================
+    # Step 9: Score Floor — signal too weak → REJECT
+    # Applied SYMMETRICALLY: distance from 0.5 < 0.015 means no signal
+    # For BUY: base_score in [0.485, 0.515] → reject
+    # For SELL: same mirror range → reject
+    # =========================================
+    if distance_from_neutral < 0.015:
         decision.direction = None
         decision.final_prob = base_score
         decision.raw_score = base_score
         decision.decision_reason = "BELOW_THRESHOLD"
+        decision.stage_reached = "SCORE_FLOOR"
         decision.confidence_level = "LOW"
-        decision.skip_reason = f"SCORE FLOOR: base_score={base_score:.4f}, distance={distance_from_neutral:.4f} < 0.02"
+        decision.skip_reason = f"SCORE FLOOR: base_score={base_score:.4f}, distance={distance_from_neutral:.4f} < 0.015"
         logger.info("[Ensemble] ⛔ %s → REJECT", decision.skip_reason)
         _log_decision(decision, current_adx, current_atr)
         return decision
 
     # =========================================
-    # Step 8: Weak Zone Hysteresis (NO ENTRY)
+    # Step 10: Weak Zone Hysteresis (NO ENTRY)
     # Applied SYMMETRICALLY using distance from 0.5
-    # Distance 0.02–0.06 = WEAK ZONE (too uncertain)
-    # BUY side: base_score 0.52–0.56
-    # SELL side: base_score 0.44–0.48
+    # Session-aware: Asia=0.05, others=0.04
+    # BUY side (0.04): base_score 0.50–0.54 | SELL side: 0.46–0.50
+    # BUY side (0.05): base_score 0.50–0.55 | SELL side: 0.45–0.50
     # =========================================
-    if distance_from_neutral < 0.06:
+    if distance_from_neutral < weak_zone_threshold:
+        wz_label = "WEAK_ZONE (Asia stricter)" if session == "Asia" else "WEAK_ZONE (Normal)"
         decision.direction = None
         decision.final_prob = base_score
         decision.raw_score = base_score
-        decision.decision_reason = "WEAK_ZONE"
+        decision.decision_reason = wz_label
+        decision.stage_reached = "WEAK_ZONE"
         decision.confidence_level = "LOW"
-        decision.skip_reason = f"WEAK ZONE: base_score={base_score:.4f}, distance={distance_from_neutral:.4f} < 0.06"
+        decision.skip_reason = f"{wz_label}: base_score={base_score:.4f}, distance={distance_from_neutral:.4f} < {weak_zone_threshold}"
         logger.info("[Ensemble] ⚠️ %s → NO ENTRY", decision.skip_reason)
         _log_decision(decision, current_adx, current_atr)
         return decision
 
     # =========================================
-    # Step 9: Regime Conflict (session vs trend mismatch → HOLD)
+    # Step 11: Regime Conflict (session vs trend mismatch → HOLD)
     # NOT a penalty. NOT a score reduction. Direct HOLD.
     # =========================================
     regime_conflict = _detect_regime_conflict(session, trend_strength)
@@ -378,6 +415,7 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
         decision.final_prob = base_score
         decision.raw_score = base_score
         decision.decision_reason = "CONFLICT"
+        decision.stage_reached = "CONFLICT"
         decision.confidence_level = "LOW"
         decision.skip_reason = f"REGIME CONFLICT: session={session}, trend_strength={trend_strength:.2f}"
         logger.warning("[Ensemble] ⛔ %s → HOLD", decision.skip_reason)
@@ -385,36 +423,36 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
         return decision
 
     # =========================================
-    # Step 10: Additive Scoring Model (STRICTLY additive, NO multiplication)
+    # Step 12: Additive Scoring Model (STRICTLY additive, NO multiplication)
     # Final = Base + Session_Bonus + Volatility_Adjustment
     # =========================================
 
-    # 10a. Session Bonus: clipped to [-0.03, +0.03]
+    # 12a. Session Bonus: clipped to [-0.03, +0.03]
     session_bonus = _compute_session_bonus(session, trend_strength)
     decision.session_bonus = session_bonus
 
-    # 10b. Volatility Adjustment
+    # 12b. Volatility Adjustment
     volatility_adjustment = _compute_volatility_adjustment(current_atr, atr_series)
     decision.volatility_adjustment = volatility_adjustment
 
-    # 10c. Total Adjustment: clipped to [-0.05, +0.05]
+    # 12c. Total Adjustment: clipped to [-0.05, +0.05]
     raw_total_adjustment = float(np.clip(session_bonus + volatility_adjustment, -0.05, 0.05))
 
-    # 10d. Adjustment-to-Base Ratio Control: adjustment ≤ 10% of base_score
+    # 12d. Adjustment-to-Base Ratio Control: adjustment ≤ 10% of base_score
     # This GUARANTEES boosts cannot create a trade alone
     if raw_total_adjustment > 0:
         total_adjustment = min(raw_total_adjustment, base_score * 0.1)
     else:
         total_adjustment = max(raw_total_adjustment, -(base_score * 0.1))
 
-    # 10e. Compute raw_score and clip
+    # 12e. Compute raw_score and clip
     raw_score = base_score + total_adjustment
     decision.raw_score = raw_score
     final_prob = float(np.clip(raw_score, 0.0, 1.0))
     decision.final_prob = final_prob
 
     # =========================================
-    # Step 11: Dynamic Thresholds (Regime-Aware)
+    # Step 13: Dynamic Thresholds (Regime-Aware)
     # EXACT FORMULA: buy_threshold = 0.58 + (1 - trend_strength) * 0.08
     # Strong trend (ts=1.0) → buy_threshold = 0.58
     # No trend (ts=0.0) → buy_threshold = 0.66
@@ -426,24 +464,27 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
     decision.sell_threshold = sell_threshold
 
     # =========================================
-    # Step 12: Direction Decision
+    # Step 14: Direction Decision + Stage Tracking
     # =========================================
     if final_prob > buy_threshold:
         decision.direction = "BUY"
         decision.decision_reason = "VALID_SIGNAL"
+        decision.stage_reached = "EXECUTION_READY"
     elif final_prob < sell_threshold:
         decision.direction = "SELL"
         decision.decision_reason = "VALID_SIGNAL"
+        decision.stage_reached = "EXECUTION_READY"
     else:
         decision.direction = None
         decision.decision_reason = "BELOW_THRESHOLD"
+        decision.stage_reached = "THRESHOLD_CHECK"
         decision.skip_reason = (
             f"HOLD: Final {final_prob:.4f} between "
             f"BUY>{buy_threshold:.4f} and SELL<{sell_threshold:.4f}"
         )
 
     # =========================================
-    # Step 13: Confidence Classification
+    # Step 15: Confidence Classification
     # >0.65 → HIGH | 0.58–0.65 → MEDIUM | else → LOW
     # =========================================
     distance_from_center = abs(final_prob - 0.5)
@@ -455,17 +496,18 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
         decision.confidence_level = "LOW"
 
     # =========================================
-    # Step 14: Log the full decision
+    # Step 16: Log the full decision
     # =========================================
     _log_decision(decision, current_adx, current_atr)
 
     # =========================================
-    # Step 15: Console Print (human-readable)
+    # Step 17: Console Print (human-readable)
     # =========================================
     status = decision.direction or "HOLD"
     conflict_flag = " ⚠️CONFLICT" if decision.conflict or decision.regime_conflict else ""
+    edge_flag = " 🔶EDGE" if decision.edge_case else ""
     print(f"\n\033[92m{'='*65}\033[0m")
-    print(f"\033[92m       🧠 ENSEMBLE DECISION v4.0{conflict_flag}\033[0m")
+    print(f"\033[92m       🧠 ENSEMBLE DECISION v4.1{conflict_flag}{edge_flag}\033[0m")
     print(f"\033[92m{'='*65}\033[0m")
     print(f"\033[92m  Session       : {session}\033[0m")
     print(f"\033[92m  Market State  : {market_state} (ADX: {current_adx:.1f} → trend_strength: {trend_strength:.3f})\033[0m")
@@ -480,6 +522,10 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
     print(f"\033[92m  Raw Score     : {raw_score:.4f}\033[0m")
     print(f"\033[92m  Final Score   : {final_prob:.4f}\033[0m")
     print(f"\033[92m  Thresholds    : BUY>{buy_threshold:.4f} | SELL<{sell_threshold:.4f}\033[0m")
+    print(f"\033[92m  Distance      : {decision.distance_from_neutral:.4f} (WZ threshold: {decision.weak_zone_threshold_used})\033[0m")
+    print(f"\033[92m  Side          : {decision.side}\033[0m")
+    print(f"\033[92m  Stage         : {decision.stage_reached}\033[0m")
+    print(f"\033[92m  Edge Case     : {decision.edge_case}\033[0m")
     print(f"\033[92m  Confidence    : {decision.confidence_level}\033[0m")
     print(f"\033[92m  Reason        : {decision.decision_reason}\033[0m")
     print(f"\033[92m  ▶ DECISION    : {status}\033[0m")
@@ -489,14 +535,29 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
 
 
 # =========================================
-# ENSEMBLE LOGGING (CSV) — FULL, NO SKIPPING
+# ENSEMBLE LOGGING (CSV) — STRICT, NO SILENT FAILURES
 # =========================================
+
+# --- Valid stages (enforced at runtime) ---
+VALID_STAGES = frozenset([
+    "INIT", "SCORE_FLOOR", "WEAK_ZONE", "ATR_FILTER",
+    "CONFLICT", "THRESHOLD_CHECK", "EXECUTION_READY",
+])
+
 
 def _log_decision(decision, current_adx=0, current_atr=0):
     """
     Log every ensemble decision to CSV for post-analysis.
     ALL fields are mandatory — no skipping.
+    CRITICAL: Failure here raises RuntimeError — no silent failures allowed.
     """
+    # --- Stage validation (MANDATORY) ---
+    if decision.stage_reached not in VALID_STAGES:
+        raise RuntimeError(
+            f"CRITICAL: Invalid stage_reached='{decision.stage_reached}'. "
+            f"Must be one of {sorted(VALID_STAGES)}"
+        )
+
     try:
         filepath = Config.ENSEMBLE_LOG_FILE
         file_exists = os.path.isfile(filepath)
@@ -509,8 +570,9 @@ def _log_decision(decision, current_adx=0, current_atr=0):
             "weighted_avg", "disagreement", "penalty",
             "session_bonus", "volatility_adjustment",
             "raw_score", "final_score",
+            "distance_from_neutral", "weak_zone_threshold_used", "edge_case",
             "buy_threshold", "sell_threshold",
-            "regime_conflict", "direction",
+            "regime_conflict", "direction", "side", "stage_reached",
             "decision_reason", "confidence_level",
             "conflict", "skip_reason",
         ]
@@ -521,7 +583,7 @@ def _log_decision(decision, current_adx=0, current_atr=0):
                 writer.writeheader()
 
             writer.writerow({
-                "timestamp": datetime.datetime.utcnow().isoformat(),
+                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 "session": decision.session,
                 "market_state": decision.market_state,
                 "adx": f"{current_adx:.2f}",
@@ -538,15 +600,87 @@ def _log_decision(decision, current_adx=0, current_atr=0):
                 "volatility_adjustment": f"{decision.volatility_adjustment:.4f}",
                 "raw_score": f"{decision.raw_score:.6f}",
                 "final_score": f"{decision.final_prob:.6f}",
+                "distance_from_neutral": f"{decision.distance_from_neutral:.6f}",
+                "weak_zone_threshold_used": f"{decision.weak_zone_threshold_used:.4f}",
+                "edge_case": decision.edge_case,
                 "buy_threshold": f"{decision.buy_threshold:.4f}",
                 "sell_threshold": f"{decision.sell_threshold:.4f}",
                 "regime_conflict": decision.regime_conflict,
                 "direction": decision.direction or "HOLD",
+                "side": decision.side,
+                "stage_reached": decision.stage_reached,
                 "decision_reason": decision.decision_reason,
                 "confidence_level": decision.confidence_level,
                 "conflict": decision.conflict,
                 "skip_reason": decision.skip_reason or "",
             })
 
+        # Update runtime metrics
+        _metrics.record(decision)
+
     except Exception as e:
-        logger.error("[Ensemble] Failed to log decision: %s", e)
+        raise RuntimeError(f"CRITICAL: Logging failed — stopping system. Error: {e}") from e
+
+
+# =========================================
+# RUNTIME METRICS TRACKER — Stage Distribution
+# =========================================
+
+class DecisionMetrics:
+    """Tracks runtime decision distribution for live observability."""
+
+    def __init__(self):
+        self.total_signals = 0
+        self.stage_counts = {s: 0 for s in VALID_STAGES}
+        self.reason_counts = {}
+        self.side_counts = {"BUY": 0, "SELL": 0, "NONE": 0}
+
+    def record(self, decision):
+        self.total_signals += 1
+        if decision.stage_reached in self.stage_counts:
+            self.stage_counts[decision.stage_reached] += 1
+        reason = decision.decision_reason
+        self.reason_counts[reason] = self.reason_counts.get(reason, 0) + 1
+        if decision.side in self.side_counts:
+            self.side_counts[decision.side] += 1
+
+    @property
+    def hold_count(self):
+        return self.total_signals - self.stage_counts.get("EXECUTION_READY", 0)
+
+    @property
+    def execution_ready_rate(self):
+        if self.total_signals == 0:
+            return 0.0
+        return self.stage_counts.get("EXECUTION_READY", 0) / self.total_signals * 100
+
+    def print_summary(self):
+        print(f"\n\033[96m{'='*60}\033[0m")
+        print(f"\033[96m       📊 ENSEMBLE RUNTIME METRICS\033[0m")
+        print(f"\033[96m{'='*60}\033[0m")
+        print(f"\033[96m  TOTAL_SIGNALS     : {self.total_signals}\033[0m")
+        print(f"\033[96m  HOLD_COUNT        : {self.hold_count}\033[0m")
+        print(f"\033[96m  EXECUTION_READY   : {self.stage_counts.get('EXECUTION_READY', 0)} ({self.execution_ready_rate:.1f}%)\033[0m")
+        print(f"\033[96m  --- Stage Breakdown ---\033[0m")
+        for stage in ["SCORE_FLOOR", "WEAK_ZONE", "ATR_FILTER", "CONFLICT", "THRESHOLD_CHECK", "EXECUTION_READY"]:
+            cnt = self.stage_counts.get(stage, 0)
+            print(f"\033[96m    {stage:20s}: {cnt}\033[0m")
+        print(f"\033[96m  --- Reason Breakdown ---\033[0m")
+        for reason, cnt in sorted(self.reason_counts.items(), key=lambda x: -x[1]):
+            print(f"\033[96m    {reason:25s}: {cnt}\033[0m")
+        print(f"\033[96m  --- Side Distribution ---\033[0m")
+        for side, cnt in self.side_counts.items():
+            print(f"\033[96m    {side:10s}: {cnt}\033[0m")
+        print(f"\033[96m{'='*60}\033[0m\n")
+
+    def reset(self):
+        self.__init__()
+
+
+# Global metrics instance
+_metrics = DecisionMetrics()
+
+
+def get_metrics():
+    """Return the global metrics tracker for external access."""
+    return _metrics
