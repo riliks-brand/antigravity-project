@@ -3828,3 +3828,19 @@
 2026-04-27 01:32:00,160 [DataLoader] [WARNING] [Market] No tick for XAUUSD. Market may be closed.
 2026-04-27 01:32:00,162 [WARNING] [Market] US30 trading is disabled.
 2026-04-27 01:32:00,162 [DataLoader] [WARNING] [Market] US30 trading is disabled.
+2026-04-27 01:32:43,661 [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-27 01:32:43,661 [MT5Engine] [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-27 01:32:43,702 [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-27 01:32:43,702 [MT5Engine] [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-27 01:32:43,713 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 01:32:43,713 [TradeManager] [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 01:32:43,715 [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 01:32:43,715 [TradeManager] [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 01:32:43,717 [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-27
+2026-04-27 01:32:43,717 [TradeManager] [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-27
+2026-04-27 01:32:50,964 [INFO] [RF] Loaded saved model from disk.
+2026-04-27 01:32:50,964 [RF_Model] [INFO] [RF] Loaded saved model from disk.
+2026-04-27 01:32:50,967 [WARNING] [Market] No tick for XAUUSD. Market may be closed.
+2026-04-27 01:32:50,967 [DataLoader] [WARNING] [Market] No tick for XAUUSD. Market may be closed.
+2026-04-27 01:32:50,968 [WARNING] [Market] US30 trading is disabled.
+2026-04-27 01:32:50,968 [DataLoader] [WARNING] [Market] US30 trading is disabled.
