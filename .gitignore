@@ -18,3 +18,6 @@ error_screenshot.png
 model.h5
 scaler.pkl
 training_curves.png
+
+*.log
+active_trades.json

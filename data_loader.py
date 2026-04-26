@@ -14,6 +14,7 @@ import pandas as pd
 import numpy as np
 import MetaTrader5 as mt5
 import datetime
+import time
 import logging
 from config import Config
 
@@ -181,6 +182,8 @@ def get_server_time_from_tick(symbol=None):
     return None
 
 
+_market_closed_logged = {}
+
 def is_market_open(symbol=None):
     """
     Check if the market is currently open for the symbol.
@@ -192,14 +195,22 @@ def is_market_open(symbol=None):
         return False
 
     # trade_mode: 0=disabled, 2=full
+    now_ts = time.time()
+    last_logged = _market_closed_logged.get(symbol, 0)
+    should_log = (now_ts - last_logged) > 3600  # Log only once per hour per symbol
+
     if info.trade_mode == 0:
-        logger.warning("[Market] %s trading is disabled.", symbol)
+        if should_log:
+            logger.warning("[Market] %s trading is disabled.", symbol)
+            _market_closed_logged[symbol] = now_ts
         return False
 
     # Also check session status via recent tick
     tick = mt5.symbol_info_tick(symbol)
     if not tick:
-        logger.warning("[Market] No tick for %s. Market may be closed.", symbol)
+        if should_log:
+            logger.warning("[Market] No tick for %s. Market may be closed.", symbol)
+            _market_closed_logged[symbol] = now_ts
         return False
 
     # Check staleness — if last tick is older than 5 minutes, market is likely closed
@@ -208,8 +219,14 @@ def is_market_open(symbol=None):
     age_seconds = (now - tick_time).total_seconds()
 
     if age_seconds > 300:
-        logger.warning("[Market] Last tick for %s is %.0fs old. Market likely closed.", symbol, age_seconds)
+        if should_log:
+            logger.warning("[Market] Last tick for %s is %.0fs old. Market likely closed.", symbol, age_seconds)
+            _market_closed_logged[symbol] = now_ts
         return False
+
+    # Reset log tracker if it opens again
+    if symbol in _market_closed_logged:
+        del _market_closed_logged[symbol]
 
     return True
 

@@ -50,7 +50,7 @@ class ManagedTrade:
     """Represents a single managed trade with all its metadata."""
 
     def __init__(self, ticket, symbol, direction, volume, entry_price,
-                 sl_price, tp1_price, tp2_price, magic, signal_time=None):
+                 sl_price, tp1_price, tp2_price, magic, signal_time=None, risk_pct=0.0):
         self.ticket = ticket
         self.symbol = symbol
         self.direction = direction          # "BUY" or "SELL"
@@ -62,6 +62,7 @@ class ManagedTrade:
         self.tp2_price = tp2_price          # Second target (trailing)
         self.magic = magic
         self.state = TradeState.OPEN
+        self.risk_pct = risk_pct
 
         # Timing
         self.signal_time = signal_time or datetime.datetime.utcnow().isoformat()
@@ -116,6 +117,7 @@ class ManagedTrade:
             "close_price": self.close_price,
             "pnl": self.pnl,
             "close_reason": self.close_reason,
+            "risk_pct": self.risk_pct,
         }
 
     @staticmethod
@@ -132,6 +134,7 @@ class ManagedTrade:
             tp2_price=d["tp2_price"],
             magic=d["magic"],
             signal_time=d.get("signal_time"),
+            risk_pct=d.get("risk_pct", 1.0),
         )
         trade.current_volume = d.get("current_volume", trade.original_volume)
         trade.state = TradeState(d.get("state", "OPEN"))
@@ -166,9 +169,9 @@ class TradeManager:
         self.consecutive_losses = 0
         self.cooldown_until = None          # datetime when cooldown expires
 
-        # Signal Deduplication
-        self.last_signal_direction = None
-        self.last_signal_candle_index = -999
+        # Signal Deduplication (per string symbol)
+        self.last_signal_direction = {}
+        self.last_signal_candle_index = {}
 
         # Daily P&L tracking
         self.daily_pnl = 0.0
@@ -279,7 +282,7 @@ class TradeManager:
 
     def register_trade(self, ticket, symbol, direction, volume,
                        entry_price, expected_price, sl_price,
-                       tp1_price, tp2_price, signal_time_ms, fill_time_ms):
+                       tp1_price, tp2_price, signal_time_ms, fill_time_ms, risk_pct=1.0):
         """
         Register a newly opened trade into the manager.
         Calculates latency and slippage automatically.
@@ -301,6 +304,7 @@ class TradeManager:
                 magic=Config.MAGIC_NUMBER,
                 signal_time=datetime.datetime.utcfromtimestamp(signal_time_ms / 1000).isoformat()
                            if signal_time_ms > 1e9 else None,
+                risk_pct=risk_pct,
             )
 
             # Execution Quality Metrics
@@ -604,7 +608,69 @@ class TradeManager:
     # GUARDS — Pre-trade validation
     # =========================================
 
-    def can_trade(self, direction, candle_index):
+    # =========================================
+    # GUARDS & PORTFOLIO MACROS
+    # =========================================
+
+    def get_current_total_risk(self):
+        """Calculate the total risk % currently deployed across all open trades."""
+        total = 0.0
+        for t in self.active_trades.values():
+            if t.state in (TradeState.OPEN, TradeState.PARTIAL_CLOSED):
+                total += getattr(t, 'risk_pct', 1.0)
+        return total
+
+    def get_usd_exposure(self):
+        """Count the number of active trades containing USD to check diversification."""
+        return sum(1 for t in self.active_trades.values() 
+                   if t.state in (TradeState.OPEN, TradeState.PARTIAL_CLOSED) and "USD" in t.symbol)
+
+    def get_current_drawdown(self, current_balance):
+        """Calculate intraday drawdown based on daily start balance."""
+        if self.daily_start_balance and self.daily_start_balance > 0 and self.daily_pnl < 0:
+            return (abs(self.daily_pnl) / self.daily_start_balance) * 100.0
+        return 0.0
+
+    def get_symbol_performance_modifier(self, symbol):
+        """Return memory boost/penalty based on historical performance of a symbol."""
+        matches = [t for t in self.closed_trades if t.get("symbol") == symbol]
+        if not matches:
+            return 0.0
+        wins = sum(1 for t in matches if t.get("pnl", 0) > 0)
+        win_rate = wins / len(matches)
+        
+        # Boost profitable pairs, penalize unprofitable pairs
+        if win_rate >= 0.60:
+            return +0.02
+        elif win_rate <= 0.40:
+            return -0.02
+        return 0.0
+
+    def check_correlation(self, new_symbol, new_direction):
+        """Check if taking this trade violates correlation limits against open trades."""
+        open_sym_dirs = {t.symbol: t.direction for t in self.active_trades.values() 
+                         if t.state in (TradeState.OPEN, TradeState.PARTIAL_CLOSED)}
+                         
+        for rule in Config.CORRELATION_RULES:
+            pairs = rule.get("pairs", [])
+            ctype = rule.get("type", "DIRECT")
+            
+            if new_symbol in pairs:
+                other_symbol = pairs[0] if pairs[1] == new_symbol else pairs[1]
+                
+                if other_symbol in open_sym_dirs:
+                    open_dir = open_sym_dirs[other_symbol]
+                    
+                    if ctype == "DIRECT" and new_direction == open_dir:
+                        return False, f"CORRELATION (DIRECT): Already holding {open_dir} {other_symbol}"
+                    elif ctype == "INVERSE" and new_direction != open_dir:
+                        # For INVERSE (e.g. XAUUSD vs USDJPY), BUY + SELL is bad (both betting against USD)
+                        # So if new_dir != open_dir, it's correlated.
+                        return False, f"CORRELATION (INVERSE): Already holding {open_dir} {other_symbol}"
+                        
+        return True, "OK"
+
+    def can_trade(self, symbol, direction, candle_index):
         """
         Master gate: checks ALL conditions before allowing a trade.
         Returns (allowed: bool, reason: str)
@@ -633,18 +699,20 @@ class TradeManager:
             if self.daily_pnl < 0 and daily_loss_pct >= Config.MAX_DAILY_LOSS_PCT:
                 return False, f"KILL SWITCH: Daily loss {daily_loss_pct:.1f}% exceeds {Config.MAX_DAILY_LOSS_PCT}%."
 
-        # 4. Signal deduplication
-        if (direction == self.last_signal_direction and
-                abs(candle_index - self.last_signal_candle_index) < Config.MIN_CANDLES_BETWEEN_TRADES):
-            candles_since = abs(candle_index - self.last_signal_candle_index)
-            return False, f"DUPLICATE SIGNAL: Same {direction} within {candles_since} candles (min: {Config.MIN_CANDLES_BETWEEN_TRADES})."
+        # 4. Signal deduplication per symbol
+        last_dir = self.last_signal_direction.get(symbol)
+        last_idx = self.last_signal_candle_index.get(symbol, -999)
+        if (direction == last_dir and
+                abs(candle_index - last_idx) < Config.MIN_CANDLES_BETWEEN_TRADES):
+            candles_since = abs(candle_index - last_idx)
+            return False, f"DUPLICATE SIGNAL: Same {direction} {symbol} within {candles_since} candles (min: {Config.MIN_CANDLES_BETWEEN_TRADES})."
 
         return True, "OK"
 
-    def update_signal_tracker(self, direction, candle_index):
+    def update_signal_tracker(self, symbol, direction, candle_index):
         """Mark this signal as the latest for deduplication."""
-        self.last_signal_direction = direction
-        self.last_signal_candle_index = candle_index
+        self.last_signal_direction[symbol] = direction
+        self.last_signal_candle_index[symbol] = candle_index
 
     def reset_daily_stats(self, current_balance):
         """Reset daily P&L. Call at the start of each trading day."""
