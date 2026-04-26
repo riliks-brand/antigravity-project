@@ -354,18 +354,32 @@ def main():
                 current_adx = processed_df['ADX'].iloc[-1] if 'ADX' in processed_df.columns else 25.0
                 atr_series = processed_df['ATR']
 
+                # ===== SESSION DETECTION (v4.0) =====
+                session = TradeManager.get_active_session(symbol)
+
+                # ===== ENSEMBLE PREDICTION (Session-Aware) =====
                 decision = ensemble_predict(
                     lstm_prob=lstm_prob,
                     rf_prob=rf_prob,
                     current_adx=current_adx,
                     current_atr=current_atr,
                     atr_series=atr_series,
+                    session=session,
                 )
 
                 direction = decision.direction
                 base_prob = decision.final_prob
-                
-                if decision.conflict or direction is None:
+                trend_strength = decision.trend_strength
+
+                # ===== REGIME PERSISTENCE (v4.0) =====
+                current_regime, regime_changed = manager.update_regime(trend_strength)
+
+                # ===== SAFETY RULE: if direction is None → DO NOT EXECUTE =====
+                if direction is None:
+                    logger.info(
+                        "[%s] SKIP: direction=None | reason=%s | confidence=%s | session=%s",
+                        symbol, decision.decision_reason, decision.confidence_level, session
+                    )
                     continue
                     
                 # ===== PORTFOLIO MACROS: CONTEXT BOOSTS & MEMORY =====
@@ -386,8 +400,11 @@ def main():
                 final_rank_score = base_prob + memory_bias_local + sym_perf_mod + context_boost
                 final_rank_score = np.clip(final_rank_score, 0.0, 1.0)
                 
-                logger.info("[%s] Base: %.3f | Context: %+.3f | MemBias: %+.3f | SymPerf: %+.3f -> RANK: %.3f", 
-                            symbol, base_prob, context_boost, memory_bias_local, sym_perf_mod, final_rank_score)
+                logger.info(
+                    "[%s] Base: %.3f | Context: %+.3f | MemBias: %+.3f | SymPerf: %+.3f -> RANK: %.3f | Session: %s | Confidence: %s", 
+                    symbol, base_prob, context_boost, memory_bias_local, sym_perf_mod,
+                    final_rank_score, session, decision.confidence_level
+                )
 
                 # Minimum score threshold check
                 if final_rank_score < Config.MIN_GLOBAL_SCORE:
@@ -408,7 +425,11 @@ def main():
                     "lstm_prob": lstm_prob,
                     "rf_prob": rf_prob,
                     "penalty": decision.penalty,
-                    "current_atr": current_atr
+                    "current_atr": current_atr,
+                    "trend_strength": trend_strength,
+                    "confidence_level": decision.confidence_level,
+                    "session": session,
+                    "regime_changed": regime_changed,
                 })
 
             # === RANK & EXECUTE PORTFOLIO ===
@@ -452,8 +473,13 @@ def main():
                         logger.warning("[DIVERSIFICATION %s]: Max USD exposure reached (%d)", sym, Config.MAX_USD_EXPOSURE)
                         continue
                 
-                # 4. Risk / Position Sizing
-                assigned_risk = Config.RISK_TIER_STRONG if score >= 0.70 else Config.RISK_TIER_WEAK
+                # 4. Risk / Position Sizing (Adaptive v4.0)
+                assigned_risk = manager.get_adaptive_risk(
+                    session=opp.get("session", "UNKNOWN"),
+                    trend_strength=opp.get("trend_strength", 0.0),
+                    regime_changed=opp.get("regime_changed", False),
+                    confidence_level=opp.get("confidence_level", "MEDIUM"),
+                )
                 
                 # Drawdown Survival Mode
                 current_dd = manager.get_current_drawdown(get_account_balance())

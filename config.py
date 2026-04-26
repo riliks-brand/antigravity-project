@@ -144,7 +144,12 @@ class Config:
     SESSION_LONDON = (7, 16)
     SESSION_NY = (13, 22)
     SESSION_ASIA = (0, 9)
-    TRADE_ONLY_IN_SESSIONS = True        # If True, only trade during active sessions
+    
+    # Session-Specific Trading Toggles
+    TRADE_ONLY_IN_SESSIONS = True        # If True, enforces session filtering
+    TRADE_SESSION_LONDON = True          # Enable trading during London session
+    TRADE_SESSION_NY = True              # Enable trading during New York session
+    TRADE_SESSION_ASIA = False           # Enable trading during Asia session (often lower liquidity)
 
     # =========================================
     # News Filter

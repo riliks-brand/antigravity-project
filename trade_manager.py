@@ -181,6 +181,13 @@ class TradeManager:
         # Equity Curve
         self.equity_history = []
 
+        # --- Regime Persistence State (v4.0) ---
+        self._current_regime = "UNKNOWN"      # "TRENDING" or "RANGING"
+        self._pending_regime = None            # Candidate regime awaiting confirmation
+        self._regime_confirm_count = 0         # Candles confirming the pending regime
+        self._regime_changed_recently = False  # True for 1 cycle after a regime switch
+        self._regime_confirm_required = 2      # Candles needed before regime switch
+
         # Load persisted state
         self._load_state()
         logger.info("TradeManager initialized. Active trades: %d", len(self.active_trades))
@@ -771,8 +778,36 @@ class TradeManager:
         return True, spread_points
 
     # =========================================
-    # SESSION FILTER
+    # SESSION FILTER & DETECTION
     # =========================================
+
+    @staticmethod
+    def get_active_session(symbol=None):
+        """
+        Detect the current active trading session based on MT5 server time.
+
+        Returns:
+            str: "London", "New York", "Asia", or "UNKNOWN"
+        """
+        import MetaTrader5 as mt5
+
+        sym = symbol or getattr(Config, "SYMBOL", "EURUSD")
+        tick = mt5.symbol_info_tick(sym)
+        if not tick:
+            return "UNKNOWN"
+
+        server_time = datetime.datetime.utcfromtimestamp(tick.time)
+        hour = server_time.hour
+
+        # Check sessions in priority order (London > NY overlap prioritizes London)
+        if Config.SESSION_LONDON[0] <= hour < Config.SESSION_LONDON[1]:
+            return "London"
+        if Config.SESSION_NY[0] <= hour < Config.SESSION_NY[1]:
+            return "New York"
+        if Config.SESSION_ASIA[0] <= hour < Config.SESSION_ASIA[1]:
+            return "Asia"
+
+        return "UNKNOWN"
 
     @staticmethod
     def is_in_trading_session(symbol=None):
@@ -785,7 +820,7 @@ class TradeManager:
         if not Config.TRADE_ONLY_IN_SESSIONS:
             return True, "Session filter disabled"
 
-        sym = symbol or Config.FOREX_SYMBOL
+        sym = symbol or getattr(Config, "SYMBOL", "EURUSD")
         tick = mt5.symbol_info_tick(sym)
         if not tick:
             return True, "Cannot get server time, allowing trade"
@@ -797,11 +832,131 @@ class TradeManager:
         ny = Config.SESSION_NY[0] <= hour < Config.SESSION_NY[1]
         asia = Config.SESSION_ASIA[0] <= hour < Config.SESSION_ASIA[1]
 
+        if london and getattr(Config, "TRADE_SESSION_LONDON", True):
+            return True, f"In London session (Server Hour: {hour})"
+        if ny and getattr(Config, "TRADE_SESSION_NY", True):
+            return True, f"In New York session (Server Hour: {hour})"
+        if asia and getattr(Config, "TRADE_SESSION_ASIA", True):
+            return True, f"In Asia session (Server Hour: {hour})"
+
         if london or ny or asia:
             session_name = "London" if london else ("New York" if ny else "Asia")
-            return True, f"In {session_name} session (Server Hour: {hour})"
+            return False, f"In {session_name} session, but trading is disabled for this session (Server Hour: {hour})"
+
+        return False, f"Outside all sessions (Server Hour: {hour})"
+
+    # =========================================
+    # REGIME PERSISTENCE (Anti Noise / Anti Flip-Flop)
+    # =========================================
+
+    def update_regime(self, trend_strength):
+        """
+        Update the market regime with persistence logic.
+        Requires confirmation candles before switching regime.
+        If regime changed recently, sets flag to temporarily reduce risk.
+
+        Args:
+            trend_strength: float 0-1 from ensemble_engine
+
+        Returns:
+            tuple: (current_regime: str, regime_changed: bool)
+        """
+        import numpy as np
+
+        # Determine the observed regime from trend_strength
+        if trend_strength >= 0.5:
+            observed_regime = "TRENDING"
         else:
-            return False, f"Outside all sessions (Server Hour: {hour})"
+            observed_regime = "RANGING"
+
+        # Reset the "recently changed" flag at the start of each call
+        self._regime_changed_recently = False
+
+        if self._current_regime == "UNKNOWN":
+            # First call ever — set directly without confirmation
+            self._current_regime = observed_regime
+            self._pending_regime = None
+            self._regime_confirm_count = 0
+            logger.info("[Regime] Initial regime set: %s (trend_strength=%.3f)",
+                        observed_regime, trend_strength)
+            return self._current_regime, False
+
+        if observed_regime == self._current_regime:
+            # No change — reset any pending switch
+            self._pending_regime = None
+            self._regime_confirm_count = 0
+            return self._current_regime, False
+
+        # Observed regime differs from current — start or continue confirmation
+        if self._pending_regime == observed_regime:
+            self._regime_confirm_count += 1
+        else:
+            # New candidate regime
+            self._pending_regime = observed_regime
+            self._regime_confirm_count = 1
+
+        if self._regime_confirm_count >= self._regime_confirm_required:
+            # Confirmed — switch regime
+            old_regime = self._current_regime
+            self._current_regime = observed_regime
+            self._pending_regime = None
+            self._regime_confirm_count = 0
+            self._regime_changed_recently = True
+            logger.info(
+                "[Regime] SWITCH: %s → %s (confirmed after %d candles, trend_strength=%.3f)",
+                old_regime, observed_regime, self._regime_confirm_required, trend_strength
+            )
+            return self._current_regime, True
+        else:
+            logger.debug(
+                "[Regime] Pending switch to %s (%d/%d confirmations, trend_strength=%.3f)",
+                observed_regime, self._regime_confirm_count,
+                self._regime_confirm_required, trend_strength
+            )
+            return self._current_regime, False
+
+    # =========================================
+    # ADAPTIVE RISK MANAGEMENT
+    # =========================================
+
+    def get_adaptive_risk(self, session, trend_strength, regime_changed, confidence_level="MEDIUM"):
+        """
+        Calculate adaptive risk based on session, trend, regime stability, and confidence.
+
+        Rules:
+            - Strong trend + HIGH confidence → 1.0%
+            - Weak/Range or MEDIUM confidence → 0.5%
+            - regime_changed == True → reduce base risk temporarily (×0.7)
+
+        Args:
+            session: str ("London", "New York", "Asia", "UNKNOWN")
+            trend_strength: float 0-1
+            regime_changed: bool
+            confidence_level: str ("HIGH", "MEDIUM", "LOW")
+
+        Returns:
+            float: risk percentage (e.g. 1.0 or 0.5)
+        """
+        # Base risk from trend + confidence
+        if trend_strength >= 0.5 and confidence_level == "HIGH":
+            base_risk = 1.0
+        else:
+            base_risk = 0.5
+
+        # Regime change → temporary risk reduction
+        if regime_changed:
+            base_risk *= 0.7
+            logger.info(
+                "[AdaptiveRisk] Regime changed recently → risk reduced to %.2f%%",
+                base_risk
+            )
+
+        logger.debug(
+            "[AdaptiveRisk] session=%s, trend=%.3f, confidence=%s, regime_changed=%s → risk=%.2f%%",
+            session, trend_strength, confidence_level, regime_changed, base_risk
+        )
+
+        return base_risk
 
     # =========================================
     # LOGGING — Execution Quality + Trade History
