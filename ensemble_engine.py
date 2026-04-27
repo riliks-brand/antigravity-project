@@ -443,9 +443,9 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
 
     # =========================================
     # Step 8: Weak Zone Threshold (Session-Aware)
-    # Asia = stricter (0.05), London/NY = normal (0.04)
+    # Phase 2.5 Adjustment: 0.03 for normal, 0.04 for Asia
     # =========================================
-    weak_zone_threshold = 0.05 if session == "Asia" else 0.04
+    weak_zone_threshold = 0.04 if session == "Asia" else 0.03
     decision.weak_zone_threshold_used = weak_zone_threshold
 
     # Edge case detection: borderline decisions within 0.005 of threshold
@@ -567,25 +567,35 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
     decision.final_prob = final_prob
 
     # =========================================
-    # Step 13: Dynamic Thresholds (Mode C — Enhanced Adaptive)
+    # Step 13: Dynamic Thresholds (Phase 2.5 — Confidence Unlock)
     # =========================================
     if diagnostic:
         # Phase 1 Diagnostic Mode: Flat relaxation
         buy_threshold = 0.65
         sell_threshold = 0.35
     else:
-        if trend_strength >= 0.7:
-            buy_threshold = 0.56 + (1.0 - trend_strength) * 0.06
+        if trend_strength > 0.35:
+            buy_threshold = 0.60
+        elif trend_strength > 0.25:
+            buy_threshold = 0.62
         else:
-            buy_threshold = 0.58 + (1.0 - trend_strength) * 0.08
-        sell_threshold = 1.0 - buy_threshold  # Mirror for sell side
+            buy_threshold = 0.65
+        sell_threshold = 1.0 - buy_threshold
 
     decision.buy_threshold = buy_threshold
     decision.sell_threshold = sell_threshold
 
     # =========================================
-    # Step 14: Direction Decision + Stage Tracking
+    # Step 14: Direction Decision + Near-Miss Activation
     # =========================================
+    # Calculate distance to threshold
+    if final_prob >= 0.5:
+        dist_to_thresh = buy_threshold - final_prob
+    else:
+        dist_to_thresh = final_prob - sell_threshold
+
+    allow_near_miss = (dist_to_thresh > 0) and (dist_to_thresh < 0.07) and (trend_strength > 0.3)
+
     if final_prob > buy_threshold:
         decision.direction = "BUY"
         decision.decision_reason = "VALID_SIGNAL"
@@ -594,6 +604,12 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
         decision.direction = "SELL"
         decision.decision_reason = "VALID_SIGNAL"
         decision.stage_reached = "EXECUTION_READY"
+    elif allow_near_miss:
+        decision.direction = decision.side
+        decision.decision_reason = "NEAR_MISS_ACTIVATION"
+        decision.stage_reached = "EXECUTION_READY"
+        logger.info("[Ensemble] 🚀 [NEAR_MISS ACTIVATED] score: %.4f | ts: %.2f | dist_to_thresh: %.4f", 
+                    final_prob, trend_strength, dist_to_thresh)
     else:
         decision.direction = None
         decision.decision_reason = "BELOW_THRESHOLD"
