@@ -1,0 +1,189 @@
+{
+  "mode_a": {
+    "mode": "Mode A (Current)",
+    "total": 147,
+    "holds": 37,
+    "executed": 110,
+    "rate": "74.8%",
+    "stages": {
+      "EXECUTION_READY": 110,
+      "CONFLICT": 12,
+      "THRESHOLD_CHECK": 11,
+      "WEAK_ZONE": 7,
+      "SCORE_FLOOR": 5,
+      "ATR_FILTER": 2
+    },
+    "avg_conf": "2.90",
+    "avg_dist": "0.2297",
+    "avg_ts": "0.5643",
+    "avg_dis": "0.1032",
+    "avg_q": "3.3611",
+    "sessions": {
+      "London": {
+        "exec": 33,
+        "total": 47,
+        "rate": "70.2%"
+      },
+      "New York": {
+        "exec": 49,
+        "total": 57,
+        "rate": "86.0%"
+      },
+      "Asia": {
+        "exec": 28,
+        "total": 43,
+        "rate": "65.1%"
+      }
+    }
+  },
+  "mode_c": {
+    "mode": "Mode C (Targeted)",
+    "total": 147,
+    "holds": 29,
+    "executed": 118,
+    "rate": "80.3%",
+    "stages": {
+      "EXECUTION_READY": 118,
+      "THRESHOLD_CHECK": 12,
+      "WEAK_ZONE": 7,
+      "SCORE_FLOOR": 5,
+      "CONFLICT": 3,
+      "ATR_FILTER": 2
+    },
+    "avg_conf": "2.91",
+    "avg_dist": "0.2310",
+    "avg_ts": "0.5667",
+    "avg_dis": "0.1032",
+    "avg_q": "3.3703",
+    "sessions": {
+      "London": {
+        "exec": 36,
+        "total": 47,
+        "rate": "76.6%"
+      },
+      "New York": {
+        "exec": 49,
+        "total": 57,
+        "rate": "86.0%"
+      },
+      "Asia": {
+        "exec": 33,
+        "total": 43,
+        "rate": "76.7%"
+      }
+    }
+  },
+  "delta": {
+    "count": 8,
+    "avg_q": "3.4964",
+    "avg_conf": "3.00",
+    "avg_ts": "0.6002",
+    "avg_dis": "0.1038",
+    "avg_dist": "0.2486",
+    "sessions": {
+      "Asia": 5,
+      "London": 3
+    },
+    "blocked_by": {
+      "REGIME_CONFLICT": 8
+    },
+    "detail": [
+      {
+        "ts": "2026-04-27T09:30:15",
+        "sess": "Asia",
+        "dir": "BUY",
+        "conf": "HIGH",
+        "trend": "0.808",
+        "dis": "0.1211",
+        "dist": "0.3013",
+        "q": "3.6865",
+        "pnl": "N/A",
+        "dd": "N/A"
+      },
+      {
+        "ts": "2026-04-27T09:30:15",
+        "sess": "Asia",
+        "dir": "BUY",
+        "conf": "HIGH",
+        "trend": "0.880",
+        "dis": "0.1472",
+        "dist": "0.2059",
+        "q": "3.7330",
+        "pnl": "N/A",
+        "dd": "N/A"
+      },
+      {
+        "ts": "2026-04-27T09:30:15",
+        "sess": "London",
+        "dir": "BUY",
+        "conf": "HIGH",
+        "trend": "0.167",
+        "dis": "0.0988",
+        "dist": "0.3136",
+        "q": "3.0683",
+        "pnl": "N/A",
+        "dd": "N/A"
+      },
+      {
+        "ts": "2026-04-27T09:30:15",
+        "sess": "Asia",
+        "dir": "BUY",
+        "conf": "HIGH",
+        "trend": "0.997",
+        "dis": "0.1579",
+        "dist": "0.2193",
+        "q": "3.8390",
+        "pnl": "N/A",
+        "dd": "N/A"
+      },
+      {
+        "ts": "2026-04-27T09:30:15",
+        "sess": "London",
+        "dir": "BUY",
+        "conf": "HIGH",
+        "trend": "0.170",
+        "dis": "0.1865",
+        "dist": "0.2395",
+        "q": "2.9839",
+        "pnl": "N/A",
+        "dd": "N/A"
+      },
+      {
+        "ts": "2026-04-27T09:30:15",
+        "sess": "Asia",
+        "dir": "BUY",
+        "conf": "HIGH",
+        "trend": "0.815",
+        "dis": "0.0068",
+        "dist": "0.3006",
+        "q": "3.8081",
+        "pnl": "N/A",
+        "dd": "N/A"
+      },
+      {
+        "ts": "2026-04-27T09:30:15",
+        "sess": "London",
+        "dir": "BUY",
+        "conf": "HIGH",
+        "trend": "0.000",
+        "dis": "0.0500",
+        "dist": "0.2100",
+        "q": "2.9500",
+        "pnl": "N/A",
+        "dd": "N/A"
+      },
+      {
+        "ts": "2026-04-27T09:30:15",
+        "sess": "Asia",
+        "dir": "SELL",
+        "conf": "HIGH",
+        "trend": "0.965",
+        "dis": "0.0624",
+        "dist": "0.1989",
+        "q": "3.9025",
+        "pnl": "N/A",
+        "dd": "N/A"
+      }
+    ]
+  }
+}

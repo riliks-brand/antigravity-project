@@ -203,38 +203,93 @@ def _compute_volatility_adjustment(current_atr, atr_series):
     return float(adjustment)
 
 
+
+def _compute_confidence_level(distance_from_neutral):
+    """
+    Compute confidence level based on distance from 0.5 (neutral).
+    Used as a pre-computation for the Double Safety Gate in regime conflict override.
+    """
+    if distance_from_neutral > 0.15:
+        return "HIGH"
+    elif distance_from_neutral > 0.08:
+        return "MEDIUM"
+    else:
+        return "LOW"
+
+
 # =========================================
-# REGIME CONFLICT DETECTION
+# REGIME CONFLICT DETECTION (Mode C — Adaptive Override)
 # =========================================
 
-def _detect_regime_conflict(session, trend_strength):
+def _detect_regime_conflict(session, trend_strength, distance_from_neutral=0.0,
+                            atr_normalized=1.0, confidence_level="LOW"):
     """
     Detect if there's a strong conflict between session expectation and market reality.
+    Mode C: Allows strong, high-confidence signals to override regime conflicts
+    with a dynamic penalty instead of a hard block.
 
     Conflicts:
-        - London (expects trend) but trend_strength < 0.2  → CONFLICT
-        - Asia (expects range) but trend_strength > 0.8    → CONFLICT
+        - London (expects trend) but trend_strength < 0.15  → CONFLICT
+        - Asia (expects range) but trend_strength > 0.8     → CONFLICT
+
+    Override conditions (ALL must be met):
+        - distance_from_neutral > dynamic_distance (volatility-adaptive)
+        - confidence_level >= MEDIUM (double safety gate)
 
     Returns:
-        bool: True if strong conflict detected → must return HOLD
+        tuple: (is_blocked: bool, regime_penalty: float)
+            - (True, 0.0)    → hard block, signal is too weak for override
+            - (False, 0.0)   → no conflict detected
+            - (False, penalty) → conflict overridden, penalty applied
     """
-    if session == "London" and trend_strength < 0.2:
-        # London should be trending, but market is dead/ranging
-        logger.warning(
-            "[Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=%.2f (ranging)",
-            trend_strength
-        )
-        return True
+    conflict_detected = False
+    conflict_type = None
 
-    if session == "Asia" and trend_strength > 0.8:
-        # Asia should be quiet/ranging, but market is strongly trending
-        logger.warning(
-            "[Ensemble] ⚠️ REGIME CONFLICT: Asia session but trend_strength=%.2f (strong trend)",
-            trend_strength
-        )
-        return True
+    if session == "London" and trend_strength < 0.15:
+        conflict_detected = True
+        conflict_type = "London_ranging"
+    elif session == "Asia" and trend_strength > 0.8:
+        conflict_detected = True
+        conflict_type = "Asia_trending"
 
-    return False
+    if not conflict_detected:
+        return False, 0.0  # No conflict
+
+    # --- Adaptive Override Logic ---
+
+    # Dynamic distance threshold: adapts to market volatility
+    # Higher volatility → requires stronger signal to override
+    dynamic_distance = 0.12 + (atr_normalized * 0.05)
+
+    # Double safety gate: distance + confidence must both be sufficient
+    confidence_map = {"HIGH": 3, "MEDIUM": 2, "LOW": 1}
+    confidence_score = confidence_map.get(str(confidence_level).upper(), 1)
+
+    allow_override = (distance_from_neutral > dynamic_distance) and (confidence_score >= 2)
+
+    if allow_override:
+        # Dynamic regime penalty: scales based on how "wrong" the regime is
+        if conflict_type == "London_ranging":
+            regime_penalty = max(0.0, (0.15 - trend_strength) * 0.1)
+        else:  # Asia_trending
+            regime_penalty = 0.02  # Fixed penalty for Asia override
+
+        logger.info(
+            "[Ensemble] ✅ REGIME OVERRIDE: session=%s, ts=%.2f, dist=%.4f > dyn_dist=%.4f, "
+            "conf=%s → penalty=%.4f",
+            session, trend_strength, distance_from_neutral, dynamic_distance,
+            confidence_level, regime_penalty
+        )
+        return False, regime_penalty  # Allow through with penalty
+
+    # Hard block — signal not strong enough to override
+    logger.warning(
+        "[Ensemble] ⚠️ REGIME CONFLICT: session=%s, ts=%.2f, dist=%.4f, "
+        "dyn_dist=%.4f, conf=%s → HARD BLOCK",
+        session, trend_strength, distance_from_neutral, dynamic_distance,
+        confidence_level
+    )
+    return True, 0.0
 
 
 # =========================================
@@ -308,11 +363,15 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
     decision.weighted_avg = weighted_avg
 
     # =========================================
-    # Step 5: Conflict Detection (model disagreement)
+    # Step 5: Conflict Detection (Mode C — Graduated)
+    # Hard block at >= 0.60 (always)
+    # Moderate zone 0.45-0.60: block only if models disagree on DIRECTION
+    # Below 0.45: no conflict (proceed to penalty in Step 6)
     # =========================================
     disagreement = abs(lstm_prob - rf_prob)
 
-    if disagreement >= Config.ENSEMBLE_CONFLICT_THRESHOLD:
+    # Hard conflict: disagreement >= 0.60 → always block
+    if disagreement >= 0.60:
         decision.conflict = True
         decision.direction = None
         decision.final_prob = weighted_avg
@@ -321,11 +380,38 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
         decision.confidence_level = "LOW"
         decision.skip_reason = (
             f"MODEL CONFLICT: |LSTM({lstm_prob:.3f}) - RF({rf_prob:.3f})| = "
-            f"{disagreement:.3f} >= {Config.ENSEMBLE_CONFLICT_THRESHOLD}"
+            f"{disagreement:.3f} >= 0.60 (hard block)"
         )
         logger.warning("[Ensemble] ⚠️ %s → HOLD", decision.skip_reason)
         _log_decision(decision, current_adx, current_atr)
         return decision
+
+    # Moderate conflict zone: 0.45 <= disagreement < 0.60
+    if disagreement >= 0.45:
+        same_direction = (lstm_prob > 0.5 and rf_prob > 0.5) or \
+                         (lstm_prob < 0.5 and rf_prob < 0.5)
+        if not same_direction:
+            # Opposite directions + high disagreement → hard block
+            decision.conflict = True
+            decision.direction = None
+            decision.final_prob = weighted_avg
+            decision.decision_reason = "CONFLICT"
+            decision.stage_reached = "CONFLICT"
+            decision.confidence_level = "LOW"
+            decision.skip_reason = (
+                f"MODEL CONFLICT: |LSTM({lstm_prob:.3f}) - RF({rf_prob:.3f})| = "
+                f"{disagreement:.3f} >= 0.45, opposite directions → block"
+            )
+            logger.warning("[Ensemble] ⚠️ %s → HOLD", decision.skip_reason)
+            _log_decision(decision, current_adx, current_atr)
+            return decision
+        else:
+            # Same direction but magnitude differs → proceed with heavy penalty in Step 6
+            logger.info(
+                "[Ensemble] ℹ️ MODEL MODERATE CONFLICT: |LSTM(%.3f) - RF(%.3f)| = %.3f, "
+                "same direction → proceed with penalty",
+                lstm_prob, rf_prob, disagreement
+            )
 
     # =========================================
     # Step 6: Disagreement Penalty
@@ -404,10 +490,21 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
         return decision
 
     # =========================================
-    # Step 11: Regime Conflict (session vs trend mismatch → HOLD)
-    # NOT a penalty. NOT a score reduction. Direct HOLD.
+    # Step 11: Regime Conflict (Mode C — Adaptive Override)
+    # Strong signals with high confidence can pass with a dynamic penalty.
+    # Weak signals in wrong regime are still hard blocked.
     # =========================================
-    regime_conflict = _detect_regime_conflict(session, trend_strength)
+    # Pre-compute confidence for the safety gate
+    _pre_confidence = _compute_confidence_level(distance_from_neutral)
+
+    # ATR normalization for dynamic distance threshold
+    atr_mean = atr_series.mean() if atr_series is not None and len(atr_series) > 0 else current_atr
+    atr_normalized = min(1.0, current_atr / atr_mean) if atr_mean > 0 else 1.0
+
+    regime_conflict, regime_penalty = _detect_regime_conflict(
+        session, trend_strength, distance_from_neutral,
+        atr_normalized, _pre_confidence
+    )
     decision.regime_conflict = regime_conflict
 
     if regime_conflict:
@@ -421,6 +518,16 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
         logger.warning("[Ensemble] ⛔ %s → HOLD", decision.skip_reason)
         _log_decision(decision, current_adx, current_atr)
         return decision
+
+    # If regime was overridden, apply the penalty to base_score
+    if regime_penalty > 0:
+        if base_score > 0.5:
+            base_score -= regime_penalty
+        else:
+            base_score += regime_penalty
+        base_score = float(np.clip(base_score, 0.0, 1.0))
+        logger.info("[Ensemble] Regime penalty applied: %.4f → adjusted base_score=%.4f",
+                    regime_penalty, base_score)
 
     # =========================================
     # Step 12: Additive Scoring Model (STRICTLY additive, NO multiplication)
@@ -452,12 +559,18 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
     decision.final_prob = final_prob
 
     # =========================================
-    # Step 13: Dynamic Thresholds (Regime-Aware)
-    # EXACT FORMULA: buy_threshold = 0.58 + (1 - trend_strength) * 0.08
-    # Strong trend (ts=1.0) → buy_threshold = 0.58
-    # No trend (ts=0.0) → buy_threshold = 0.66
+    # Step 13: Dynamic Thresholds (Mode C — Enhanced Adaptive)
+    # Strong trend (ts >= 0.7): steeper curve, more permissive
+    #   buy_threshold = 0.56 + (1 - ts) * 0.06
+    #   ts=1.0 → 0.56, ts=0.7 → 0.578
+    # Normal/weak trend (ts < 0.7): standard formula (unchanged)
+    #   buy_threshold = 0.58 + (1 - ts) * 0.08
+    #   ts=0.0 → 0.66
     # =========================================
-    buy_threshold = 0.58 + (1.0 - trend_strength) * 0.08
+    if trend_strength >= 0.7:
+        buy_threshold = 0.56 + (1.0 - trend_strength) * 0.06
+    else:
+        buy_threshold = 0.58 + (1.0 - trend_strength) * 0.08
     sell_threshold = 1.0 - buy_threshold  # Mirror for sell side
 
     decision.buy_threshold = buy_threshold

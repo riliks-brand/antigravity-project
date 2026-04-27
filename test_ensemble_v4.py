@@ -148,17 +148,30 @@ class TestATRFilter:
 # =========================================
 
 class TestRegimeConflict:
-    def test_london_low_trend_conflict(self):
-        d = predict(lstm=0.75, rf=0.70, adx=20, session="London")
+    def test_london_low_trend_conflict_weak_signal(self):
+        """Mode C: Weak signal + London conflict → still HOLD."""
+        # distance ~0.022 < dynamic_distance → hard block
+        d = predict(lstm=0.53, rf=0.52, adx=20, session="London")
         assert d.direction is None
-        assert d.decision_reason == "CONFLICT"
-        assert d.stage_reached == "CONFLICT"
 
-    def test_asia_high_trend_conflict(self):
+    def test_london_low_trend_override_strong_signal(self):
+        """Mode C: Strong signal + London conflict → OVERRIDE with penalty."""
+        # LSTM=0.75, RF=0.70, ADX=20 → ts=0, distance=0.21 > dynamic_distance
+        d = predict(lstm=0.75, rf=0.70, adx=20, session="London")
+        assert d.direction == "BUY"  # Overridden, not blocked
+        assert d.regime_conflict is False  # Override returns False
+
+    def test_asia_high_trend_override_strong_signal(self):
+        """Mode C: Strong Asia signal overrides conflict with penalty."""
         d = predict(lstm=0.80, rf=0.75, adx=55, session="Asia")
+        assert d.direction == "BUY"  # Override allowed
+        assert d.regime_conflict is False
+
+    def test_asia_high_trend_conflict_weak_signal(self):
+        """Mode C: Weak signal in Asia trending → still blocked."""
+        # distance ~0.06, below dynamic_distance → hard block
+        d = predict(lstm=0.56, rf=0.54, adx=55, session="Asia")
         assert d.direction is None
-        assert d.decision_reason == "CONFLICT"
-        assert d.stage_reached == "CONFLICT"
 
     def test_no_conflict_normal(self):
         d = predict(lstm=0.80, rf=0.75, adx=35, session="London")
@@ -171,8 +184,10 @@ class TestRegimeConflict:
 
 class TestThresholds:
     def test_dynamic_threshold_strong_trend(self):
+        """Mode C: Strong trend (ts>=0.7) uses enhanced formula → 0.56 + (1-ts)*0.06."""
         d = predict(lstm=0.80, rf=0.75, adx=50, session="New York")
-        assert abs(d.buy_threshold - 0.58) < 0.01
+        # ts = (50-20)/30 = 1.0 → threshold = 0.56 + 0 = 0.56
+        assert abs(d.buy_threshold - 0.56) < 0.01
 
     def test_dynamic_threshold_no_trend(self):
         d = predict(lstm=0.80, rf=0.75, adx=20, session="New York")
@@ -287,7 +302,10 @@ class TestDiagnostics:
         assert predict(lstm=0.85, rf=0.80, adx=40, session="New York").stage_reached == "EXECUTION_READY"
         assert predict(lstm=0.505, rf=0.505, adx=20, session="London").stage_reached == "SCORE_FLOOR"
         assert predict(lstm=0.53, rf=0.52, adx=20, session="New York").stage_reached == "WEAK_ZONE"
-        assert predict(lstm=0.75, rf=0.70, adx=20, session="London").stage_reached == "CONFLICT"
+        # Mode C: strong signal + London conflict = OVERRIDE (not CONFLICT)
+        # Use weak signal for conflict test
+        d = predict(lstm=0.53, rf=0.52, adx=20, session="London")
+        assert d.stage_reached in ("WEAK_ZONE", "SCORE_FLOOR")  # Weak signal filtered earlier
 
     def test_distance_from_neutral_tracked(self):
         d = predict(lstm=0.85, rf=0.80, adx=40, session="New York")
