@@ -198,13 +198,30 @@ def main():
     # ===== PHASE 4: Import modules =====
     from data_loader import fetch_mtf_data, fetch_tick_data, is_market_open
     from features import feature_engineering_pipeline
-    from lstm_model import prepare_sequential_data, train_and_evaluate
+    import joblib
+    import os
+    
+    # Optional GPU suppression if needed
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+    from tensorflow.keras.models import load_model
 
-    # ===== PHASE 5: Initialize RF Model & Ensemble =====
+    # ===== PHASE 5: Initialize RF & LSTM Models =====
     from rf_model import RFModel
     from ensemble_engine import ensemble_predict
 
     rf_model = RFModel()
+    
+    # Load Offline LSTM Model
+    lstm_model_path = "lstm_model.h5"
+    lstm_scaler_path = "lstm_scaler.joblib"
+    
+    if os.path.exists(lstm_model_path) and os.path.exists(lstm_scaler_path):
+        logger.info("Loading offline LSTM model and scaler...")
+        lstm_model = load_model(lstm_model_path)
+        lstm_scaler = joblib.load(lstm_scaler_path)
+    else:
+        logger.critical("[Fatal] Offline LSTM models not found. Please run train_offline.py first.")
+        return
 
     # State variables
     last_eval_candle = -1
@@ -329,25 +346,18 @@ def main():
                 if processed_df is None or processed_df.empty: continue
 
                 # ===== LSTM PREDICTION =====
-                try:
-                    X_train, X_test, y_train, y_test, scaler, train_weights = prepare_sequential_data(processed_df)
-                    model, history, acc = train_and_evaluate(X_train, X_test, y_train, y_test, sample_weights=train_weights)
-                except Exception as e:
-                    logger.error("[%s] LSTM Training failed: %s", symbol, e)
+                latest_features = processed_df.drop(['Target'], axis=1, errors='ignore').values
+                latest_features_scaled = lstm_scaler.transform(latest_features)
+
+                if len(latest_features_scaled) < Config.SEQUENCE_LENGTH: 
                     continue
-
-                latest_features = processed_df.drop(['Target'], axis=1).values
-                latest_features_scaled = scaler.transform(latest_features)
-
-                if len(latest_features_scaled) < Config.SEQUENCE_LENGTH: continue
+                
                 X_live = np.array([latest_features_scaled[-Config.SEQUENCE_LENGTH:]])
-                lstm_prob = float(model.predict(X_live)[0][0])
+                lstm_prob = float(lstm_model.predict(X_live, verbose=0)[0][0])
 
                 # ===== RANDOM FOREST PREDICTION =====
                 rf_prob = 0.5
                 if Config.ENSEMBLE_ENABLED:
-                    if rf_model.needs_retraining(candle_index):
-                        rf_model.train(processed_df)
                     rf_prob = rf_model.predict_proba(processed_df)
 
                 current_atr = processed_df['ATR'].iloc[-1]

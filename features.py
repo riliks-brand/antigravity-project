@@ -323,14 +323,21 @@ def detect_feature_drift(df: pd.DataFrame) -> dict:
 # TARGET GENERATION
 # =========================================
 
-def generate_target_column(df: pd.DataFrame, lookahead: int = Config.PREDICT_LOOKAHEAD) -> pd.DataFrame:
+def generate_target_column(df: pd.DataFrame, lookahead: int = 6) -> pd.DataFrame:
     """
-    Creates the Target column.
-    1 if Close price N periods from now is strictly greater than current Close.
-    0 otherwise.
+    Creates the Target column with strict ATR-based noise filtering.
+    BUY (1) if future move > 1.5 * ATR
+    SELL (0) if future move < -1.5 * ATR
+    HOLD (NaN) otherwise.
     """
     df['future_close'] = df['close'].shift(-lookahead)
-    df['Target'] = np.where(df['future_close'] > df['close'], 1, 0)
+    future_move = df['future_close'] - df['close']
+    threshold = df['ATR'] * 1.5
+    
+    # 1 = BUY, 0 = SELL, np.nan = HOLD (noise)
+    df['Target'] = np.where(future_move > threshold, 1, 
+                            np.where(future_move < -threshold, 0, np.nan))
+    
     df.drop(['future_close'], axis=1, inplace=True)
     return df
 
