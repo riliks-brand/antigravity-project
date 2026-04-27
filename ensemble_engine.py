@@ -296,7 +296,7 @@ def _detect_regime_conflict(session, trend_strength, distance_from_neutral=0.0,
 # CORE ENSEMBLE PREDICTION
 # =========================================
 
-def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, session="UNKNOWN"):
+def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, session="UNKNOWN", diagnostic=False):
     """
     The core ensemble prediction function — Session-Aware & Market-Adaptive.
 
@@ -465,7 +465,11 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
         decision.stage_reached = "SCORE_FLOOR"
         decision.confidence_level = "LOW"
         decision.skip_reason = f"SCORE FLOOR: base_score={base_score:.4f}, distance={distance_from_neutral:.4f} < 0.015"
-        logger.info("[Ensemble] ⛔ %s → REJECT", decision.skip_reason)
+        if not diagnostic:
+            logger.info("[Ensemble] ⛔ %s → REJECT", decision.skip_reason)
+        else:
+            logger.info("[Ensemble] 📉 [DIAGNOSTIC HOLD] base: %.4f | dist: %.4f | ts: %.2f | reason: SCORE_FLOOR",
+                        base_score, distance_from_neutral, trend_strength)
         _log_decision(decision, current_adx, current_atr)
         return decision
 
@@ -485,7 +489,11 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
         decision.stage_reached = "WEAK_ZONE"
         decision.confidence_level = "LOW"
         decision.skip_reason = f"{wz_label}: base_score={base_score:.4f}, distance={distance_from_neutral:.4f} < {weak_zone_threshold}"
-        logger.info("[Ensemble] ⚠️ %s → NO ENTRY", decision.skip_reason)
+        if not diagnostic:
+            logger.info("[Ensemble] ⚠️ %s → NO ENTRY", decision.skip_reason)
+        else:
+            logger.info("[Ensemble] 📉 [DIAGNOSTIC HOLD] base: %.4f | dist: %.4f | ts: %.2f | reason: WEAK_ZONE",
+                        base_score, distance_from_neutral, trend_strength)
         _log_decision(decision, current_adx, current_atr)
         return decision
 
@@ -560,18 +568,17 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
 
     # =========================================
     # Step 13: Dynamic Thresholds (Mode C — Enhanced Adaptive)
-    # Strong trend (ts >= 0.7): steeper curve, more permissive
-    #   buy_threshold = 0.56 + (1 - ts) * 0.06
-    #   ts=1.0 → 0.56, ts=0.7 → 0.578
-    # Normal/weak trend (ts < 0.7): standard formula (unchanged)
-    #   buy_threshold = 0.58 + (1 - ts) * 0.08
-    #   ts=0.0 → 0.66
     # =========================================
-    if trend_strength >= 0.7:
-        buy_threshold = 0.56 + (1.0 - trend_strength) * 0.06
+    if diagnostic:
+        # Phase 1 Diagnostic Mode: Flat relaxation
+        buy_threshold = 0.65
+        sell_threshold = 0.35
     else:
-        buy_threshold = 0.58 + (1.0 - trend_strength) * 0.08
-    sell_threshold = 1.0 - buy_threshold  # Mirror for sell side
+        if trend_strength >= 0.7:
+            buy_threshold = 0.56 + (1.0 - trend_strength) * 0.06
+        else:
+            buy_threshold = 0.58 + (1.0 - trend_strength) * 0.08
+        sell_threshold = 1.0 - buy_threshold  # Mirror for sell side
 
     decision.buy_threshold = buy_threshold
     decision.sell_threshold = sell_threshold
@@ -595,6 +602,16 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
             f"HOLD: Final {final_prob:.4f} between "
             f"BUY>{buy_threshold:.4f} and SELL<{sell_threshold:.4f}"
         )
+        
+        # Diagnostics
+        if diagnostic:
+            _pre_conf = _compute_confidence_level(distance_from_neutral)
+            if _pre_conf in ["MEDIUM", "HIGH"] and distance_from_neutral > 0.10:
+                logger.info("[Ensemble] 🔍 [NEAR MISS] score: %.4f, dist: %.4f, ts: %.2f | conf: %s | gap_to_buy: %.4f, gap_to_sell: %.4f",
+                            final_prob, distance_from_neutral, trend_strength, _pre_conf, 
+                            buy_threshold - final_prob, final_prob - sell_threshold)
+            logger.info("[Ensemble] 📉 [DIAGNOSTIC HOLD] base: %.4f | dist: %.4f | ts: %.2f | reason: THRESHOLD",
+                        base_score, distance_from_neutral, trend_strength)
 
     # =========================================
     # Step 15: Confidence Classification

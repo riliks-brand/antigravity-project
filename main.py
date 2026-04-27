@@ -360,22 +360,38 @@ def main():
                 if Config.ENSEMBLE_ENABLED:
                     rf_prob = rf_model.predict_proba(processed_df)
 
-                current_atr = processed_df['ATR'].iloc[-1]
-                current_adx = processed_df['ADX'].iloc[-1] if 'ADX' in processed_df.columns else 25.0
-                atr_series = processed_df['ATR']
+                current_atr = processed_df['ATR'].iloc[-1] if not pd.isna(processed_df['ATR'].iloc[-1]) else 0.001
+                # Use H1_ADX for macro trend strength instead of noisy M5 ADX
+                h1_adx_val = processed_df['H1_ADX'].iloc[-1] if 'H1_ADX' in processed_df.columns else 25.0
+                current_adx = h1_adx_val if not pd.isna(h1_adx_val) else 25.0
+                atr_series = processed_df['ATR'].dropna()
 
                 # ===== SESSION DETECTION (v4.0) =====
                 session = TradeManager.get_active_session(symbol)
 
                 # ===== ENSEMBLE PREDICTION (Session-Aware) =====
-                decision = ensemble_predict(
-                    lstm_prob=lstm_prob,
-                    rf_prob=rf_prob,
-                    current_adx=current_adx,
-                    current_atr=current_atr,
-                    atr_series=atr_series,
-                    session=session,
+                decision_original = ensemble_predict(
+                    lstm_prob=lstm_prob, rf_prob=rf_prob, current_adx=current_adx,
+                    current_atr=current_atr, atr_series=atr_series, session=session,
+                    diagnostic=False
                 )
+                
+                decision_diagnostic = ensemble_predict(
+                    lstm_prob=lstm_prob, rf_prob=rf_prob, current_adx=current_adx,
+                    current_atr=current_atr, atr_series=atr_series, session=session,
+                    diagnostic=True
+                )
+                
+                # --- Dual Evaluation Logging ---
+                if decision_original.direction is None and decision_diagnostic.direction is not None:
+                    logger.info("[%s] 📊 [DUAL] THRESHOLD_BLOCK: Original=HOLD, Diagnostic=%s", symbol, decision_diagnostic.direction)
+                elif decision_original.direction is None and decision_diagnostic.direction is None:
+                    logger.info("[%s] 📊 [DUAL] MODEL_LIMITATION: Original=HOLD, Diagnostic=HOLD", symbol)
+                elif decision_original.direction is not None:
+                    logger.info("[%s] 📊 [DUAL] NATIVE_EXECUTION: Original=%s", symbol, decision_original.direction)
+
+                # Use diagnostic decision to unblock execution if DIAGNOSTIC_MODE is enabled
+                decision = decision_diagnostic if getattr(Config, "DIAGNOSTIC_MODE", False) else decision_original
 
                 direction = decision.direction
                 base_prob = decision.final_prob

@@ -35,8 +35,11 @@ class Config:
     # =========================================
     # LSTM Model Settings
     # =========================================
-    SEQUENCE_LENGTH = 120
+    SEQUENCE_LENGTH = 60  # Reduced for diagnostic phase
     PREDICT_LOOKAHEAD = 5
+    
+    # Phase 1 Diagnostic Mode
+    DIAGNOSTIC_MODE = True
 
     # Decision Thresholds (Adaptive base values — adjusted by volatility at runtime)
     PROB_THRESHOLD_BUY = 0.70

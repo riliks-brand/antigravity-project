@@ -96,8 +96,8 @@ def add_trend_features(df: pd.DataFrame) -> pd.DataFrame:
     df['DI_plus'] = adx.adx_pos()
     df['DI_minus'] = adx.adx_neg()
 
-    # Is market trending? (ADX > threshold)
-    df['is_trending'] = np.where(df['ADX'] >= Config.ADX_RANGING_THRESHOLD, 1, 0)
+    # Is market trending? (ADX > 25 = TREND (1), else RANGE (0))
+    df['is_trending'] = np.where(df['ADX'] > 25, 1, 0)
 
     return df
 
@@ -320,6 +320,118 @@ def detect_feature_drift(df: pd.DataFrame) -> dict:
 
 
 # =========================================
+# SMART MONEY CONCEPTS (Phase 2)
+# =========================================
+
+def add_market_structure_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Market Structure (BOS, HH/HL, Structure Trend)"""
+    window = 10
+    
+    # Past window max/min to avoid lookahead bias
+    df['past_max'] = df['high'].shift(1).rolling(window=window).max()
+    df['past_min'] = df['low'].shift(1).rolling(window=window).min()
+    
+    # HH / LL flags
+    df['higher_high'] = np.where(df['high'] > df['past_max'], 1, 0)
+    df['lower_low'] = np.where(df['low'] < df['past_min'], 1, 0)
+    
+    # Structure Trend
+    df['structure_event'] = np.where(df['higher_high'] == 1, 1, np.where(df['lower_low'] == 1, -1, 0))
+    df['structure_trend'] = df['structure_event'].replace(0, np.nan).ffill().fillna(0)
+    
+    # BOS Strength
+    bos_raw = np.where(
+        df['higher_high'] == 1, (df['close'] - df['past_max']) / (df['ATR'] + 1e-8),
+        np.where(df['lower_low'] == 1, (df['past_min'] - df['close']) / (df['ATR'] + 1e-8), 0.0)
+    )
+    df['bos_strength'] = pd.Series(bos_raw).clip(lower=0.0).values
+    
+    df.drop(['past_max', 'past_min', 'structure_event'], axis=1, inplace=True)
+    return df
+
+def add_order_block_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Order Blocks (Distance, Zone, Strength)"""
+    # Impulsive moves (past 3 candles)
+    df['move_3'] = df['close'] - df['close'].shift(3)
+    df['impulsive_bullish'] = df['move_3'] > (2 * df['ATR'])
+    df['impulsive_bearish'] = df['move_3'] < -(2 * df['ATR'])
+    
+    df['ob_bullish_price'] = df['low'].shift(3).rolling(3).min()
+    df['ob_bearish_price'] = df['high'].shift(3).rolling(3).max()
+    
+    df['active_bullish_ob'] = np.where(df['impulsive_bullish'], df['ob_bullish_price'], np.nan)
+    df['active_bearish_ob'] = np.where(df['impulsive_bearish'], df['ob_bearish_price'], np.nan)
+    
+    df['active_bullish_ob'] = pd.Series(df['active_bullish_ob']).ffill().values
+    df['active_bearish_ob'] = pd.Series(df['active_bearish_ob']).ffill().values
+    
+    df['dist_to_bullish_ob'] = df['close'] - df['active_bullish_ob']
+    df['dist_to_bearish_ob'] = df['active_bearish_ob'] - df['close']
+    
+    # distance_to_ob
+    df['distance_to_ob'] = df[['dist_to_bullish_ob', 'dist_to_bearish_ob']].abs().min(axis=1) / (df['ATR'] + 1e-8)
+    
+    # inside_ob_zone
+    df['inside_ob_zone'] = np.where(df['distance_to_ob'] < 0.5, 1, 0)
+    
+    # ob_strength
+    df['ob_strength_bullish'] = np.where(df['impulsive_bullish'], df['move_3'] / df['ATR'], np.nan)
+    df['ob_strength_bearish'] = np.where(df['impulsive_bearish'], abs(df['move_3']) / df['ATR'], np.nan)
+    df['ob_strength_bullish'] = pd.Series(df['ob_strength_bullish']).ffill().values
+    df['ob_strength_bearish'] = pd.Series(df['ob_strength_bearish']).ffill().values
+    
+    df['ob_strength'] = np.where(
+        abs(df['dist_to_bullish_ob']) < abs(df['dist_to_bearish_ob']), 
+        df['ob_strength_bullish'], 
+        df['ob_strength_bearish']
+    )
+    df['ob_strength'] = df['ob_strength'].fillna(0)
+    
+    drop_cols = ['move_3', 'impulsive_bullish', 'impulsive_bearish', 'ob_bullish_price', 'ob_bearish_price', 
+                 'active_bullish_ob', 'active_bearish_ob', 'dist_to_bullish_ob', 'dist_to_bearish_ob',
+                 'ob_strength_bullish', 'ob_strength_bearish']
+    df.drop(drop_cols, axis=1, inplace=True)
+    return df
+
+def add_fvg_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Fair Value Gaps (Size, Distance, Filled)"""
+    df['fvg_bullish_gap'] = df['low'] - df['high'].shift(2)
+    df['is_fvg_bullish'] = df['fvg_bullish_gap'] > 0
+    
+    df['fvg_bearish_gap'] = df['low'].shift(2) - df['high']
+    df['is_fvg_bearish'] = df['fvg_bearish_gap'] > 0
+    
+    df['fvg_size'] = np.where(df['is_fvg_bullish'], df['fvg_bullish_gap'] / (df['ATR'] + 1e-8),
+                     np.where(df['is_fvg_bearish'], df['fvg_bearish_gap'] / (df['ATR'] + 1e-8), 0.0))
+    
+    df['last_fvg_price'] = np.where(df['is_fvg_bullish'], df['high'].shift(2) + (df['fvg_bullish_gap']/2),
+                           np.where(df['is_fvg_bearish'], df['low'].shift(2) - (df['fvg_bearish_gap']/2), np.nan))
+    df['last_fvg_price'] = pd.Series(df['last_fvg_price']).ffill().values
+    
+    df['distance_to_fvg'] = abs(df['close'] - df['last_fvg_price']) / (df['ATR'] + 1e-8)
+    df['distance_to_fvg'] = df['distance_to_fvg'].fillna(0)
+    
+    df['fvg_filled'] = np.where((df['distance_to_fvg'] < 0.2) & (df['last_fvg_price'].notna()), 1, 0)
+    
+    df.drop(['fvg_bullish_gap', 'is_fvg_bullish', 'fvg_bearish_gap', 'is_fvg_bearish', 'last_fvg_price'], axis=1, inplace=True)
+    return df
+
+def add_liquidity_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Liquidity Sweeps and Equal Highs"""
+    window = 10
+    past_highs = df['high'].shift(1).rolling(window).max()
+    past_lows = df['low'].shift(1).rolling(window).min()
+    
+    df['equal_highs_count'] = np.where(abs(df['high'] - past_highs) < (0.1 * df['ATR']), 1, 0)
+    df['equal_highs_count'] = pd.Series(df['equal_highs_count']).rolling(window).sum().fillna(0).values
+    
+    sweep_bullish = (df['high'] > past_highs) & (df['close'] < past_highs) & (df['upper_shadow_ratio'] > 0.5)
+    sweep_bearish = (df['low'] < past_lows) & (df['close'] > past_lows) & (df['lower_shadow_ratio'] > 0.5)
+    
+    df['liquidity_sweep_flag'] = np.where(sweep_bullish, -1, np.where(sweep_bearish, 1, 0))
+    return df
+
+# =========================================
 # TARGET GENERATION
 # =========================================
 
@@ -332,7 +444,7 @@ def generate_target_column(df: pd.DataFrame, lookahead: int = 6) -> pd.DataFrame
     """
     df['future_close'] = df['close'].shift(-lookahead)
     future_move = df['future_close'] - df['close']
-    threshold = df['ATR'] * 1.5
+    threshold = df['ATR'] * 1.2
     
     # 1 = BUY, 0 = SELL, np.nan = HOLD (noise)
     df['Target'] = np.where(future_move > threshold, 1, 
@@ -368,6 +480,12 @@ def feature_engineering_pipeline(df: pd.DataFrame, df_confirm=None, df_trend=Non
     df = add_pivot_points(df)
     df = add_session_features(df)
     df = add_price_action_features(df)
+
+    # Smart Money Concepts (Phase 2)
+    df = add_market_structure_features(df)
+    df = add_order_block_features(df)
+    df = add_fvg_features(df)
+    df = add_liquidity_features(df)
 
     # Time-based features
     if pd.api.types.is_datetime64_any_dtype(df.index):

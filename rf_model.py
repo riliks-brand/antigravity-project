@@ -186,7 +186,9 @@ class RFModel:
             try:
                 self.model = joblib.load(RF_MODEL_PATH)
                 self.scaler = joblib.load(RF_SCALER_PATH)
-                logger.info("[RF] Loaded saved model from disk.")
+                if os.path.exists("rf_features.joblib"):
+                    self.feature_names = joblib.load("rf_features.joblib")
+                logger.info("[RF] Loaded saved model from disk with %d features.", len(self.feature_names))
             except Exception as e:
                 logger.warning("[RF] Failed to load saved model: %s", e)
                 self.model = None
@@ -196,6 +198,7 @@ class RFModel:
         try:
             joblib.dump(self.model, RF_MODEL_PATH)
             joblib.dump(self.scaler, RF_SCALER_PATH)
+            joblib.dump(self.feature_names, "rf_features.joblib")
             logger.info("[RF] Model saved to disk.")
         except Exception as e:
             logger.warning("[RF] Failed to save model: %s", e)
