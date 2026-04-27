@@ -576,11 +576,13 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
     else:
         if trend_strength > 0.35:
             buy_threshold = 0.60
+            sell_threshold = 0.40
         elif trend_strength > 0.25:
             buy_threshold = 0.62
+            sell_threshold = 0.38
         else:
             buy_threshold = 0.65
-        sell_threshold = 1.0 - buy_threshold
+            sell_threshold = 0.37  # Adjusted from 0.35 per review
 
     decision.buy_threshold = buy_threshold
     decision.sell_threshold = sell_threshold
@@ -594,7 +596,17 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
     else:
         dist_to_thresh = final_prob - sell_threshold
 
-    allow_near_miss = (dist_to_thresh > 0) and (dist_to_thresh < 0.07) and (trend_strength > 0.3)
+    allow_near_miss = False
+    if dist_to_thresh > 0:
+        is_trend = trend_strength > 0.15
+        
+        if is_trend and dist_to_thresh < 0.07:
+            allow_near_miss = True
+        elif not is_trend and dist_to_thresh < 0.03:
+            allow_near_miss = True
+            
+        if _pre_confidence in ["MEDIUM", "HIGH"] and dist_to_thresh < 0.05:
+            allow_near_miss = True
 
     if final_prob > buy_threshold:
         decision.direction = "BUY"

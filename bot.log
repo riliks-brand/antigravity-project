@@ -9716,3 +9716,316 @@
 2026-04-27 16:40:01,961 [Main] [INFO] [XAUUSD] 📊 [DUAL] MODEL_LIMITATION: Original=HOLD, Diagnostic=HOLD
 2026-04-27 16:40:01,961 [Main] [INFO] [XAUUSD] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=LOW | session=New York
 2026-04-27 16:40:01,962 [Main] [INFO] No viable opportunities this cycle across portfolio.
+2026-04-27 16:46:16,674 [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-27 16:46:16,674 [MT5Engine] [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-27 16:46:16,692 [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-27 16:46:16,692 [MT5Engine] [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-27 16:46:16,695 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 16:46:16,695 [TradeManager] [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 16:46:16,696 [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 16:46:16,696 [TradeManager] [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 16:46:16,697 [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-27
+2026-04-27 16:46:16,697 [TradeManager] [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-27
+2026-04-27 16:46:21,202 [INFO] [RF] Loaded saved model from disk with 44 features.
+2026-04-27 16:46:21,202 [RF_Model] [INFO] [RF] Loaded saved model from disk with 44 features.
+2026-04-27 16:46:21,206 [Main] [INFO] Loading offline LSTM model and scaler...
+2026-04-27 16:46:21,857 [WARNING] [Market] US30 trading is disabled.
+2026-04-27 16:46:21,857 [DataLoader] [WARNING] [Market] US30 trading is disabled.
+2026-04-27 16:46:45,011 [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-27 16:46:45,011 [MT5Engine] [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-27 16:46:45,023 [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-27 16:46:45,023 [MT5Engine] [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-27 16:46:45,033 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 16:46:45,033 [TradeManager] [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 16:46:45,033 [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 16:46:45,033 [TradeManager] [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 16:46:45,035 [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-27
+2026-04-27 16:46:45,035 [TradeManager] [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-27
+2026-04-27 16:46:49,780 [INFO] [RF] Loaded saved model from disk with 44 features.
+2026-04-27 16:46:49,780 [RF_Model] [INFO] [RF] Loaded saved model from disk with 44 features.
+2026-04-27 16:46:49,782 [Main] [INFO] Loading offline LSTM model and scaler...
+2026-04-27 16:46:50,479 [WARNING] [Market] US30 trading is disabled.
+2026-04-27 16:46:50,479 [DataLoader] [WARNING] [Market] US30 trading is disabled.
+2026-04-27 16:50:00,930 [Main] [INFO] 
+=================================================================
+2026-04-27 16:50:00,932 [Main] [INFO] [PORTFOLIO EVALUATION] Candle #1 | Loop Trigger Time: 2026-04-27 13:50:00
+2026-04-27 16:50:00,934 [Main] [INFO] =================================================================
+2026-04-27 16:50:00,935 [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 16:50:00,935 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 16:50:00,953 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 16:50:00,953 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 16:50:00,961 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 16:50:00,961 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 16:50:00,966 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 16:50:00,966 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 16:50:00,967 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 16:50:00,967 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 16:50:00,969 [INFO] Starting feature engineering pipeline...
+2026-04-27 16:50:00,969 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 16:50:01,181 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 16:50:01,181 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 16:50:01,232 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 16:50:01,232 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 16:50:01,234 [INFO] Dropped 64 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 16:50:01,234 [Features] [INFO] Dropped 64 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 16:50:01,242 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 16:50:01,242 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 16:50:01,245 [INFO] Data shape: (1936, 70) → (1764, 70) (after NaN cleanup)
+2026-04-27 16:50:01,245 [Features] [INFO] Data shape: (1936, 70) → (1764, 70) (after NaN cleanup)
+2026-04-27 16:50:02,157 [DEBUG] [Ensemble] trend_strength=0.106 → RANGING | LSTM=53.2% RF=46.8% | Session=New York
+2026-04-27 16:50:02,157 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.106 → RANGING | LSTM=53.2% RF=46.8% | Session=New York
+2026-04-27 16:50:02,157 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5039, distance=0.0039 < 0.015 → REJECT
+2026-04-27 16:50:02,157 [Ensemble] [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5039, distance=0.0039 < 0.015 → REJECT
+2026-04-27 16:50:02,161 [DEBUG] [Ensemble] trend_strength=0.106 → RANGING | LSTM=53.2% RF=46.8% | Session=New York
+2026-04-27 16:50:02,161 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.106 → RANGING | LSTM=53.2% RF=46.8% | Session=New York
+2026-04-27 16:50:02,161 [INFO] [Ensemble] 📉 [DIAGNOSTIC HOLD] base: 0.5039 | dist: 0.0039 | ts: 0.11 | reason: SCORE_FLOOR
+2026-04-27 16:50:02,161 [Ensemble] [INFO] [Ensemble] 📉 [DIAGNOSTIC HOLD] base: 0.5039 | dist: 0.0039 | ts: 0.11 | reason: SCORE_FLOOR
+2026-04-27 16:50:02,161 [Main] [INFO] [EURUSD] 📊 [DUAL] MODEL_LIMITATION: Original=HOLD, Diagnostic=HOLD
+2026-04-27 16:50:02,161 [INFO] [Regime] Initial regime set: RANGING (trend_strength=0.106)
+2026-04-27 16:50:02,161 [TradeManager] [INFO] [Regime] Initial regime set: RANGING (trend_strength=0.106)
+2026-04-27 16:50:02,161 [Main] [INFO] [EURUSD] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=LOW | session=New York
+2026-04-27 16:50:02,166 [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 16:50:02,166 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 16:50:02,170 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 16:50:02,170 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 16:50:02,174 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 16:50:02,174 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 16:50:02,178 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 16:50:02,178 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 16:50:02,179 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 16:50:02,179 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 16:50:02,181 [INFO] Starting feature engineering pipeline...
+2026-04-27 16:50:02,181 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 16:50:02,307 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 16:50:02,307 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 16:50:02,353 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 16:50:02,353 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 16:50:02,357 [INFO] Dropped 70 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 16:50:02,357 [Features] [INFO] Dropped 70 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 16:50:02,362 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 16:50:02,362 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 16:50:02,367 [INFO] Data shape: (1930, 70) → (1764, 70) (after NaN cleanup)
+2026-04-27 16:50:02,367 [Features] [INFO] Data shape: (1930, 70) → (1764, 70) (after NaN cleanup)
+2026-04-27 16:50:02,508 [DEBUG] [Ensemble] trend_strength=0.406 → TRANSITIONING | LSTM=62.2% RF=37.8% | Session=New York
+2026-04-27 16:50:02,508 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.406 → TRANSITIONING | LSTM=62.2% RF=37.8% | Session=New York
+2026-04-27 16:50:02,508 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.4936, distance=0.0064 < 0.015 → REJECT
+2026-04-27 16:50:02,508 [Ensemble] [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.4936, distance=0.0064 < 0.015 → REJECT
+2026-04-27 16:50:02,508 [DEBUG] [Ensemble] trend_strength=0.406 → TRANSITIONING | LSTM=62.2% RF=37.8% | Session=New York
+2026-04-27 16:50:02,508 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.406 → TRANSITIONING | LSTM=62.2% RF=37.8% | Session=New York
+2026-04-27 16:50:02,508 [INFO] [Ensemble] 📉 [DIAGNOSTIC HOLD] base: 0.4936 | dist: 0.0064 | ts: 0.41 | reason: SCORE_FLOOR
+2026-04-27 16:50:02,508 [Ensemble] [INFO] [Ensemble] 📉 [DIAGNOSTIC HOLD] base: 0.4936 | dist: 0.0064 | ts: 0.41 | reason: SCORE_FLOOR
+2026-04-27 16:50:02,511 [Main] [INFO] [GBPUSD] 📊 [DUAL] MODEL_LIMITATION: Original=HOLD, Diagnostic=HOLD
+2026-04-27 16:50:02,511 [Main] [INFO] [GBPUSD] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=LOW | session=New York
+2026-04-27 16:50:02,511 [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 16:50:02,511 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 16:50:02,517 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 16:50:02,517 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 16:50:02,521 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 16:50:02,521 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 16:50:02,524 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 16:50:02,524 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 16:50:02,524 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 16:50:02,524 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 16:50:02,526 [INFO] Starting feature engineering pipeline...
+2026-04-27 16:50:02,526 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 16:50:02,656 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 16:50:02,656 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 16:50:02,702 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 16:50:02,702 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 16:50:02,707 [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 16:50:02,707 [Features] [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 16:50:02,714 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 16:50:02,714 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 16:50:02,718 [INFO] Data shape: (1987, 70) → (1801, 70) (after NaN cleanup)
+2026-04-27 16:50:02,718 [Features] [INFO] Data shape: (1987, 70) → (1801, 70) (after NaN cleanup)
+2026-04-27 16:50:02,877 [DEBUG] [Ensemble] trend_strength=0.144 → RANGING | LSTM=54.3% RF=45.7% | Session=New York
+2026-04-27 16:50:02,877 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.144 → RANGING | LSTM=54.3% RF=45.7% | Session=New York
+2026-04-27 16:50:02,883 [DEBUG] [Ensemble] trend_strength=0.144 → RANGING | LSTM=54.3% RF=45.7% | Session=New York
+2026-04-27 16:50:02,883 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.144 → RANGING | LSTM=54.3% RF=45.7% | Session=New York
+2026-04-27 16:50:02,885 [INFO] [Ensemble] 🔍 [NEAR MISS] score: 0.3818, dist: 0.1182, ts: 0.14 | conf: MEDIUM | gap_to_buy: 0.2682, gap_to_sell: 0.0318
+2026-04-27 16:50:02,885 [Ensemble] [INFO] [Ensemble] 🔍 [NEAR MISS] score: 0.3818, dist: 0.1182, ts: 0.14 | conf: MEDIUM | gap_to_buy: 0.2682, gap_to_sell: 0.0318
+2026-04-27 16:50:02,886 [INFO] [Ensemble] 📉 [DIAGNOSTIC HOLD] base: 0.3818 | dist: 0.1182 | ts: 0.14 | reason: THRESHOLD
+2026-04-27 16:50:02,886 [Ensemble] [INFO] [Ensemble] 📉 [DIAGNOSTIC HOLD] base: 0.3818 | dist: 0.1182 | ts: 0.14 | reason: THRESHOLD
+2026-04-27 16:50:02,893 [Main] [INFO] [USDJPY] 📊 [DUAL] MODEL_LIMITATION: Original=HOLD, Diagnostic=HOLD
+2026-04-27 16:50:02,893 [Main] [INFO] [USDJPY] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=MEDIUM | session=New York
+2026-04-27 16:50:02,893 [INFO] [MTF] Fetching multi-timeframe data for XAUUSD...
+2026-04-27 16:50:02,893 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for XAUUSD...
+2026-04-27 16:50:02,898 [INFO] [Data] ✅ Fetched 2000 candles for XAUUSD (M5)
+2026-04-27 16:50:02,898 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for XAUUSD (M5)
+2026-04-27 16:50:02,898 [INFO] [Data] ✅ Fetched 2000 candles for XAUUSD (M15)
+2026-04-27 16:50:02,898 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for XAUUSD (M15)
+2026-04-27 16:50:02,906 [INFO] [Data] ✅ Fetched 2000 candles for XAUUSD (H1)
+2026-04-27 16:50:02,906 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for XAUUSD (H1)
+2026-04-27 16:50:02,906 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 16:50:02,906 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 16:50:02,907 [INFO] Starting feature engineering pipeline...
+2026-04-27 16:50:02,907 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 16:50:03,039 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 16:50:03,039 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 16:50:03,084 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 16:50:03,084 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 16:50:03,092 [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 16:50:03,092 [Features] [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 16:50:03,093 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 16:50:03,093 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 16:50:03,098 [INFO] Data shape: (1987, 70) → (1801, 70) (after NaN cleanup)
+2026-04-27 16:50:03,098 [Features] [INFO] Data shape: (1987, 70) → (1801, 70) (after NaN cleanup)
+2026-04-27 16:50:03,244 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 16:50:03,244 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 16:50:03,253 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 16:50:03,253 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 16:50:03,254 [INFO] [Ensemble] 📉 [DIAGNOSTIC HOLD] base: 0.5746 | dist: 0.0746 | ts: 0.00 | reason: THRESHOLD
+2026-04-27 16:50:03,254 [Ensemble] [INFO] [Ensemble] 📉 [DIAGNOSTIC HOLD] base: 0.5746 | dist: 0.0746 | ts: 0.00 | reason: THRESHOLD
+2026-04-27 16:50:03,257 [Main] [INFO] [XAUUSD] 📊 [DUAL] MODEL_LIMITATION: Original=HOLD, Diagnostic=HOLD
+2026-04-27 16:50:03,257 [Main] [INFO] [XAUUSD] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=LOW | session=New York
+2026-04-27 16:50:03,257 [Main] [INFO] No viable opportunities this cycle across portfolio.
+2026-04-27 16:54:16,640 [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-27 16:54:16,640 [MT5Engine] [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-27 16:54:16,650 [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-27 16:54:16,650 [MT5Engine] [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-27 16:54:16,653 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 16:54:16,653 [TradeManager] [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 16:54:16,653 [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 16:54:16,653 [TradeManager] [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 16:54:16,654 [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-27
+2026-04-27 16:54:16,654 [TradeManager] [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-27
+2026-04-27 16:54:20,844 [INFO] [RF] Loaded saved model from disk with 44 features.
+2026-04-27 16:54:20,844 [RF_Model] [INFO] [RF] Loaded saved model from disk with 44 features.
+2026-04-27 16:54:20,844 [Main] [INFO] Loading offline LSTM model and scaler...
+2026-04-27 16:54:21,474 [WARNING] [Market] US30 trading is disabled.
+2026-04-27 16:54:21,474 [DataLoader] [WARNING] [Market] US30 trading is disabled.
+2026-04-27 16:55:00,845 [Main] [INFO] 
+=================================================================
+2026-04-27 16:55:00,846 [Main] [INFO] [PORTFOLIO EVALUATION] Candle #1 | Loop Trigger Time: 2026-04-27 13:55:00
+2026-04-27 16:55:00,846 [Main] [INFO] =================================================================
+2026-04-27 16:55:00,847 [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 16:55:00,847 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 16:55:00,851 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 16:55:00,851 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 16:55:00,859 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 16:55:00,859 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 16:55:00,863 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 16:55:00,863 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 16:55:00,864 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 16:55:00,864 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 16:55:00,866 [INFO] Starting feature engineering pipeline...
+2026-04-27 16:55:00,866 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 16:55:01,120 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 16:55:01,120 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 16:55:01,169 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 16:55:01,169 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 16:55:01,175 [INFO] Dropped 64 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 16:55:01,175 [Features] [INFO] Dropped 64 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 16:55:01,180 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 16:55:01,180 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 16:55:01,184 [INFO] Data shape: (1936, 70) → (1764, 70) (after NaN cleanup)
+2026-04-27 16:55:01,184 [Features] [INFO] Data shape: (1936, 70) → (1764, 70) (after NaN cleanup)
+2026-04-27 16:55:02,240 [DEBUG] [Ensemble] trend_strength=0.102 → RANGING | LSTM=53.1% RF=46.9% | Session=New York
+2026-04-27 16:55:02,240 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.102 → RANGING | LSTM=53.1% RF=46.9% | Session=New York
+2026-04-27 16:55:02,242 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.5153, distance=0.0153 < 0.03 → NO ENTRY
+2026-04-27 16:55:02,242 [Ensemble] [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.5153, distance=0.0153 < 0.03 → NO ENTRY
+2026-04-27 16:55:02,243 [DEBUG] [Ensemble] trend_strength=0.102 → RANGING | LSTM=53.1% RF=46.9% | Session=New York
+2026-04-27 16:55:02,243 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.102 → RANGING | LSTM=53.1% RF=46.9% | Session=New York
+2026-04-27 16:55:02,244 [INFO] [Ensemble] 📉 [DIAGNOSTIC HOLD] base: 0.5153 | dist: 0.0153 | ts: 0.10 | reason: WEAK_ZONE
+2026-04-27 16:55:02,244 [Ensemble] [INFO] [Ensemble] 📉 [DIAGNOSTIC HOLD] base: 0.5153 | dist: 0.0153 | ts: 0.10 | reason: WEAK_ZONE
+2026-04-27 16:55:02,245 [Main] [INFO] [EURUSD] 📊 [DUAL] MODEL_LIMITATION: Original=HOLD, Diagnostic=HOLD
+2026-04-27 16:55:02,246 [INFO] [Regime] Initial regime set: RANGING (trend_strength=0.102)
+2026-04-27 16:55:02,246 [TradeManager] [INFO] [Regime] Initial regime set: RANGING (trend_strength=0.102)
+2026-04-27 16:55:02,247 [Main] [INFO] [EURUSD] SKIP: direction=None | reason=WEAK_ZONE (Normal) | confidence=LOW | session=New York
+2026-04-27 16:55:02,247 [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 16:55:02,247 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 16:55:02,251 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 16:55:02,251 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 16:55:02,256 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 16:55:02,256 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 16:55:02,261 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 16:55:02,261 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 16:55:02,262 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 16:55:02,262 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 16:55:02,264 [INFO] Starting feature engineering pipeline...
+2026-04-27 16:55:02,264 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 16:55:02,410 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 16:55:02,410 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 16:55:02,460 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 16:55:02,460 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 16:55:02,464 [INFO] Dropped 70 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 16:55:02,464 [Features] [INFO] Dropped 70 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 16:55:02,468 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 16:55:02,468 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 16:55:02,472 [INFO] Data shape: (1930, 70) → (1764, 70) (after NaN cleanup)
+2026-04-27 16:55:02,472 [Features] [INFO] Data shape: (1930, 70) → (1764, 70) (after NaN cleanup)
+2026-04-27 16:55:02,624 [DEBUG] [Ensemble] trend_strength=0.406 → TRANSITIONING | LSTM=62.2% RF=37.8% | Session=New York
+2026-04-27 16:55:02,624 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.406 → TRANSITIONING | LSTM=62.2% RF=37.8% | Session=New York
+2026-04-27 16:55:02,625 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5083, distance=0.0083 < 0.015 → REJECT
+2026-04-27 16:55:02,625 [Ensemble] [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5083, distance=0.0083 < 0.015 → REJECT
+2026-04-27 16:55:02,627 [DEBUG] [Ensemble] trend_strength=0.406 → TRANSITIONING | LSTM=62.2% RF=37.8% | Session=New York
+2026-04-27 16:55:02,627 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.406 → TRANSITIONING | LSTM=62.2% RF=37.8% | Session=New York
+2026-04-27 16:55:02,628 [INFO] [Ensemble] 📉 [DIAGNOSTIC HOLD] base: 0.5083 | dist: 0.0083 | ts: 0.41 | reason: SCORE_FLOOR
+2026-04-27 16:55:02,628 [Ensemble] [INFO] [Ensemble] 📉 [DIAGNOSTIC HOLD] base: 0.5083 | dist: 0.0083 | ts: 0.41 | reason: SCORE_FLOOR
+2026-04-27 16:55:02,630 [Main] [INFO] [GBPUSD] 📊 [DUAL] MODEL_LIMITATION: Original=HOLD, Diagnostic=HOLD
+2026-04-27 16:55:02,630 [Main] [INFO] [GBPUSD] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=LOW | session=New York
+2026-04-27 16:55:02,631 [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 16:55:02,631 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 16:55:02,635 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 16:55:02,635 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 16:55:02,641 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 16:55:02,641 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 16:55:02,646 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 16:55:02,646 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 16:55:02,647 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 16:55:02,647 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 16:55:02,648 [INFO] Starting feature engineering pipeline...
+2026-04-27 16:55:02,648 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 16:55:02,784 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 16:55:02,784 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 16:55:02,837 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 16:55:02,837 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 16:55:02,843 [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 16:55:02,843 [Features] [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 16:55:02,847 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 16:55:02,847 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 16:55:02,852 [INFO] Data shape: (1987, 70) → (1801, 70) (after NaN cleanup)
+2026-04-27 16:55:02,852 [Features] [INFO] Data shape: (1987, 70) → (1801, 70) (after NaN cleanup)
+2026-04-27 16:55:03,006 [DEBUG] [Ensemble] trend_strength=0.138 → RANGING | LSTM=54.1% RF=45.9% | Session=New York
+2026-04-27 16:55:03,006 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.138 → RANGING | LSTM=54.1% RF=45.9% | Session=New York
+2026-04-27 16:55:03,008 [INFO] [Ensemble] 🚀 [NEAR_MISS ACTIVATED] score: 0.3796 | ts: 0.14 | dist_to_thresh: 0.0096
+2026-04-27 16:55:03,008 [Ensemble] [INFO] [Ensemble] 🚀 [NEAR_MISS ACTIVATED] score: 0.3796 | ts: 0.14 | dist_to_thresh: 0.0096
+2026-04-27 16:55:03,014 [DEBUG] [Ensemble] trend_strength=0.138 → RANGING | LSTM=54.1% RF=45.9% | Session=New York
+2026-04-27 16:55:03,014 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.138 → RANGING | LSTM=54.1% RF=45.9% | Session=New York
+2026-04-27 16:55:03,016 [INFO] [Ensemble] 🚀 [NEAR_MISS ACTIVATED] score: 0.3796 | ts: 0.14 | dist_to_thresh: 0.0296
+2026-04-27 16:55:03,016 [Ensemble] [INFO] [Ensemble] 🚀 [NEAR_MISS ACTIVATED] score: 0.3796 | ts: 0.14 | dist_to_thresh: 0.0296
+2026-04-27 16:55:03,022 [Main] [INFO] [USDJPY] 📊 [DUAL] NATIVE_EXECUTION: Original=SELL
+2026-04-27 16:55:03,023 [Main] [INFO] [USDJPY] Base: 0.380 | Context: +0.000 | MemBias: +0.000 | SymPerf: +0.000 -> RANK: 0.380 | Session: New York | Confidence: MEDIUM
+2026-04-27 16:55:03,023 [INFO] [MTF] Fetching multi-timeframe data for XAUUSD...
+2026-04-27 16:55:03,023 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for XAUUSD...
+2026-04-27 16:55:03,029 [INFO] [Data] ✅ Fetched 2000 candles for XAUUSD (M5)
+2026-04-27 16:55:03,029 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for XAUUSD (M5)
+2026-04-27 16:55:03,033 [INFO] [Data] ✅ Fetched 2000 candles for XAUUSD (M15)
+2026-04-27 16:55:03,033 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for XAUUSD (M15)
+2026-04-27 16:55:03,040 [INFO] [Data] ✅ Fetched 2000 candles for XAUUSD (H1)
+2026-04-27 16:55:03,040 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for XAUUSD (H1)
+2026-04-27 16:55:03,041 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 16:55:03,041 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 16:55:03,043 [INFO] Starting feature engineering pipeline...
+2026-04-27 16:55:03,043 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 16:55:03,183 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 16:55:03,183 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 16:55:03,229 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 16:55:03,229 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 16:55:03,234 [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 16:55:03,234 [Features] [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 16:55:03,238 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 16:55:03,238 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 16:55:03,243 [INFO] Data shape: (1987, 70) → (1801, 70) (after NaN cleanup)
+2026-04-27 16:55:03,243 [Features] [INFO] Data shape: (1987, 70) → (1801, 70) (after NaN cleanup)
+2026-04-27 16:55:03,393 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 16:55:03,393 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 16:55:03,394 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.4923, distance=0.0077 < 0.015 → REJECT
+2026-04-27 16:55:03,394 [Ensemble] [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.4923, distance=0.0077 < 0.015 → REJECT
+2026-04-27 16:55:03,396 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 16:55:03,396 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=New York
+2026-04-27 16:55:03,397 [INFO] [Ensemble] 📉 [DIAGNOSTIC HOLD] base: 0.4923 | dist: 0.0077 | ts: 0.00 | reason: SCORE_FLOOR
+2026-04-27 16:55:03,397 [Ensemble] [INFO] [Ensemble] 📉 [DIAGNOSTIC HOLD] base: 0.4923 | dist: 0.0077 | ts: 0.00 | reason: SCORE_FLOOR
+2026-04-27 16:55:03,398 [Main] [INFO] [XAUUSD] 📊 [DUAL] MODEL_LIMITATION: Original=HOLD, Diagnostic=HOLD
+2026-04-27 16:55:03,398 [Main] [INFO] [XAUUSD] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=LOW | session=New York
+2026-04-27 16:55:03,399 [Main] [INFO] No viable opportunities this cycle across portfolio.
