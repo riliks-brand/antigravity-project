@@ -3844,3 +3844,1006 @@
 2026-04-27 01:32:50,967 [DataLoader] [WARNING] [Market] No tick for XAUUSD. Market may be closed.
 2026-04-27 01:32:50,968 [WARNING] [Market] US30 trading is disabled.
 2026-04-27 01:32:50,968 [DataLoader] [WARNING] [Market] US30 trading is disabled.
+2026-04-27 11:29:15,229 [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-27 11:29:15,229 [MT5Engine] [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-27 11:29:23,244 [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-27 11:29:23,244 [MT5Engine] [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-27 11:29:23,289 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 11:29:23,289 [TradeManager] [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 11:29:23,305 [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 11:29:23,305 [TradeManager] [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 11:29:23,327 [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-27
+2026-04-27 11:29:23,327 [TradeManager] [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-27
+2026-04-27 11:29:48,408 [INFO] [RF] Loaded saved model from disk.
+2026-04-27 11:29:48,408 [RF_Model] [INFO] [RF] Loaded saved model from disk.
+2026-04-27 11:29:48,412 [WARNING] [Market] No tick for XAUUSD. Market may be closed.
+2026-04-27 11:29:48,412 [DataLoader] [WARNING] [Market] No tick for XAUUSD. Market may be closed.
+2026-04-27 11:29:48,412 [WARNING] [Market] US30 trading is disabled.
+2026-04-27 11:29:48,412 [DataLoader] [WARNING] [Market] US30 trading is disabled.
+2026-04-27 11:30:00,571 [Main] [INFO] 
+=================================================================
+2026-04-27 11:30:00,571 [Main] [INFO] [PORTFOLIO EVALUATION] Candle #1 | Loop Trigger Time: 2026-04-27 08:30:00
+2026-04-27 11:30:00,572 [Main] [INFO] =================================================================
+2026-04-27 11:30:00,572 [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 11:30:00,572 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 11:30:00,793 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 11:30:00,793 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 11:30:00,824 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 11:30:00,824 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 11:30:00,857 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 11:30:00,857 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 11:30:00,858 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:30:00,858 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:30:00,861 [INFO] Starting feature engineering pipeline...
+2026-04-27 11:30:00,861 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 11:30:00,997 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:30:00,997 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:30:01,055 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:30:01,055 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:30:01,058 [INFO] Dropped 64 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:30:01,058 [Features] [INFO] Dropped 64 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:30:01,065 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:30:01,065 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:30:01,068 [INFO] Data shape: (1936, 58) → (1750, 58) (after NaN cleanup)
+2026-04-27 11:30:01,068 [Features] [INFO] Data shape: (1936, 58) → (1750, 58) (after NaN cleanup)
+2026-04-27 11:30:01,069 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:30:01,069 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:30:01,124 [INFO] Training data: X=(1304, 120, 57), Y=(1304,) | Test data: X=(326, 120, 57), Y=(326,)
+2026-04-27 11:30:01,124 [LSTM] [INFO] Training data: X=(1304, 120, 57), Y=(1304,) | Test data: X=(326, 120, 57), Y=(326,)
+2026-04-27 11:30:01,124 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:30:01,124 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:30:01,932 [INFO] Starting main model training...
+2026-04-27 11:30:01,932 [LSTM] [INFO] Starting main model training...
+2026-04-27 11:30:39,580 [INFO] FINAL TEST ACCURACY: 50.92% | LOSS: 0.6947
+2026-04-27 11:30:39,580 [LSTM] [INFO] FINAL TEST ACCURACY: 50.92% | LOSS: 0.6947
+2026-04-27 11:30:40,084 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:30:40,084 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:30:40,894 [INFO] [RF] Engineering de-correlated features...
+2026-04-27 11:30:40,894 [RF_Model] [INFO] [RF] Engineering de-correlated features...
+2026-04-27 11:30:41,844 [INFO] [RF] ✅ Training complete. Accuracy: 55.43%
+2026-04-27 11:30:41,844 [RF_Model] [INFO] [RF] ✅ Training complete. Accuracy: 55.43%
+2026-04-27 11:30:41,844 [INFO] [RF] Top 5 Features:
+2026-04-27 11:30:41,844 [RF_Model] [INFO] [RF] Top 5 Features:
+2026-04-27 11:30:41,844 [INFO] [RF]   1. di_ratio: 0.0420
+2026-04-27 11:30:41,844 [RF_Model] [INFO] [RF]   1. di_ratio: 0.0420
+2026-04-27 11:30:41,844 [INFO] [RF]   2. ATR_delta_5: 0.0378
+2026-04-27 11:30:41,844 [RF_Model] [INFO] [RF]   2. ATR_delta_5: 0.0378
+2026-04-27 11:30:41,844 [INFO] [RF]   3. close_std_50: 0.0363
+2026-04-27 11:30:41,844 [RF_Model] [INFO] [RF]   3. close_std_50: 0.0363
+2026-04-27 11:30:41,844 [INFO] [RF]   4. MACD_delta_5: 0.0345
+2026-04-27 11:30:41,844 [RF_Model] [INFO] [RF]   4. MACD_delta_5: 0.0345
+2026-04-27 11:30:41,844 [INFO] [RF]   5. RSI_x_ATR: 0.0344
+2026-04-27 11:30:41,844 [RF_Model] [INFO] [RF]   5. RSI_x_ATR: 0.0344
+2026-04-27 11:30:41,966 [INFO] [RF] Model saved to disk.
+2026-04-27 11:30:41,966 [RF_Model] [INFO] [RF] Model saved to disk.
+2026-04-27 11:30:42,044 [DEBUG] [Ensemble] trend_strength=0.160 → RANGING | LSTM=54.8% RF=45.2% | Session=London
+2026-04-27 11:30:42,044 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.160 → RANGING | LSTM=54.8% RF=45.2% | Session=London
+2026-04-27 11:30:42,044 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.16 (ranging)
+2026-04-27 11:30:42,044 [Ensemble] [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.16 (ranging)
+2026-04-27 11:30:42,044 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.16 → HOLD
+2026-04-27 11:30:42,044 [Ensemble] [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.16 → HOLD
+2026-04-27 11:30:42,057 [INFO] [Regime] Initial regime set: RANGING (trend_strength=0.160)
+2026-04-27 11:30:42,057 [TradeManager] [INFO] [Regime] Initial regime set: RANGING (trend_strength=0.160)
+2026-04-27 11:30:42,057 [Main] [INFO] [EURUSD] SKIP: direction=None | reason=CONFLICT | confidence=LOW | session=London
+2026-04-27 11:30:42,057 [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 11:30:42,057 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 11:30:42,130 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 11:30:42,130 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 11:30:42,149 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 11:30:42,149 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 11:30:42,169 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 11:30:42,169 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 11:30:42,169 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:30:42,169 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:30:42,170 [INFO] Starting feature engineering pipeline...
+2026-04-27 11:30:42,170 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 11:30:42,294 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:30:42,294 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:30:42,337 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:30:42,337 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:30:42,341 [INFO] Dropped 70 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:30:42,341 [Features] [INFO] Dropped 70 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:30:42,345 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:30:42,345 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:30:42,349 [INFO] Data shape: (1930, 58) → (1744, 58) (after NaN cleanup)
+2026-04-27 11:30:42,349 [Features] [INFO] Data shape: (1930, 58) → (1744, 58) (after NaN cleanup)
+2026-04-27 11:30:42,350 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:30:42,350 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:30:42,395 [INFO] Training data: X=(1299, 120, 57), Y=(1299,) | Test data: X=(325, 120, 57), Y=(325,)
+2026-04-27 11:30:42,395 [LSTM] [INFO] Training data: X=(1299, 120, 57), Y=(1299,) | Test data: X=(325, 120, 57), Y=(325,)
+2026-04-27 11:30:42,395 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:30:42,395 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:30:42,889 [INFO] Starting main model training...
+2026-04-27 11:30:42,889 [LSTM] [INFO] Starting main model training...
+2026-04-27 11:31:19,118 [INFO] FINAL TEST ACCURACY: 47.08% | LOSS: 0.6949
+2026-04-27 11:31:19,118 [LSTM] [INFO] FINAL TEST ACCURACY: 47.08% | LOSS: 0.6949
+2026-04-27 11:31:19,618 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:31:19,618 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:31:20,572 [DEBUG] [Ensemble] trend_strength=0.151 → RANGING | LSTM=54.5% RF=45.5% | Session=London
+2026-04-27 11:31:20,572 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.151 → RANGING | LSTM=54.5% RF=45.5% | Session=London
+2026-04-27 11:31:20,573 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5022, distance=0.0022 < 0.015 → REJECT
+2026-04-27 11:31:20,573 [Ensemble] [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5022, distance=0.0022 < 0.015 → REJECT
+2026-04-27 11:31:20,574 [Main] [INFO] [GBPUSD] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=LOW | session=London
+2026-04-27 11:31:20,575 [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 11:31:20,575 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 11:31:20,626 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 11:31:20,626 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 11:31:20,660 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 11:31:20,660 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 11:31:20,688 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 11:31:20,688 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 11:31:20,689 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:31:20,689 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:31:20,691 [INFO] Starting feature engineering pipeline...
+2026-04-27 11:31:20,691 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 11:31:20,807 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:31:20,807 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:31:20,854 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:31:20,854 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:31:20,857 [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:31:20,857 [Features] [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:31:20,863 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:31:20,863 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:31:20,866 [INFO] Data shape: (1987, 58) → (1801, 58) (after NaN cleanup)
+2026-04-27 11:31:20,866 [Features] [INFO] Data shape: (1987, 58) → (1801, 58) (after NaN cleanup)
+2026-04-27 11:31:20,868 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:31:20,868 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:31:20,916 [INFO] Training data: X=(1344, 120, 57), Y=(1344,) | Test data: X=(337, 120, 57), Y=(337,)
+2026-04-27 11:31:20,916 [LSTM] [INFO] Training data: X=(1344, 120, 57), Y=(1344,) | Test data: X=(337, 120, 57), Y=(337,)
+2026-04-27 11:31:20,924 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:31:20,924 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:31:21,551 [INFO] Starting main model training...
+2026-04-27 11:31:21,551 [LSTM] [INFO] Starting main model training...
+2026-04-27 11:31:56,105 [INFO] FINAL TEST ACCURACY: 48.66% | LOSS: 0.7043
+2026-04-27 11:31:56,105 [LSTM] [INFO] FINAL TEST ACCURACY: 48.66% | LOSS: 0.7043
+2026-04-27 11:31:56,553 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:31:56,553 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:31:57,744 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 11:31:57,744 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 11:31:57,746 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.4982, distance=0.0018 < 0.015 → REJECT
+2026-04-27 11:31:57,746 [Ensemble] [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.4982, distance=0.0018 < 0.015 → REJECT
+2026-04-27 11:31:57,747 [Main] [INFO] [USDJPY] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=LOW | session=London
+2026-04-27 11:31:57,748 [Main] [INFO] No viable opportunities this cycle across portfolio.
+2026-04-27 11:35:00,564 [Main] [INFO] 
+=================================================================
+2026-04-27 11:35:00,565 [Main] [INFO] [PORTFOLIO EVALUATION] Candle #2 | Loop Trigger Time: 2026-04-27 08:35:00
+2026-04-27 11:35:00,565 [Main] [INFO] =================================================================
+2026-04-27 11:35:00,566 [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 11:35:00,566 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 11:35:00,599 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 11:35:00,599 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 11:35:00,619 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 11:35:00,619 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 11:35:00,636 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 11:35:00,636 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 11:35:00,637 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:35:00,637 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:35:00,638 [INFO] Starting feature engineering pipeline...
+2026-04-27 11:35:00,638 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 11:35:00,758 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:35:00,758 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:35:00,806 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:35:00,806 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:35:00,807 [INFO] Dropped 64 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:35:00,807 [Features] [INFO] Dropped 64 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:35:00,816 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:35:00,816 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:35:00,818 [INFO] Data shape: (1936, 58) → (1764, 58) (after NaN cleanup)
+2026-04-27 11:35:00,818 [Features] [INFO] Data shape: (1936, 58) → (1764, 58) (after NaN cleanup)
+2026-04-27 11:35:00,819 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:35:00,819 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:35:00,878 [INFO] Training data: X=(1315, 120, 57), Y=(1315,) | Test data: X=(329, 120, 57), Y=(329,)
+2026-04-27 11:35:00,878 [LSTM] [INFO] Training data: X=(1315, 120, 57), Y=(1315,) | Test data: X=(329, 120, 57), Y=(329,)
+2026-04-27 11:35:00,885 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:35:00,885 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:35:01,452 [INFO] Starting main model training...
+2026-04-27 11:35:01,452 [LSTM] [INFO] Starting main model training...
+2026-04-27 11:35:54,818 [INFO] FINAL TEST ACCURACY: 44.98% | LOSS: 0.7047
+2026-04-27 11:35:54,818 [LSTM] [INFO] FINAL TEST ACCURACY: 44.98% | LOSS: 0.7047
+2026-04-27 11:35:55,218 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:35:55,218 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:35:56,072 [DEBUG] [Ensemble] trend_strength=0.518 → TRANSITIONING | LSTM=65.5% RF=34.5% | Session=London
+2026-04-27 11:35:56,072 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.518 → TRANSITIONING | LSTM=65.5% RF=34.5% | Session=London
+2026-04-27 11:35:56,075 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.4631, distance=0.0369 < 0.04 → NO ENTRY
+2026-04-27 11:35:56,075 [Ensemble] [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.4631, distance=0.0369 < 0.04 → NO ENTRY
+2026-04-27 11:35:56,079 [DEBUG] [Regime] Pending switch to TRENDING (1/2 confirmations, trend_strength=0.518)
+2026-04-27 11:35:56,079 [TradeManager] [DEBUG] [Regime] Pending switch to TRENDING (1/2 confirmations, trend_strength=0.518)
+2026-04-27 11:35:56,080 [Main] [INFO] [EURUSD] SKIP: direction=None | reason=WEAK_ZONE (Normal) | confidence=LOW | session=London
+2026-04-27 11:35:56,081 [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 11:35:56,081 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 11:35:56,121 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 11:35:56,121 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 11:35:56,138 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 11:35:56,138 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 11:35:56,143 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 11:35:56,143 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 11:35:56,143 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:35:56,143 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:35:56,146 [INFO] Starting feature engineering pipeline...
+2026-04-27 11:35:56,146 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 11:35:56,243 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:35:56,243 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:35:56,280 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:35:56,280 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:35:56,285 [INFO] Dropped 70 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:35:56,285 [Features] [INFO] Dropped 70 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:35:56,289 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:35:56,289 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:35:56,292 [INFO] Data shape: (1930, 58) → (1744, 58) (after NaN cleanup)
+2026-04-27 11:35:56,292 [Features] [INFO] Data shape: (1930, 58) → (1744, 58) (after NaN cleanup)
+2026-04-27 11:35:56,293 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:35:56,293 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:35:56,336 [INFO] Training data: X=(1299, 120, 57), Y=(1299,) | Test data: X=(325, 120, 57), Y=(325,)
+2026-04-27 11:35:56,336 [LSTM] [INFO] Training data: X=(1299, 120, 57), Y=(1299,) | Test data: X=(325, 120, 57), Y=(325,)
+2026-04-27 11:35:56,343 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:35:56,343 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:35:56,832 [INFO] Starting main model training...
+2026-04-27 11:35:56,832 [LSTM] [INFO] Starting main model training...
+2026-04-27 11:36:51,196 [INFO] FINAL TEST ACCURACY: 47.38% | LOSS: 0.6938
+2026-04-27 11:36:51,196 [LSTM] [INFO] FINAL TEST ACCURACY: 47.38% | LOSS: 0.6938
+2026-04-27 11:36:51,993 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:36:51,993 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:36:52,853 [tensorflow] [WARNING] 5 out of the last 5 calls to <function Model.make_predict_function.<locals>.predict_function at 0x0000022104389040> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+2026-04-27 11:36:52,939 [DEBUG] [Ensemble] trend_strength=0.139 → RANGING | LSTM=54.2% RF=45.8% | Session=London
+2026-04-27 11:36:52,939 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.139 → RANGING | LSTM=54.2% RF=45.8% | Session=London
+2026-04-27 11:36:52,940 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.14 (ranging)
+2026-04-27 11:36:52,940 [Ensemble] [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.14 (ranging)
+2026-04-27 11:36:52,941 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.14 → HOLD
+2026-04-27 11:36:52,941 [Ensemble] [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.14 → HOLD
+2026-04-27 11:36:52,943 [Main] [INFO] [GBPUSD] SKIP: direction=None | reason=CONFLICT | confidence=LOW | session=London
+2026-04-27 11:36:52,943 [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 11:36:52,943 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 11:36:52,974 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 11:36:52,974 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 11:36:52,990 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 11:36:52,990 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 11:36:53,007 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 11:36:53,007 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 11:36:53,007 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:36:53,007 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:36:53,010 [INFO] Starting feature engineering pipeline...
+2026-04-27 11:36:53,010 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 11:36:53,116 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:36:53,116 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:36:53,161 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:36:53,161 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:36:53,164 [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:36:53,164 [Features] [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:36:53,170 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:36:53,170 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:36:53,175 [INFO] Data shape: (1987, 58) → (1801, 58) (after NaN cleanup)
+2026-04-27 11:36:53,175 [Features] [INFO] Data shape: (1987, 58) → (1801, 58) (after NaN cleanup)
+2026-04-27 11:36:53,176 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:36:53,176 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:36:53,224 [INFO] Training data: X=(1344, 120, 57), Y=(1344,) | Test data: X=(337, 120, 57), Y=(337,)
+2026-04-27 11:36:53,224 [LSTM] [INFO] Training data: X=(1344, 120, 57), Y=(1344,) | Test data: X=(337, 120, 57), Y=(337,)
+2026-04-27 11:36:53,229 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:36:53,229 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:36:53,793 [INFO] Starting main model training...
+2026-04-27 11:36:53,793 [LSTM] [INFO] Starting main model training...
+2026-04-27 11:37:50,798 [INFO] FINAL TEST ACCURACY: 52.52% | LOSS: 0.7045
+2026-04-27 11:37:50,798 [LSTM] [INFO] FINAL TEST ACCURACY: 52.52% | LOSS: 0.7045
+2026-04-27 11:37:51,356 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:37:51,356 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:37:52,385 [tensorflow] [WARNING] 6 out of the last 6 calls to <function Model.make_predict_function.<locals>.predict_function at 0x00000221761A9310> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+2026-04-27 11:37:52,507 [DEBUG] [Ensemble] trend_strength=0.023 → RANGING | LSTM=50.7% RF=49.3% | Session=London
+2026-04-27 11:37:52,507 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.023 → RANGING | LSTM=50.7% RF=49.3% | Session=London
+2026-04-27 11:37:52,507 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.5345, distance=0.0345 < 0.04 → NO ENTRY
+2026-04-27 11:37:52,507 [Ensemble] [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.5345, distance=0.0345 < 0.04 → NO ENTRY
+2026-04-27 11:37:52,511 [Main] [INFO] [USDJPY] SKIP: direction=None | reason=WEAK_ZONE (Normal) | confidence=LOW | session=London
+2026-04-27 11:37:52,511 [Main] [INFO] No viable opportunities this cycle across portfolio.
+2026-04-27 11:40:03,506 [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-27 11:40:03,506 [MT5Engine] [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-27 11:40:03,768 [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-27 11:40:03,768 [MT5Engine] [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 99983.52 USD | Leverage: 1:100
+2026-04-27 11:40:03,804 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 11:40:03,804 [TradeManager] [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-27 11:40:03,807 [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 11:40:03,807 [TradeManager] [INFO] TradeManager initialized. Active trades: 0
+2026-04-27 11:40:03,809 [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-27
+2026-04-27 11:40:03,809 [TradeManager] [INFO] [DAILY RESET] Balance: 99983.52 | Date: 2026-04-27
+2026-04-27 11:40:48,992 [INFO] [RF] Loaded saved model from disk.
+2026-04-27 11:40:48,992 [RF_Model] [INFO] [RF] Loaded saved model from disk.
+2026-04-27 11:40:48,996 [WARNING] [Market] No tick for XAUUSD. Market may be closed.
+2026-04-27 11:40:48,996 [DataLoader] [WARNING] [Market] No tick for XAUUSD. Market may be closed.
+2026-04-27 11:40:48,998 [WARNING] [Market] US30 trading is disabled.
+2026-04-27 11:40:48,998 [DataLoader] [WARNING] [Market] US30 trading is disabled.
+2026-04-27 11:40:48,999 [Main] [INFO] 
+=================================================================
+2026-04-27 11:40:49,000 [Main] [INFO] [PORTFOLIO EVALUATION] Candle #1 | Loop Trigger Time: 2026-04-27 08:40:48
+2026-04-27 11:40:49,001 [Main] [INFO] =================================================================
+2026-04-27 11:40:49,002 [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 11:40:49,002 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 11:40:49,014 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 11:40:49,014 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 11:40:49,021 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 11:40:49,021 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 11:40:49,031 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 11:40:49,031 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 11:40:49,033 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:40:49,033 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:40:49,036 [INFO] Starting feature engineering pipeline...
+2026-04-27 11:40:49,036 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 11:40:49,281 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:40:49,281 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:40:49,336 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:40:49,336 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:40:49,340 [INFO] Dropped 64 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:40:49,340 [Features] [INFO] Dropped 64 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:40:49,347 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:40:49,347 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:40:49,358 [INFO] Data shape: (1936, 58) → (1764, 58) (after NaN cleanup)
+2026-04-27 11:40:49,358 [Features] [INFO] Data shape: (1936, 58) → (1764, 58) (after NaN cleanup)
+2026-04-27 11:40:49,359 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:40:49,359 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:40:49,447 [INFO] Training data: X=(1315, 120, 57), Y=(1315,) | Test data: X=(329, 120, 57), Y=(329,)
+2026-04-27 11:40:49,447 [LSTM] [INFO] Training data: X=(1315, 120, 57), Y=(1315,) | Test data: X=(329, 120, 57), Y=(329,)
+2026-04-27 11:40:49,455 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:40:49,455 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:40:50,676 [INFO] Starting main model training...
+2026-04-27 11:40:50,676 [LSTM] [INFO] Starting main model training...
+2026-04-27 11:41:33,265 [INFO] FINAL TEST ACCURACY: 47.11% | LOSS: 0.7146
+2026-04-27 11:41:33,265 [LSTM] [INFO] FINAL TEST ACCURACY: 47.11% | LOSS: 0.7146
+2026-04-27 11:41:34,091 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:41:34,091 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:41:35,603 [INFO] [RF] Engineering de-correlated features...
+2026-04-27 11:41:35,603 [RF_Model] [INFO] [RF] Engineering de-correlated features...
+2026-04-27 11:41:36,756 [INFO] [RF] ✅ Training complete. Accuracy: 54.23%
+2026-04-27 11:41:36,756 [RF_Model] [INFO] [RF] ✅ Training complete. Accuracy: 54.23%
+2026-04-27 11:41:36,758 [INFO] [RF] Top 5 Features:
+2026-04-27 11:41:36,758 [RF_Model] [INFO] [RF] Top 5 Features:
+2026-04-27 11:41:36,759 [INFO] [RF]   1. ATR_delta_5: 0.0442
+2026-04-27 11:41:36,759 [RF_Model] [INFO] [RF]   1. ATR_delta_5: 0.0442
+2026-04-27 11:41:36,762 [INFO] [RF]   2. close_std_50: 0.0393
+2026-04-27 11:41:36,762 [RF_Model] [INFO] [RF]   2. close_std_50: 0.0393
+2026-04-27 11:41:36,763 [INFO] [RF]   3. returns_kurt_20: 0.0386
+2026-04-27 11:41:36,763 [RF_Model] [INFO] [RF]   3. returns_kurt_20: 0.0386
+2026-04-27 11:41:36,765 [INFO] [RF]   4. di_ratio: 0.0372
+2026-04-27 11:41:36,765 [RF_Model] [INFO] [RF]   4. di_ratio: 0.0372
+2026-04-27 11:41:36,768 [INFO] [RF]   5. ema_ratio: 0.0360
+2026-04-27 11:41:36,768 [RF_Model] [INFO] [RF]   5. ema_ratio: 0.0360
+2026-04-27 11:41:37,179 [INFO] [RF] Model saved to disk.
+2026-04-27 11:41:37,179 [RF_Model] [INFO] [RF] Model saved to disk.
+2026-04-27 11:41:37,410 [DEBUG] [Ensemble] trend_strength=0.440 → TRANSITIONING | LSTM=63.2% RF=36.8% | Session=London
+2026-04-27 11:41:37,410 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.440 → TRANSITIONING | LSTM=63.2% RF=36.8% | Session=London
+2026-04-27 11:41:37,428 [INFO] [Regime] Initial regime set: RANGING (trend_strength=0.440)
+2026-04-27 11:41:37,428 [TradeManager] [INFO] [Regime] Initial regime set: RANGING (trend_strength=0.440)
+2026-04-27 11:41:37,431 [Main] [INFO] [EURUSD] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=LOW | session=London
+2026-04-27 11:41:37,433 [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 11:41:37,433 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 11:41:37,447 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 11:41:37,447 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 11:41:37,459 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 11:41:37,459 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 11:41:37,470 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 11:41:37,470 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 11:41:37,474 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:41:37,474 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:41:37,481 [INFO] Starting feature engineering pipeline...
+2026-04-27 11:41:37,481 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 11:41:37,725 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:41:37,725 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:41:37,778 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:41:37,778 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:41:37,784 [INFO] Dropped 70 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:41:37,784 [Features] [INFO] Dropped 70 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:41:37,790 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:41:37,790 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:41:37,794 [INFO] Data shape: (1930, 58) → (1744, 58) (after NaN cleanup)
+2026-04-27 11:41:37,794 [Features] [INFO] Data shape: (1930, 58) → (1744, 58) (after NaN cleanup)
+2026-04-27 11:41:37,796 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:41:37,796 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:41:37,861 [INFO] Training data: X=(1299, 120, 57), Y=(1299,) | Test data: X=(325, 120, 57), Y=(325,)
+2026-04-27 11:41:37,861 [LSTM] [INFO] Training data: X=(1299, 120, 57), Y=(1299,) | Test data: X=(325, 120, 57), Y=(325,)
+2026-04-27 11:41:37,869 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:41:37,869 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:41:38,864 [INFO] Starting main model training...
+2026-04-27 11:41:38,864 [LSTM] [INFO] Starting main model training...
+2026-04-27 11:42:17,494 [INFO] FINAL TEST ACCURACY: 44.62% | LOSS: 0.7092
+2026-04-27 11:42:17,494 [LSTM] [INFO] FINAL TEST ACCURACY: 44.62% | LOSS: 0.7092
+2026-04-27 11:42:17,902 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:42:17,902 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:42:18,806 [DEBUG] [Ensemble] trend_strength=0.112 → RANGING | LSTM=53.3% RF=46.7% | Session=London
+2026-04-27 11:42:18,806 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.112 → RANGING | LSTM=53.3% RF=46.7% | Session=London
+2026-04-27 11:42:18,807 [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.11 (ranging)
+2026-04-27 11:42:18,807 [Ensemble] [WARNING] [Ensemble] ⚠️ REGIME CONFLICT: London session but trend_strength=0.11 (ranging)
+2026-04-27 11:42:18,808 [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.11 → HOLD
+2026-04-27 11:42:18,808 [Ensemble] [WARNING] [Ensemble] ⛔ REGIME CONFLICT: session=London, trend_strength=0.11 → HOLD
+2026-04-27 11:42:18,809 [Main] [INFO] [GBPUSD] SKIP: direction=None | reason=CONFLICT | confidence=LOW | session=London
+2026-04-27 11:42:18,809 [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 11:42:18,809 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 11:42:18,811 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 11:42:18,811 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 11:42:18,819 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 11:42:18,819 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 11:42:18,826 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 11:42:18,826 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 11:42:18,827 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:42:18,827 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:42:18,829 [INFO] Starting feature engineering pipeline...
+2026-04-27 11:42:18,829 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 11:42:18,929 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:42:18,929 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:42:18,965 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:42:18,965 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:42:18,968 [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:42:18,968 [Features] [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:42:18,974 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:42:18,974 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:42:18,977 [INFO] Data shape: (1987, 58) → (1801, 58) (after NaN cleanup)
+2026-04-27 11:42:18,977 [Features] [INFO] Data shape: (1987, 58) → (1801, 58) (after NaN cleanup)
+2026-04-27 11:42:18,977 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:42:18,977 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:42:19,016 [INFO] Training data: X=(1344, 120, 57), Y=(1344,) | Test data: X=(337, 120, 57), Y=(337,)
+2026-04-27 11:42:19,016 [LSTM] [INFO] Training data: X=(1344, 120, 57), Y=(1344,) | Test data: X=(337, 120, 57), Y=(337,)
+2026-04-27 11:42:19,025 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:42:19,025 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:42:19,517 [INFO] Starting main model training...
+2026-04-27 11:42:19,517 [LSTM] [INFO] Starting main model training...
+2026-04-27 11:42:53,124 [INFO] FINAL TEST ACCURACY: 43.03% | LOSS: 0.7198
+2026-04-27 11:42:53,124 [LSTM] [INFO] FINAL TEST ACCURACY: 43.03% | LOSS: 0.7198
+2026-04-27 11:42:53,567 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:42:53,567 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:42:54,566 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 11:42:54,566 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 11:42:54,566 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.5183, distance=0.0183 < 0.04 → NO ENTRY
+2026-04-27 11:42:54,566 [Ensemble] [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.5183, distance=0.0183 < 0.04 → NO ENTRY
+2026-04-27 11:42:54,566 [Main] [INFO] [USDJPY] SKIP: direction=None | reason=WEAK_ZONE (Normal) | confidence=LOW | session=London
+2026-04-27 11:42:54,566 [Main] [INFO] No viable opportunities this cycle across portfolio.
+2026-04-27 11:45:00,760 [Main] [INFO] 
+=================================================================
+2026-04-27 11:45:00,760 [Main] [INFO] [PORTFOLIO EVALUATION] Candle #2 | Loop Trigger Time: 2026-04-27 08:45:00
+2026-04-27 11:45:00,761 [Main] [INFO] =================================================================
+2026-04-27 11:45:00,761 [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 11:45:00,761 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 11:45:00,766 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 11:45:00,766 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 11:45:00,770 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 11:45:00,770 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 11:45:00,774 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 11:45:00,774 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 11:45:00,775 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:45:00,775 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:45:00,776 [INFO] Starting feature engineering pipeline...
+2026-04-27 11:45:00,776 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 11:45:00,893 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:45:00,893 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:45:00,943 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:45:00,943 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:45:00,949 [INFO] Dropped 64 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:45:00,949 [Features] [INFO] Dropped 64 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:45:00,953 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:45:00,953 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:45:00,957 [INFO] Data shape: (1936, 58) → (1764, 58) (after NaN cleanup)
+2026-04-27 11:45:00,957 [Features] [INFO] Data shape: (1936, 58) → (1764, 58) (after NaN cleanup)
+2026-04-27 11:45:00,958 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:45:00,958 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:45:01,007 [INFO] Training data: X=(1315, 120, 57), Y=(1315,) | Test data: X=(329, 120, 57), Y=(329,)
+2026-04-27 11:45:01,007 [LSTM] [INFO] Training data: X=(1315, 120, 57), Y=(1315,) | Test data: X=(329, 120, 57), Y=(329,)
+2026-04-27 11:45:01,013 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:45:01,013 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:45:01,603 [INFO] Starting main model training...
+2026-04-27 11:45:01,603 [LSTM] [INFO] Starting main model training...
+2026-04-27 11:45:46,830 [INFO] FINAL TEST ACCURACY: 58.97% | LOSS: 0.6903
+2026-04-27 11:45:46,830 [LSTM] [INFO] FINAL TEST ACCURACY: 58.97% | LOSS: 0.6903
+2026-04-27 11:45:47,299 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:45:47,299 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:45:48,206 [DEBUG] [Ensemble] trend_strength=0.468 → TRANSITIONING | LSTM=64.0% RF=36.0% | Session=London
+2026-04-27 11:45:48,206 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.468 → TRANSITIONING | LSTM=64.0% RF=36.0% | Session=London
+2026-04-27 11:45:48,207 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.4847, distance=0.0153 < 0.04 → NO ENTRY
+2026-04-27 11:45:48,207 [Ensemble] [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.4847, distance=0.0153 < 0.04 → NO ENTRY
+2026-04-27 11:45:48,207 [Main] [INFO] [EURUSD] SKIP: direction=None | reason=WEAK_ZONE (Normal) | confidence=LOW | session=London
+2026-04-27 11:45:48,207 [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 11:45:48,207 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 11:45:48,211 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 11:45:48,211 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 11:45:48,218 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 11:45:48,218 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 11:45:48,224 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 11:45:48,224 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 11:45:48,225 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:45:48,225 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:45:48,227 [INFO] Starting feature engineering pipeline...
+2026-04-27 11:45:48,227 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 11:45:48,327 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:45:48,327 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:45:48,367 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:45:48,367 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:45:48,374 [INFO] Dropped 70 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:45:48,374 [Features] [INFO] Dropped 70 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:45:48,379 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:45:48,379 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:45:48,382 [INFO] Data shape: (1930, 58) → (1744, 58) (after NaN cleanup)
+2026-04-27 11:45:48,382 [Features] [INFO] Data shape: (1930, 58) → (1744, 58) (after NaN cleanup)
+2026-04-27 11:45:48,383 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:45:48,383 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:45:48,433 [INFO] Training data: X=(1299, 120, 57), Y=(1299,) | Test data: X=(325, 120, 57), Y=(325,)
+2026-04-27 11:45:48,433 [LSTM] [INFO] Training data: X=(1299, 120, 57), Y=(1299,) | Test data: X=(325, 120, 57), Y=(325,)
+2026-04-27 11:45:48,440 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:45:48,440 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:45:48,992 [INFO] Starting main model training...
+2026-04-27 11:45:48,992 [LSTM] [INFO] Starting main model training...
+2026-04-27 11:46:37,361 [INFO] FINAL TEST ACCURACY: 41.85% | LOSS: 0.7115
+2026-04-27 11:46:37,361 [LSTM] [INFO] FINAL TEST ACCURACY: 41.85% | LOSS: 0.7115
+2026-04-27 11:46:37,782 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:46:37,782 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:46:38,546 [tensorflow] [WARNING] 5 out of the last 5 calls to <function Model.make_predict_function.<locals>.predict_function at 0x000001ABBE264310> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+2026-04-27 11:46:38,634 [DEBUG] [Ensemble] trend_strength=0.176 → RANGING | LSTM=55.3% RF=44.7% | Session=London
+2026-04-27 11:46:38,634 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.176 → RANGING | LSTM=55.3% RF=44.7% | Session=London
+2026-04-27 11:46:38,634 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.4643, distance=0.0357 < 0.04 → NO ENTRY
+2026-04-27 11:46:38,634 [Ensemble] [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.4643, distance=0.0357 < 0.04 → NO ENTRY
+2026-04-27 11:46:38,634 [Main] [INFO] [GBPUSD] SKIP: direction=None | reason=WEAK_ZONE (Normal) | confidence=LOW | session=London
+2026-04-27 11:46:38,634 [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 11:46:38,634 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 11:46:38,638 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 11:46:38,638 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 11:46:38,644 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 11:46:38,644 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 11:46:38,649 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 11:46:38,649 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 11:46:38,649 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:46:38,649 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:46:38,649 [INFO] Starting feature engineering pipeline...
+2026-04-27 11:46:38,649 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 11:46:38,745 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:46:38,745 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:46:38,783 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:46:38,783 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:46:38,786 [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:46:38,786 [Features] [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:46:38,790 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:46:38,790 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:46:38,796 [INFO] Data shape: (1987, 58) → (1801, 58) (after NaN cleanup)
+2026-04-27 11:46:38,796 [Features] [INFO] Data shape: (1987, 58) → (1801, 58) (after NaN cleanup)
+2026-04-27 11:46:38,797 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:46:38,797 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:46:38,845 [INFO] Training data: X=(1344, 120, 57), Y=(1344,) | Test data: X=(337, 120, 57), Y=(337,)
+2026-04-27 11:46:38,845 [LSTM] [INFO] Training data: X=(1344, 120, 57), Y=(1344,) | Test data: X=(337, 120, 57), Y=(337,)
+2026-04-27 11:46:38,845 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:46:38,845 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:46:39,351 [INFO] Starting main model training...
+2026-04-27 11:46:39,351 [LSTM] [INFO] Starting main model training...
+2026-04-27 11:47:19,649 [INFO] FINAL TEST ACCURACY: 46.59% | LOSS: 0.7057
+2026-04-27 11:47:19,649 [LSTM] [INFO] FINAL TEST ACCURACY: 46.59% | LOSS: 0.7057
+2026-04-27 11:47:20,044 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:47:20,044 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:47:20,808 [tensorflow] [WARNING] 6 out of the last 6 calls to <function Model.make_predict_function.<locals>.predict_function at 0x000001ABBBBFB4C0> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+2026-04-27 11:47:20,885 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 11:47:20,885 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 11:47:20,885 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.5236, distance=0.0236 < 0.04 → NO ENTRY
+2026-04-27 11:47:20,885 [Ensemble] [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.5236, distance=0.0236 < 0.04 → NO ENTRY
+2026-04-27 11:47:20,888 [Main] [INFO] [USDJPY] SKIP: direction=None | reason=WEAK_ZONE (Normal) | confidence=LOW | session=London
+2026-04-27 11:47:20,889 [Main] [INFO] No viable opportunities this cycle across portfolio.
+2026-04-27 11:50:00,589 [Main] [INFO] 
+=================================================================
+2026-04-27 11:50:00,589 [Main] [INFO] [PORTFOLIO EVALUATION] Candle #3 | Loop Trigger Time: 2026-04-27 08:50:00
+2026-04-27 11:50:00,591 [Main] [INFO] =================================================================
+2026-04-27 11:50:00,591 [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 11:50:00,591 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 11:50:00,594 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 11:50:00,594 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 11:50:00,599 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 11:50:00,599 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 11:50:00,603 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 11:50:00,603 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 11:50:00,604 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:50:00,604 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:50:00,606 [INFO] Starting feature engineering pipeline...
+2026-04-27 11:50:00,606 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 11:50:00,723 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:50:00,723 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:50:00,776 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:50:00,776 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:50:00,781 [INFO] Dropped 64 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:50:00,781 [Features] [INFO] Dropped 64 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:50:00,785 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:50:00,785 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:50:00,789 [INFO] Data shape: (1936, 58) → (1764, 58) (after NaN cleanup)
+2026-04-27 11:50:00,789 [Features] [INFO] Data shape: (1936, 58) → (1764, 58) (after NaN cleanup)
+2026-04-27 11:50:00,789 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:50:00,789 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:50:00,839 [INFO] Training data: X=(1315, 120, 57), Y=(1315,) | Test data: X=(329, 120, 57), Y=(329,)
+2026-04-27 11:50:00,839 [LSTM] [INFO] Training data: X=(1315, 120, 57), Y=(1315,) | Test data: X=(329, 120, 57), Y=(329,)
+2026-04-27 11:50:00,847 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:50:00,847 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:50:01,384 [INFO] Starting main model training...
+2026-04-27 11:50:01,384 [LSTM] [INFO] Starting main model training...
+2026-04-27 11:51:34,322 [INFO] FINAL TEST ACCURACY: 51.67% | LOSS: 0.6941
+2026-04-27 11:51:34,322 [LSTM] [INFO] FINAL TEST ACCURACY: 51.67% | LOSS: 0.6941
+2026-04-27 11:51:35,258 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:51:35,258 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:51:37,654 [DEBUG] [Ensemble] trend_strength=0.475 → TRANSITIONING | LSTM=64.3% RF=35.7% | Session=London
+2026-04-27 11:51:37,654 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.475 → TRANSITIONING | LSTM=64.3% RF=35.7% | Session=London
+2026-04-27 11:51:37,655 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5105, distance=0.0105 < 0.015 → REJECT
+2026-04-27 11:51:37,655 [Ensemble] [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.5105, distance=0.0105 < 0.015 → REJECT
+2026-04-27 11:51:37,656 [Main] [INFO] [EURUSD] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=LOW | session=London
+2026-04-27 11:51:37,657 [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 11:51:37,657 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 11:51:37,662 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 11:51:37,662 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 11:51:37,668 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 11:51:37,668 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 11:51:37,674 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 11:51:37,674 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 11:51:37,675 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:51:37,675 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:51:37,677 [INFO] Starting feature engineering pipeline...
+2026-04-27 11:51:37,677 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 11:51:37,816 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:51:37,816 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:51:37,874 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:51:37,874 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:51:37,878 [INFO] Dropped 70 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:51:37,878 [Features] [INFO] Dropped 70 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:51:37,884 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:51:37,884 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:51:37,889 [INFO] Data shape: (1930, 58) → (1744, 58) (after NaN cleanup)
+2026-04-27 11:51:37,889 [Features] [INFO] Data shape: (1930, 58) → (1744, 58) (after NaN cleanup)
+2026-04-27 11:51:37,891 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:51:37,891 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:51:37,977 [INFO] Training data: X=(1299, 120, 57), Y=(1299,) | Test data: X=(325, 120, 57), Y=(325,)
+2026-04-27 11:51:37,977 [LSTM] [INFO] Training data: X=(1299, 120, 57), Y=(1299,) | Test data: X=(325, 120, 57), Y=(325,)
+2026-04-27 11:51:37,986 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:51:37,986 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:51:38,853 [INFO] Starting main model training...
+2026-04-27 11:51:38,853 [LSTM] [INFO] Starting main model training...
+2026-04-27 11:53:20,181 [INFO] FINAL TEST ACCURACY: 46.77% | LOSS: 0.6906
+2026-04-27 11:53:20,181 [LSTM] [INFO] FINAL TEST ACCURACY: 46.77% | LOSS: 0.6906
+2026-04-27 11:53:21,444 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:53:21,444 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:53:22,779 [DEBUG] [Ensemble] trend_strength=0.206 → TRANSITIONING | LSTM=56.2% RF=43.8% | Session=London
+2026-04-27 11:53:22,779 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.206 → TRANSITIONING | LSTM=56.2% RF=43.8% | Session=London
+2026-04-27 11:53:22,797 [Main] [INFO] [GBPUSD] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=LOW | session=London
+2026-04-27 11:53:22,799 [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 11:53:22,799 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 11:53:22,813 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 11:53:22,813 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 11:53:22,832 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 11:53:22,832 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 11:53:22,850 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 11:53:22,850 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 11:53:22,852 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:53:22,852 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:53:22,857 [INFO] Starting feature engineering pipeline...
+2026-04-27 11:53:22,857 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 11:53:23,089 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:53:23,089 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:53:23,142 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:53:23,142 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:53:23,146 [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:53:23,146 [Features] [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:53:23,152 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:53:23,152 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:53:23,157 [INFO] Data shape: (1987, 58) → (1801, 58) (after NaN cleanup)
+2026-04-27 11:53:23,157 [Features] [INFO] Data shape: (1987, 58) → (1801, 58) (after NaN cleanup)
+2026-04-27 11:53:23,159 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:53:23,159 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:53:23,246 [INFO] Training data: X=(1344, 120, 57), Y=(1344,) | Test data: X=(337, 120, 57), Y=(337,)
+2026-04-27 11:53:23,246 [LSTM] [INFO] Training data: X=(1344, 120, 57), Y=(1344,) | Test data: X=(337, 120, 57), Y=(337,)
+2026-04-27 11:53:23,257 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:53:23,257 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:53:24,177 [INFO] Starting main model training...
+2026-04-27 11:53:24,177 [LSTM] [INFO] Starting main model training...
+2026-04-27 11:54:58,865 [INFO] FINAL TEST ACCURACY: 48.66% | LOSS: 0.6937
+2026-04-27 11:54:58,865 [LSTM] [INFO] FINAL TEST ACCURACY: 48.66% | LOSS: 0.6937
+2026-04-27 11:54:59,494 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:54:59,494 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:55:00,730 [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 11:55:00,730 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.000 → RANGING | LSTM=50.0% RF=50.0% | Session=London
+2026-04-27 11:55:00,732 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.4972, distance=0.0028 < 0.015 → REJECT
+2026-04-27 11:55:00,732 [Ensemble] [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.4972, distance=0.0028 < 0.015 → REJECT
+2026-04-27 11:55:00,733 [Main] [INFO] [USDJPY] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=LOW | session=London
+2026-04-27 11:55:00,734 [Main] [INFO] No viable opportunities this cycle across portfolio.
+2026-04-27 11:55:00,735 [Main] [INFO] 
+=================================================================
+2026-04-27 11:55:00,736 [Main] [INFO] [PORTFOLIO EVALUATION] Candle #4 | Loop Trigger Time: 2026-04-27 08:55:00
+2026-04-27 11:55:00,736 [Main] [INFO] =================================================================
+2026-04-27 11:55:00,737 [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 11:55:00,737 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 11:55:00,743 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 11:55:00,743 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 11:55:00,750 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 11:55:00,750 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 11:55:00,756 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 11:55:00,756 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 11:55:00,757 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:55:00,757 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:55:00,760 [INFO] Starting feature engineering pipeline...
+2026-04-27 11:55:00,760 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 11:55:00,888 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:55:00,888 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:55:00,975 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:55:00,975 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:55:00,984 [INFO] Dropped 64 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:55:00,984 [Features] [INFO] Dropped 64 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:55:00,994 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:55:00,994 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:55:00,999 [INFO] Data shape: (1936, 58) → (1764, 58) (after NaN cleanup)
+2026-04-27 11:55:00,999 [Features] [INFO] Data shape: (1936, 58) → (1764, 58) (after NaN cleanup)
+2026-04-27 11:55:01,003 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:55:01,003 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:55:01,093 [INFO] Training data: X=(1315, 120, 57), Y=(1315,) | Test data: X=(329, 120, 57), Y=(329,)
+2026-04-27 11:55:01,093 [LSTM] [INFO] Training data: X=(1315, 120, 57), Y=(1315,) | Test data: X=(329, 120, 57), Y=(329,)
+2026-04-27 11:55:01,105 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:55:01,105 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:55:01,979 [INFO] Starting main model training...
+2026-04-27 11:55:01,979 [LSTM] [INFO] Starting main model training...
+2026-04-27 11:56:56,235 [INFO] FINAL TEST ACCURACY: 48.33% | LOSS: 0.6983
+2026-04-27 11:56:56,235 [LSTM] [INFO] FINAL TEST ACCURACY: 48.33% | LOSS: 0.6983
+2026-04-27 11:56:57,083 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:56:57,083 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:56:58,410 [DEBUG] [Ensemble] trend_strength=0.491 → TRANSITIONING | LSTM=64.7% RF=35.3% | Session=London
+2026-04-27 11:56:58,410 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.491 → TRANSITIONING | LSTM=64.7% RF=35.3% | Session=London
+2026-04-27 11:56:58,430 [Main] [INFO] [EURUSD] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=MEDIUM | session=London
+2026-04-27 11:56:58,431 [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 11:56:58,431 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 11:56:58,444 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 11:56:58,444 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 11:56:58,460 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 11:56:58,460 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 11:56:58,475 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 11:56:58,475 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 11:56:58,477 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:56:58,477 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:56:58,483 [INFO] Starting feature engineering pipeline...
+2026-04-27 11:56:58,483 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 11:56:58,776 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:56:58,776 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:56:58,867 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:56:58,867 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:56:58,882 [INFO] Dropped 70 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:56:58,882 [Features] [INFO] Dropped 70 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:56:58,895 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:56:58,895 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:56:58,907 [INFO] Data shape: (1930, 58) → (1745, 58) (after NaN cleanup)
+2026-04-27 11:56:58,907 [Features] [INFO] Data shape: (1930, 58) → (1745, 58) (after NaN cleanup)
+2026-04-27 11:56:58,910 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:56:58,910 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:56:59,045 [INFO] Training data: X=(1300, 120, 57), Y=(1300,) | Test data: X=(325, 120, 57), Y=(325,)
+2026-04-27 11:56:59,045 [LSTM] [INFO] Training data: X=(1300, 120, 57), Y=(1300,) | Test data: X=(325, 120, 57), Y=(325,)
+2026-04-27 11:56:59,063 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:56:59,063 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:57:00,327 [INFO] Starting main model training...
+2026-04-27 11:57:00,327 [LSTM] [INFO] Starting main model training...
+2026-04-27 11:58:25,317 [INFO] FINAL TEST ACCURACY: 53.23% | LOSS: 0.6952
+2026-04-27 11:58:25,317 [LSTM] [INFO] FINAL TEST ACCURACY: 53.23% | LOSS: 0.6952
+2026-04-27 11:58:25,839 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:58:25,839 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:58:26,769 [DEBUG] [Ensemble] trend_strength=0.268 → TRANSITIONING | LSTM=58.0% RF=42.0% | Session=London
+2026-04-27 11:58:26,769 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.268 → TRANSITIONING | LSTM=58.0% RF=42.0% | Session=London
+2026-04-27 11:58:26,775 [Main] [INFO] [GBPUSD] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=MEDIUM | session=London
+2026-04-27 11:58:26,775 [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 11:58:26,775 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 11:58:26,779 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 11:58:26,779 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 11:58:26,784 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 11:58:26,784 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 11:58:26,789 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 11:58:26,789 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 11:58:26,790 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:58:26,790 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 11:58:26,791 [INFO] Starting feature engineering pipeline...
+2026-04-27 11:58:26,791 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 11:58:26,893 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:58:26,893 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 11:58:26,936 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:58:26,936 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 11:58:26,939 [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:58:26,939 [Features] [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 11:58:26,945 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:58:26,945 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 11:58:26,948 [INFO] Data shape: (1987, 58) → (1801, 58) (after NaN cleanup)
+2026-04-27 11:58:26,948 [Features] [INFO] Data shape: (1987, 58) → (1801, 58) (after NaN cleanup)
+2026-04-27 11:58:26,948 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:58:26,948 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 11:58:26,993 [INFO] Training data: X=(1344, 120, 57), Y=(1344,) | Test data: X=(337, 120, 57), Y=(337,)
+2026-04-27 11:58:26,993 [LSTM] [INFO] Training data: X=(1344, 120, 57), Y=(1344,) | Test data: X=(337, 120, 57), Y=(337,)
+2026-04-27 11:58:26,993 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:58:26,993 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 11:58:27,524 [INFO] Starting main model training...
+2026-04-27 11:58:27,524 [LSTM] [INFO] Starting main model training...
+2026-04-27 11:59:21,103 [INFO] FINAL TEST ACCURACY: 51.04% | LOSS: 0.7024
+2026-04-27 11:59:21,103 [LSTM] [INFO] FINAL TEST ACCURACY: 51.04% | LOSS: 0.7024
+2026-04-27 11:59:21,693 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:59:21,693 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 11:59:22,844 [DEBUG] [Ensemble] trend_strength=0.035 → RANGING | LSTM=51.1% RF=48.9% | Session=London
+2026-04-27 11:59:22,844 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.035 → RANGING | LSTM=51.1% RF=48.9% | Session=London
+2026-04-27 11:59:22,844 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.4892, distance=0.0108 < 0.015 → REJECT
+2026-04-27 11:59:22,844 [Ensemble] [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.4892, distance=0.0108 < 0.015 → REJECT
+2026-04-27 11:59:22,844 [Main] [INFO] [USDJPY] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=LOW | session=London
+2026-04-27 11:59:22,844 [Main] [INFO] No viable opportunities this cycle across portfolio.
+2026-04-27 12:00:00,293 [Main] [INFO] 
+=================================================================
+2026-04-27 12:00:00,293 [Main] [INFO] [PORTFOLIO EVALUATION] Candle #5 | Loop Trigger Time: 2026-04-27 09:00:00
+2026-04-27 12:00:00,293 [Main] [INFO] =================================================================
+2026-04-27 12:00:00,293 [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 12:00:00,293 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 12:00:00,293 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 12:00:00,293 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 12:00:00,303 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 12:00:00,303 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 12:00:00,308 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 12:00:00,308 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 12:00:00,309 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 12:00:00,309 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 12:00:00,310 [INFO] Starting feature engineering pipeline...
+2026-04-27 12:00:00,310 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 12:00:00,415 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 12:00:00,415 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 12:00:00,453 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 12:00:00,453 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 12:00:00,457 [INFO] Dropped 64 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 12:00:00,457 [Features] [INFO] Dropped 64 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 12:00:00,464 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 12:00:00,464 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 12:00:00,469 [INFO] Data shape: (1936, 58) → (1764, 58) (after NaN cleanup)
+2026-04-27 12:00:00,469 [Features] [INFO] Data shape: (1936, 58) → (1764, 58) (after NaN cleanup)
+2026-04-27 12:00:00,469 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 12:00:00,469 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 12:00:00,517 [INFO] Training data: X=(1315, 120, 57), Y=(1315,) | Test data: X=(329, 120, 57), Y=(329,)
+2026-04-27 12:00:00,517 [LSTM] [INFO] Training data: X=(1315, 120, 57), Y=(1315,) | Test data: X=(329, 120, 57), Y=(329,)
+2026-04-27 12:00:00,524 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 12:00:00,524 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 12:00:01,093 [INFO] Starting main model training...
+2026-04-27 12:00:01,093 [LSTM] [INFO] Starting main model training...
+2026-04-27 12:00:57,035 [INFO] FINAL TEST ACCURACY: 54.10% | LOSS: 0.6858
+2026-04-27 12:00:57,035 [LSTM] [INFO] FINAL TEST ACCURACY: 54.10% | LOSS: 0.6858
+2026-04-27 12:00:57,724 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 12:00:57,724 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 12:00:58,584 [DEBUG] [Ensemble] trend_strength=0.513 → TRANSITIONING | LSTM=65.4% RF=34.6% | Session=London
+2026-04-27 12:00:58,584 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.513 → TRANSITIONING | LSTM=65.4% RF=34.6% | Session=London
+2026-04-27 12:00:58,584 [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.4672, distance=0.0328 < 0.04 → NO ENTRY
+2026-04-27 12:00:58,584 [Ensemble] [INFO] [Ensemble] ⚠️ WEAK_ZONE (Normal): base_score=0.4672, distance=0.0328 < 0.04 → NO ENTRY
+2026-04-27 12:00:58,589 [DEBUG] [Regime] Pending switch to TRENDING (1/2 confirmations, trend_strength=0.513)
+2026-04-27 12:00:58,589 [TradeManager] [DEBUG] [Regime] Pending switch to TRENDING (1/2 confirmations, trend_strength=0.513)
+2026-04-27 12:00:58,589 [Main] [INFO] [EURUSD] SKIP: direction=None | reason=WEAK_ZONE (Normal) | confidence=LOW | session=London
+2026-04-27 12:00:58,592 [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 12:00:58,592 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 12:00:58,600 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 12:00:58,600 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 12:00:58,605 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 12:00:58,605 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 12:00:58,611 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 12:00:58,611 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 12:00:58,611 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 12:00:58,611 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 12:00:58,613 [INFO] Starting feature engineering pipeline...
+2026-04-27 12:00:58,613 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 12:00:58,709 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 12:00:58,709 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 12:00:58,757 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 12:00:58,757 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 12:00:58,757 [INFO] Dropped 70 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 12:00:58,757 [Features] [INFO] Dropped 70 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 12:00:58,764 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 12:00:58,764 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 12:00:58,768 [INFO] Data shape: (1930, 58) → (1746, 58) (after NaN cleanup)
+2026-04-27 12:00:58,768 [Features] [INFO] Data shape: (1930, 58) → (1746, 58) (after NaN cleanup)
+2026-04-27 12:00:58,769 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 12:00:58,769 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 12:00:58,811 [INFO] Training data: X=(1300, 120, 57), Y=(1300,) | Test data: X=(326, 120, 57), Y=(326,)
+2026-04-27 12:00:58,811 [LSTM] [INFO] Training data: X=(1300, 120, 57), Y=(1300,) | Test data: X=(326, 120, 57), Y=(326,)
+2026-04-27 12:00:58,817 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 12:00:58,817 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 12:00:59,326 [INFO] Starting main model training...
+2026-04-27 12:00:59,326 [LSTM] [INFO] Starting main model training...
+2026-04-27 12:01:47,689 [INFO] FINAL TEST ACCURACY: 39.88% | LOSS: 0.7207
+2026-04-27 12:01:47,689 [LSTM] [INFO] FINAL TEST ACCURACY: 39.88% | LOSS: 0.7207
+2026-04-27 12:01:48,103 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 12:01:48,103 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 12:01:48,951 [DEBUG] [Ensemble] trend_strength=0.312 → TRANSITIONING | LSTM=59.4% RF=40.6% | Session=London
+2026-04-27 12:01:48,951 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.312 → TRANSITIONING | LSTM=59.4% RF=40.6% | Session=London
+2026-04-27 12:01:48,957 [Main] [INFO] [GBPUSD] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=MEDIUM | session=London
+2026-04-27 12:01:48,957 [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 12:01:48,957 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for USDJPY...
+2026-04-27 12:01:48,962 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 12:01:48,962 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M5)
+2026-04-27 12:01:48,966 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 12:01:48,966 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (M15)
+2026-04-27 12:01:48,971 [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 12:01:48,971 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for USDJPY (H1)
+2026-04-27 12:01:48,972 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 12:01:48,972 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 12:01:48,973 [INFO] Starting feature engineering pipeline...
+2026-04-27 12:01:48,973 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 12:01:49,075 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 12:01:49,075 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 12:01:49,116 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 12:01:49,116 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 12:01:49,120 [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 12:01:49,120 [Features] [INFO] Dropped 13 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 12:01:49,126 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 12:01:49,126 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 12:01:49,129 [INFO] Data shape: (1987, 58) → (1801, 58) (after NaN cleanup)
+2026-04-27 12:01:49,129 [Features] [INFO] Data shape: (1987, 58) → (1801, 58) (after NaN cleanup)
+2026-04-27 12:01:49,130 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 12:01:49,130 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 12:01:49,174 [INFO] Training data: X=(1344, 120, 57), Y=(1344,) | Test data: X=(337, 120, 57), Y=(337,)
+2026-04-27 12:01:49,174 [LSTM] [INFO] Training data: X=(1344, 120, 57), Y=(1344,) | Test data: X=(337, 120, 57), Y=(337,)
+2026-04-27 12:01:49,182 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 12:01:49,182 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 12:01:49,675 [INFO] Starting main model training...
+2026-04-27 12:01:49,675 [LSTM] [INFO] Starting main model training...
+2026-04-27 12:02:55,389 [INFO] FINAL TEST ACCURACY: 45.70% | LOSS: 0.6996
+2026-04-27 12:02:55,389 [LSTM] [INFO] FINAL TEST ACCURACY: 45.70% | LOSS: 0.6996
+2026-04-27 12:02:55,899 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 12:02:55,899 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 12:02:56,774 [DEBUG] [Ensemble] trend_strength=0.061 → RANGING | LSTM=51.8% RF=48.2% | Session=London
+2026-04-27 12:02:56,774 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.061 → RANGING | LSTM=51.8% RF=48.2% | Session=London
+2026-04-27 12:02:56,776 [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.4995, distance=0.0005 < 0.015 → REJECT
+2026-04-27 12:02:56,776 [Ensemble] [INFO] [Ensemble] ⛔ SCORE FLOOR: base_score=0.4995, distance=0.0005 < 0.015 → REJECT
+2026-04-27 12:02:56,777 [Main] [INFO] [USDJPY] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=LOW | session=London
+2026-04-27 12:02:56,779 [Main] [INFO] No viable opportunities this cycle across portfolio.
+2026-04-27 12:05:00,227 [Main] [INFO] 
+=================================================================
+2026-04-27 12:05:00,227 [Main] [INFO] [PORTFOLIO EVALUATION] Candle #6 | Loop Trigger Time: 2026-04-27 09:05:00
+2026-04-27 12:05:00,229 [Main] [INFO] =================================================================
+2026-04-27 12:05:00,230 [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 12:05:00,230 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for EURUSD...
+2026-04-27 12:05:00,240 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 12:05:00,240 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M5)
+2026-04-27 12:05:00,243 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 12:05:00,243 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (M15)
+2026-04-27 12:05:00,248 [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 12:05:00,248 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for EURUSD (H1)
+2026-04-27 12:05:00,249 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 12:05:00,249 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 12:05:00,250 [INFO] Starting feature engineering pipeline...
+2026-04-27 12:05:00,250 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 12:05:00,349 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 12:05:00,349 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 12:05:00,393 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 12:05:00,393 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 12:05:00,397 [INFO] Dropped 64 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 12:05:00,397 [Features] [INFO] Dropped 64 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 12:05:00,398 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 12:05:00,398 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 12:05:00,406 [INFO] Data shape: (1936, 58) → (1764, 58) (after NaN cleanup)
+2026-04-27 12:05:00,406 [Features] [INFO] Data shape: (1936, 58) → (1764, 58) (after NaN cleanup)
+2026-04-27 12:05:00,407 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 12:05:00,407 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 12:05:00,448 [INFO] Training data: X=(1315, 120, 57), Y=(1315,) | Test data: X=(329, 120, 57), Y=(329,)
+2026-04-27 12:05:00,448 [LSTM] [INFO] Training data: X=(1315, 120, 57), Y=(1315,) | Test data: X=(329, 120, 57), Y=(329,)
+2026-04-27 12:05:00,459 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 12:05:00,459 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 12:05:00,961 [INFO] Starting main model training...
+2026-04-27 12:05:00,961 [LSTM] [INFO] Starting main model training...
+2026-04-27 12:05:55,744 [INFO] FINAL TEST ACCURACY: 45.90% | LOSS: 0.7279
+2026-04-27 12:05:55,744 [LSTM] [INFO] FINAL TEST ACCURACY: 45.90% | LOSS: 0.7279
+2026-04-27 12:05:56,149 [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 12:05:56,149 [LSTM] [INFO] Saved training curves to: D:\Candlestick_Detection\training_curves.png
+2026-04-27 12:05:56,994 [DEBUG] [Ensemble] trend_strength=0.533 → TRANSITIONING | LSTM=66.0% RF=34.0% | Session=London
+2026-04-27 12:05:56,994 [Ensemble] [DEBUG] [Ensemble] trend_strength=0.533 → TRANSITIONING | LSTM=66.0% RF=34.0% | Session=London
+2026-04-27 12:05:57,009 [DEBUG] [Regime] Pending switch to TRENDING (1/2 confirmations, trend_strength=0.533)
+2026-04-27 12:05:57,009 [TradeManager] [DEBUG] [Regime] Pending switch to TRENDING (1/2 confirmations, trend_strength=0.533)
+2026-04-27 12:05:57,011 [Main] [INFO] [EURUSD] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=LOW | session=London
+2026-04-27 12:05:57,011 [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 12:05:57,011 [DataLoader] [INFO] [MTF] Fetching multi-timeframe data for GBPUSD...
+2026-04-27 12:05:57,017 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 12:05:57,017 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M5)
+2026-04-27 12:05:57,021 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 12:05:57,021 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (M15)
+2026-04-27 12:05:57,026 [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 12:05:57,026 [DataLoader] [INFO] [Data] ✅ Fetched 2000 candles for GBPUSD (H1)
+2026-04-27 12:05:57,026 [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 12:05:57,026 [DataLoader] [INFO] [MTF] ✅ M5: 2000 | M15: 2000 | H1: 2000 candles
+2026-04-27 12:05:57,028 [INFO] Starting feature engineering pipeline...
+2026-04-27 12:05:57,028 [Features] [INFO] Starting feature engineering pipeline...
+2026-04-27 12:05:57,131 [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 12:05:57,131 [Features] [INFO] [MTF] Injected M15 features: ['M15_RSI', 'M15_EMA_50', 'M15_trend']
+2026-04-27 12:05:57,180 [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 12:05:57,180 [Features] [INFO] [MTF] Injected H1 features: ['H1_EMA_50', 'H1_EMA_200', 'H1_trend', 'H1_ADX']
+2026-04-27 12:05:57,184 [INFO] Dropped 70 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 12:05:57,184 [Features] [INFO] Dropped 70 rows due to ATR liquidity filter (< 0.0002).
+2026-04-27 12:05:57,189 [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 12:05:57,189 [Features] [DEBUG] [DRIFT] All features within normal range.
+2026-04-27 12:05:57,193 [INFO] Data shape: (1930, 58) → (1747, 58) (after NaN cleanup)
+2026-04-27 12:05:57,193 [Features] [INFO] Data shape: (1930, 58) → (1747, 58) (after NaN cleanup)
+2026-04-27 12:05:57,193 [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 12:05:57,193 [LSTM] [INFO] Preparing sequential data with lookback of 120 candles...
+2026-04-27 12:05:57,237 [INFO] Training data: X=(1301, 120, 57), Y=(1301,) | Test data: X=(326, 120, 57), Y=(326,)
+2026-04-27 12:05:57,237 [LSTM] [INFO] Training data: X=(1301, 120, 57), Y=(1301,) | Test data: X=(326, 120, 57), Y=(326,)
+2026-04-27 12:05:57,246 [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 12:05:57,246 [LSTM] [INFO] Building LSTM model (input shape: (120, 57))...
+2026-04-27 12:05:58,117 [INFO] Starting main model training...
+2026-04-27 12:05:58,117 [LSTM] [INFO] Starting main model training...

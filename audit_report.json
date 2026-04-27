@@ -1,0 +1,185 @@
+{
+  "mode_a": {
+    "mode": "Mode A (Current)",
+    "total_signals": 168,
+    "hold_count": 66,
+    "execution_ready": 102,
+    "execution_rate": "60.7%",
+    "stage_breakdown": {
+      "EXECUTION_READY": 102,
+      "CONFLICT": 28,
+      "WEAK_ZONE": 14,
+      "SCORE_FLOOR": 11,
+      "THRESHOLD_CHECK": 11,
+      "ATR_FILTER": 2
+    },
+    "reason_breakdown": {
+      "VALID_SIGNAL": 102,
+      "BELOW_THRESHOLD": 22,
+      "REGIME_CONFLICT": 22,
+      "WEAK_ZONE": 14,
+      "CONFLICT": 6,
+      "LOW_ATR": 2
+    },
+    "avg_confidence": "2.90",
+    "avg_distance": "0.2249",
+    "avg_trend_strength": "0.5158",
+    "avg_disagreement": "0.0990",
+    "avg_quality_score": "3.3188",
+    "trades_with_pnl": 102,
+    "avg_pnl": "0.000132",
+    "total_pnl": "0.013447",
+    "win_count": 100,
+    "loss_count": 2,
+    "win_rate": "98.0%",
+    "avg_drawdown": "-0.000132",
+    "max_drawdown": "0.000137",
+    "session_breakdown": {
+      "London": {
+        "total": 74,
+        "executed": 35,
+        "rate": "47.3%",
+        "win_rate": "100.0%",
+        "avg_pnl": "0.000137",
+        "avg_quality": "3.3313"
+      },
+      "New York": {
+        "total": 51,
+        "executed": 43,
+        "rate": "84.3%",
+        "win_rate": "95.3%",
+        "avg_pnl": "0.000124",
+        "avg_quality": "3.3058"
+      },
+      "Asia": {
+        "total": 43,
+        "executed": 24,
+        "rate": "55.8%",
+        "win_rate": "100.0%",
+        "avg_pnl": "0.000137",
+        "avg_quality": "3.3238"
+      }
+    }
+  },
+  "mode_b": {
+    "mode": "Mode B (Relaxed)",
+    "total_signals": 168,
+    "hold_count": 65,
+    "execution_ready": 103,
+    "execution_rate": "61.3%",
+    "stage_breakdown": {
+      "EXECUTION_READY": 103,
+      "CONFLICT": 29,
+      "THRESHOLD_CHECK": 12,
+      "SCORE_FLOOR": 11,
+      "WEAK_ZONE": 11,
+      "ATR_FILTER": 2
+    },
+    "reason_breakdown": {
+      "VALID_SIGNAL": 103,
+      "BELOW_THRESHOLD": 23,
+      "REGIME_CONFLICT": 23,
+      "WEAK_ZONE": 11,
+      "CONFLICT": 6,
+      "LOW_ATR": 2
+    },
+    "avg_confidence": "2.89",
+    "avg_distance": "0.2240",
+    "avg_trend_strength": "0.5142",
+    "avg_disagreement": "0.0981",
+    "avg_quality_score": "3.3094",
+    "trades_with_pnl": 103,
+    "avg_pnl": "0.000132",
+    "total_pnl": "0.013584",
+    "win_count": 101,
+    "loss_count": 2,
+    "win_rate": "98.1%",
+    "avg_drawdown": "-0.000132",
+    "max_drawdown": "0.000137",
+    "session_breakdown": {
+      "London": {
+        "total": 74,
+        "executed": 35,
+        "rate": "47.3%",
+        "win_rate": "100.0%",
+        "avg_pnl": "0.000137",
+        "avg_quality": "3.3313"
+      },
+      "New York": {
+        "total": 51,
+        "executed": 44,
+        "rate": "86.3%",
+        "win_rate": "95.5%",
+        "avg_pnl": "0.000125",
+        "avg_quality": "3.2840"
+      },
+      "Asia": {
+        "total": 43,
+        "executed": 24,
+        "rate": "55.8%",
+        "win_rate": "100.0%",
+        "avg_pnl": "0.000137",
+        "avg_quality": "3.3238"
+      }
+    }
+  },
+  "delta_analysis": {
+    "count": 1,
+    "avg_confidence": "2.00",
+    "avg_trend_strength": "0.3521",
+    "avg_disagreement": "0.0058",
+    "avg_distance": "0.1284",
+    "avg_quality_score": "2.3463",
+    "session_distribution": {
+      "New York": 1
+    },
+    "previously_blocked_by": {},
+    "original_block_reasons": {
+      "BELOW_THRESHOLD": 1
+    },
+    "trades_with_pnl": 1,
+    "win_rate": "100.0%",
+    "avg_pnl": "0.000137",
+    "avg_drawdown": "-0.000137",
+    "detail": [
+      {
+        "timestamp": "2026-04-26T22:30:55.077782+00:00",
+        "session": "New York",
+        "direction": "BUY",
+        "confidence": "MEDIUM",
+        "trend_str": "0.352",
+        "disagree": "0.0058",
+        "distance": "0.1284",
+        "quality": "2.3463",
+        "pnl": "0.000137",
+        "drawdown": "-0.000137"
+      }
+    ]
+  },
+  "distance_distribution_a": {
+    "mode": "Mode A (Current)",
+    "histogram": {
+      "[0.0, 0.02)": 0,
+      "[0.02, 0.04)": 0,
+      "[0.04, 0.06)": 0,
+      "[0.06, 0.1)": 1,
+      "[0.1, 0.15)": 16,
+      "[0.15, 0.2)": 25,
+      "[0.2, 0.3)": 39,
+      "[0.3, 0.5)": 21
+    }
+  },
+  "distance_distribution_b": {
+    "mode": "Mode B (Relaxed)",
+    "histogram": {
+      "[0.0, 0.02)": 0,
+      "[0.02, 0.04)": 0,
+      "[0.04, 0.06)": 0,
+      "[0.06, 0.1)": 1,
+      "[0.1, 0.15)": 17,
+      "[0.15, 0.2)": 25,
+      "[0.2, 0.3)": 39,
+      "[0.3, 0.5)": 21
+    }
+  }
+}
