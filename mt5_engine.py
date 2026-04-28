@@ -201,9 +201,9 @@ def calculate_lot_size(symbol, sl_points, risk_multiplier=1.0):
         return 0.0
 
     balance = account.balance
-    risk_pct = Config.RISK_PERCENT_PER_TRADE / 100.0
-    risk_amount = balance * risk_pct * risk_multiplier
-
+    # risk_multiplier is passed as the final risk percentage (e.g. 0.25 for 0.25%)
+    risk_pct = risk_multiplier / 100.0
+    risk_amount = balance * risk_pct
     tick_value = info.trade_tick_value
     if tick_value is None or tick_value <= 0:
         tick_value = 1.0  # Fallback
