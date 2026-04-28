@@ -39,7 +39,7 @@ class Config:
     PREDICT_LOOKAHEAD = 5
     
     # Phase 1 Diagnostic Mode
-    DIAGNOSTIC_MODE = True
+    DIAGNOSTIC_MODE = False
 
     # Decision Thresholds (Adaptive base values — adjusted by volatility at runtime)
     PROB_THRESHOLD_BUY = 0.70
