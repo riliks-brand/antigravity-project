@@ -10572,3 +10572,13 @@
 2026-04-27 17:15:02,351 [Main] [INFO] [XAUUSD] 📊 [DUAL] MODEL_LIMITATION: Original=HOLD, Diagnostic=HOLD
 2026-04-27 17:15:02,351 [Main] [INFO] [XAUUSD] SKIP: direction=None | reason=BELOW_THRESHOLD | confidence=LOW | session=New York
 2026-04-27 17:15:02,351 [Main] [INFO] No viable opportunities this cycle across portfolio.
+2026-04-28 12:41:14,809 [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-28 12:41:14,809 [MT5Engine] [INFO] [MT5] Attempting to link with the open terminal...
+2026-04-28 12:41:23,036 [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 100143.81 USD | Leverage: 1:100
+2026-04-28 12:41:23,036 [MT5Engine] [INFO] Connected & Logged into MetaQuotes-Demo | Balance: 100143.81 USD | Leverage: 1:100
+2026-04-28 12:41:23,052 [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-28 12:41:23,052 [TradeManager] [INFO] [Persistence] Loaded 0 active trades from JSON.
+2026-04-28 12:41:23,057 [INFO] TradeManager initialized. Active trades: 0
+2026-04-28 12:41:23,057 [TradeManager] [INFO] TradeManager initialized. Active trades: 0
+2026-04-28 12:41:23,058 [INFO] [DAILY RESET] Balance: 100143.81 | Date: 2026-04-28
+2026-04-28 12:41:23,058 [TradeManager] [INFO] [DAILY RESET] Balance: 100143.81 | Date: 2026-04-28
