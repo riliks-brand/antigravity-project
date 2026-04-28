@@ -459,8 +459,20 @@ class TradeManager:
             comment = result.comment if result else "No result"
             logger.error("[TP1 PARTIAL CLOSE FAILED] Ticket #%s | Code: %s | %s", trade.ticket, retcode, comment)
 
+            # Safety check: Did MT5 natively close the position already?
+            pos_check = mt5.positions_get(ticket=trade.ticket)
+            if not pos_check:
+                logger.warning("[SAFETY] Position #%s no longer exists! Natively closed by MT5. Removing from active trades.", trade.ticket)
+                trade.state = TradeState.CLOSED
+                trade.close_reason = "NATIVE_CLOSE"
+                trade.close_time = datetime.datetime.utcnow().isoformat()
+                self.closed_trades.append(trade.to_dict())
+                del self.active_trades[trade.ticket]
+                self._save_state()
+                return
+
             # Retry with FOK
-            if result and result.retcode == mt5.TRADE_RETCODE_INVALID_FILL:
+            if result and result.retcode in (mt5.TRADE_RETCODE_INVALID_FILL, 10013):
                 request["type_filling"] = mt5.ORDER_FILLING_FOK
                 result = mt5.order_send(request)
                 if result and result.retcode == mt5.TRADE_RETCODE_DONE:
@@ -469,6 +481,8 @@ class TradeManager:
                     trade.state = TradeState.PARTIAL_CLOSED
                     trade.trailing_active = True
                     trade.trailing_sl = trade.entry_price
+                    self._save_state()
+                    logger.info("[TP1 HIT] (FOK Fallback) Ticket #%s | Closed %.2f lots", trade.ticket, close_volume)
                     if Config.MOVE_SL_TO_BE_AFTER_TP1:
                         self._move_sl_to_breakeven(trade, mt5)
                     self._save_state()
@@ -598,6 +612,17 @@ class TradeManager:
             retcode = result.retcode if result else "None"
             comment = result.comment if result else "No result"
             logger.error("[CLOSE FAILED] Ticket #%s | Code: %s | %s", trade.ticket, retcode, comment)
+            
+            # Safety check: Did MT5 natively close the position already?
+            pos_check = mt5.positions_get(ticket=trade.ticket)
+            if not pos_check:
+                logger.warning("[SAFETY] Position #%s no longer exists! Natively closed by MT5. Removing from active trades.", trade.ticket)
+                trade.state = TradeState.CLOSED
+                trade.close_reason = "NATIVE_CLOSE"
+                trade.close_time = datetime.datetime.utcnow().isoformat()
+                self.closed_trades.append(trade.to_dict())
+                del self.active_trades[trade.ticket]
+                self._save_state()
 
             # Retry with FOK
             if result and result.retcode == mt5.TRADE_RETCODE_INVALID_FILL:

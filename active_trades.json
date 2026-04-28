@@ -1,7 +1,36 @@
 {
-  "active_trades": [],
+  "active_trades": [
+    {
+      "ticket": 56422987168,
+      "symbol": "XAUUSD",
+      "direction": "SELL",
+      "original_volume": 3.13,
+      "current_volume": 3.13,
+      "entry_price": 4602.01,
+      "sl_price": 4609.98,
+      "tp1_price": 4591.3099999999995,
+      "tp2_price": 4586.0,
+      "magic": 121052,
+      "state": "OPEN",
+      "signal_time": "2026-04-28T11:25:17.038469",
+      "fill_time": "2026-04-28T11:25:17.252399",
+      "close_time": null,
+      "expected_price": 4601.98,
+      "filled_price": 4602.01,
+      "slippage_points": 3.0000000000654836,
+      "latency_ms": 211.94091796875,
+      "tp1_hit": false,
+      "sl_moved_to_be": false,
+      "trailing_active": false,
+      "trailing_sl": null,
+      "close_price": null,
+      "pnl": 0.0,
+      "close_reason": "",
+      "risk_pct": 0.25
+    }
+  ],
   "consecutive_losses": 0,
   "cooldown_until": null,
   "daily_pnl": 0.0,
-  "last_updated": "2026-04-28T11:12:20.699227"
+  "last_updated": "2026-04-28T11:35:54.238177"
 }

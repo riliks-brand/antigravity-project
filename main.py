@@ -608,7 +608,7 @@ def main():
                     action=dir_,
                     symbol=sym,
                     sl_points=sl_points,
-                    tp_points=tp1_points,
+                    tp_points=tp2_points,  # Native MT5 TP set to TP2 so partial close at TP1 can occur
                     risk_multiplier=final_risk_percent,
                     signal_time_ms=signal_time_ms,
                 )
