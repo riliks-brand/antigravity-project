@@ -114,7 +114,7 @@ class Config:
     # =========================================
     # Execution Safety
     # =========================================
-    MAX_SPREAD_POINTS = 30               # Reject trade if spread > this
+    MAX_SPREAD_POINTS = 500              # Relaxed from 30 to allow Gold/Indices
     SLIPPAGE_TOLERANCE = 10              # MT5 deviation parameter (points)
     MAX_RETRIES = 2                      # Retry order_send on failure
     MAGIC_NUMBER = 121052                # Unique bot identifier

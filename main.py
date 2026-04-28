@@ -127,11 +127,11 @@ def apply_hybrid_filters(processed_df, direction, symbol, server_time=None):
 
     # 2. Trend Alignment (H1)
     h1_trend = last.get('H1_trend', 0)
-    if h1_trend != 0:
-        if direction == "BUY" and h1_trend == -1:
-            reasons.append("COUNTER-TREND: BUY against H1 downtrend")
-        elif direction == "SELL" and h1_trend == 1:
-            reasons.append("COUNTER-TREND: SELL against H1 uptrend")
+    #if h1_trend != 0:
+    #    if direction == "BUY" and h1_trend == -1:
+    #        reasons.append("COUNTER-TREND: BUY against H1 downtrend")
+    #    elif direction == "SELL" and h1_trend == 1:
+    #        reasons.append("COUNTER-TREND: SELL against H1 uptrend")
 
     # 3. Low Volatility Filter
     volatility = last.get('Volatility', 0)
@@ -495,14 +495,14 @@ def main():
 
                 # Minimum score threshold check
                 if final_rank_score < Config.MIN_GLOBAL_SCORE:
-                    logger.debug("[%s] Dropped: Rank %.3f < %.2f", symbol, final_rank_score, Config.MIN_GLOBAL_SCORE)
+                    logger.info("[%s] Dropped: Rank %.3f < %.2f", symbol, final_rank_score, Config.MIN_GLOBAL_SCORE)
                     continue
 
                 # Hybrid local filters
                 # We use now as the server_time for news filters since UTC minute matches market minute
                 filter_passed, filter_reason = apply_hybrid_filters(processed_df, direction, symbol, now)
                 if not filter_passed:
-                    logger.debug("[%s] Rejected Locally: %s", symbol, filter_reason)
+                    logger.info("[%s] Rejected Locally: %s", symbol, filter_reason)
                     continue
 
                 opportunities.append({
