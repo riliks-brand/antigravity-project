@@ -246,7 +246,7 @@ def _detect_regime_conflict(session, trend_strength, distance_from_neutral=0.0,
     conflict_detected = False
     conflict_type = None
 
-    if session == "London" and trend_strength < 0.15:
+    if session == "London" and trend_strength < 0.05:
         conflict_detected = True
         conflict_type = "London_ranging"
     elif session == "Asia" and trend_strength > 0.8:
@@ -260,7 +260,7 @@ def _detect_regime_conflict(session, trend_strength, distance_from_neutral=0.0,
 
     # Dynamic distance threshold: adapts to market volatility
     # Higher volatility → requires stronger signal to override
-    dynamic_distance = 0.12 + (atr_normalized * 0.05)
+    dynamic_distance = 0.05 + (atr_normalized * 0.02)
 
     # Double safety gate: distance + confidence must both be sufficient
     confidence_map = {"HIGH": 3, "MEDIUM": 2, "LOW": 1}
@@ -456,7 +456,7 @@ def ensemble_predict(
     # Step 8: Weak Zone Threshold (Session-Aware)
     # Phase 2.5 Adjustment: 0.03 for normal, 0.04 for Asia
     # =========================================
-    weak_zone_threshold = 0.04 if session == "Asia" else 0.03
+    weak_zone_threshold = 0.02 if session == "Asia" else 0.01
     decision.weak_zone_threshold_used = weak_zone_threshold
 
     # Edge case detection: borderline decisions within 0.005 of threshold
@@ -468,7 +468,7 @@ def ensemble_predict(
     # For BUY: base_score in [0.485, 0.515] → reject
     # For SELL: same mirror range → reject
     # =========================================
-    if distance_from_neutral < 0.015:
+    if distance_from_neutral < 0.002:
         decision.direction = None
         decision.final_prob = base_score
         decision.raw_score = base_score
@@ -599,14 +599,14 @@ def ensemble_predict(
         sell_threshold = 0.35
     else:
         if trend_strength > 0.35:
-            buy_threshold = 0.60
-            sell_threshold = 0.40
+            buy_threshold = 0.55
+            sell_threshold = 0.45
         elif trend_strength > 0.25:
-            buy_threshold = 0.62
-            sell_threshold = 0.38
+            buy_threshold = 0.56
+            sell_threshold = 0.44
         else:
-            buy_threshold = 0.65
-            sell_threshold = 0.37  # Adjusted from 0.35 per review
+            buy_threshold = 0.58
+            sell_threshold = 0.42
 
     decision.buy_threshold = buy_threshold
     decision.sell_threshold = sell_threshold

@@ -73,7 +73,7 @@ class Config:
     # =========================================
     # Portfolio Smart Execution & Context Ranking
     # =========================================
-    MIN_GLOBAL_SCORE = 0.60              # Absolute minimum score a trade must have
+    MIN_GLOBAL_SCORE = 0.05              # Relaxed from 0.60 to allow trades
     
     # Priority Context Boosts ( added to raw prediction )
     BOOST_STRONG_TREND = 0.02
@@ -165,7 +165,7 @@ class Config:
     # Feature Engineering
     # =========================================
     ATR_THRESHOLD = 0.0002               # Filter for low liquidity periods
-    ADX_RANGING_THRESHOLD = 25           # ADX < 25 = ranging market → skip
+    ADX_RANGING_THRESHOLD = 15           # Relaxed from 25
     DXY_TICKER = "DX-Y.NYB"
 
     # Feature Drift Detection
