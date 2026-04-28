@@ -296,7 +296,17 @@ def _detect_regime_conflict(session, trend_strength, distance_from_neutral=0.0,
 # CORE ENSEMBLE PREDICTION
 # =========================================
 
-def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, session="UNKNOWN", diagnostic=False):
+def ensemble_predict(
+    lstm_prob: float,
+    rf_prob: float,
+    current_adx: float,
+    current_atr: float,
+    atr_series: pd.Series,
+    session: str = "London",
+    diagnostic: bool = False,
+    event_boost: float = 0.0,
+    h1_trend: int = 0
+) -> EnsembleDecision:
     """
     The core ensemble prediction function — Session-Aware & Market-Adaptive.
 
@@ -539,7 +549,7 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
 
     # =========================================
     # Step 12: Additive Scoring Model (STRICTLY additive, NO multiplication)
-    # Final = Base + Session_Bonus + Volatility_Adjustment
+    # Final = Base + Session_Bonus + Volatility_Adjustment + Event_Boost - MTF_Penalty
     # =========================================
 
     # 12a. Session Bonus: clipped to [-0.03, +0.03]
@@ -549,9 +559,22 @@ def ensemble_predict(lstm_prob, rf_prob, current_adx, current_atr, atr_series, s
     # 12b. Volatility Adjustment
     volatility_adjustment = _compute_volatility_adjustment(current_atr, atr_series)
     decision.volatility_adjustment = volatility_adjustment
+    
+    # 12c. Dynamic Event Boost (Phase 3)
+    # Only applied in the direction of the trade
+    if decision.side == "BUY" and event_boost > 0:
+        actual_event_boost = min(event_boost, 0.04) # Cap boost
+    elif decision.side == "SELL" and event_boost > 0:
+        actual_event_boost = min(event_boost, 0.04)
+    else:
+        actual_event_boost = 0.0
+        
+    # 12d. MTF Soft Penalty (Phase 3)
+    against_h1 = (decision.side == "BUY" and h1_trend == -1) or (decision.side == "SELL" and h1_trend == 1)
+    mtf_penalty = -0.03 if against_h1 else 0.0
 
-    # 12c. Total Adjustment: clipped to [-0.05, +0.05]
-    raw_total_adjustment = float(np.clip(session_bonus + volatility_adjustment, -0.05, 0.05))
+    # 12e. Total Adjustment: clipped to [-0.06, +0.06]
+    raw_total_adjustment = float(np.clip(session_bonus + volatility_adjustment + actual_event_boost + mtf_penalty, -0.06, 0.06))
 
     # 12d. Adjustment-to-Base Ratio Control: adjustment ≤ 10% of base_score
     # This GUARANTEES boosts cannot create a trade alone

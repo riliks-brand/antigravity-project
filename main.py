@@ -228,6 +228,8 @@ def main():
     last_heartbeat = time.time()
     candle_index = 0
     last_daily_summary_date = None
+    last_eval_time = 0
+    symbol_states = {}
 
     print("\n\033[92m[STARTUP] ✅ All systems online. Entering main loop.\033[0m\n")
 
@@ -301,25 +303,24 @@ def main():
 
                     manager.on_tick(symbol, tick_data['bid'], tick_data['ask'], current_atr)
 
-            # ===== CANDLE CLOSE CONFIRMATION (5-minute boundary) =====
-            # Use universal UTC time for boundary checks to prevent the bot from
-            # freezing on weekends when Forex clock ticks (like EURUSD) become completely stagnant.
+            # ===== 10-SECOND HYBRID LOOP =====
+            if time.time() - last_eval_time < 10:
+                notifier.flush_queue()
+                time.sleep(1)
+                continue
+            
+            last_eval_time = time.time()
             server_minute = now.minute
 
             is_candle_close = (server_minute % 5 == 0) and (server_minute != last_eval_candle)
 
-            if not is_candle_close:
-                notifier.flush_queue()
-                time.sleep(1)
-                continue
-
-            last_eval_candle = server_minute
-            candle_index += 1
-
-            logger.info("\n" + "=" * 65)
-            logger.info("[PORTFOLIO EVALUATION] Candle #%d | Loop Trigger Time: %s",
-                        candle_index, now.strftime('%Y-%m-%d %H:%M:%S'))
-            logger.info("=" * 65)
+            if is_candle_close:
+                last_eval_candle = server_minute
+                candle_index += 1
+                logger.info("\n" + "=" * 65)
+                logger.info("[PORTFOLIO EVALUATION] Candle #%d | Loop Trigger Time: %s",
+                            candle_index, now.strftime('%Y-%m-%d %H:%M:%S'))
+                logger.info("=" * 65)
 
             opportunities = []
 
@@ -327,6 +328,30 @@ def main():
                 if not is_market_open(symbol):
                     continue
                 if symbol == "BTCUSD" and not Config.TRADE_CRYPTO_WEEKENDS and now.weekday() >= 5:
+                    continue
+
+                tick_data_eval = fetch_tick_data(symbol)
+                current_price = tick_data_eval['bid'] if tick_data_eval else None
+                if not current_price: continue
+                
+                state = symbol_states.get(symbol, {})
+                force_eval = is_candle_close
+                
+                if not force_eval and state.get("last_close"):
+                    if abs(current_price - state["last_close"]) > 0.5 * state.get("atr", 0.001):
+                        force_eval = True
+                    elif state.get("ob_bull") and abs(current_price - state["ob_bull"]) < 0.5 * state.get("atr", 0.001):
+                        force_eval = True
+                    elif state.get("ob_bear") and abs(current_price - state["ob_bear"]) < 0.5 * state.get("atr", 0.001):
+                        force_eval = True
+                    elif state.get("fvg") and abs(current_price - state["fvg"]) < 0.2 * state.get("atr", 0.001):
+                        force_eval = True
+                    elif state.get("past_max") and current_price > state["past_max"]:
+                        force_eval = True
+                    elif state.get("past_min") and current_price < state["past_min"]:
+                        force_eval = True
+                        
+                if not force_eval:
                     continue
 
                 # ===== FETCH MULTI-TIMEFRAME DATA =====
@@ -344,6 +369,17 @@ def main():
                     df_m5, df_confirm=df_m15 if not df_m15.empty else None, df_trend=df_h1 if not df_h1.empty else None
                 )
                 if processed_df is None or processed_df.empty: continue
+
+                # Update State
+                symbol_states[symbol] = {
+                    "last_close": current_price,
+                    "atr": processed_df['ATR'].iloc[-1] if not pd.isna(processed_df['ATR'].iloc[-1]) else 0.001,
+                    "ob_bull": processed_df['active_bullish_ob'].iloc[-1] if 'active_bullish_ob' in processed_df.columns and not pd.isna(processed_df['active_bullish_ob'].iloc[-1]) else None,
+                    "ob_bear": processed_df['active_bearish_ob'].iloc[-1] if 'active_bearish_ob' in processed_df.columns and not pd.isna(processed_df['active_bearish_ob'].iloc[-1]) else None,
+                    "fvg": processed_df['last_fvg_price'].iloc[-1] if 'last_fvg_price' in processed_df.columns and not pd.isna(processed_df['last_fvg_price'].iloc[-1]) else None,
+                    "past_max": processed_df['high'].iloc[-10:].max() if len(processed_df) >= 10 else None,
+                    "past_min": processed_df['low'].iloc[-10:].min() if len(processed_df) >= 10 else None,
+                }
 
                 # ===== LSTM PREDICTION =====
                 latest_features = processed_df.drop(['Target'], axis=1, errors='ignore').values
@@ -366,6 +402,28 @@ def main():
                 current_adx = h1_adx_val if not pd.isna(h1_adx_val) else 25.0
                 atr_series = processed_df['ATR'].dropna()
 
+                # ===== DYNAMIC CONFIDENCE BOOST & MTF LOGIC (Phase 3) =====
+                event_boost = 0.0
+                event_strength = 1.0
+                
+                inside_ob = processed_df['inside_ob_zone'].iloc[-1] if 'inside_ob_zone' in processed_df.columns else 0
+                ob_strength = processed_df['ob_strength'].iloc[-1] if 'ob_strength' in processed_df.columns else 0.0
+                fvg_filled = processed_df['fvg_filled'].iloc[-1] if 'fvg_filled' in processed_df.columns else 0
+                fvg_size = processed_df['fvg_size'].iloc[-1] if 'fvg_size' in processed_df.columns else 0.0
+                liq_sweep = processed_df['liquidity_sweep_flag'].iloc[-1] if 'liquidity_sweep_flag' in processed_df.columns else 0
+                
+                if inside_ob == 1:
+                    event_strength += ob_strength
+                    event_boost += 0.02 * min(1.0, ob_strength)
+                if fvg_filled == 1:
+                    event_strength += fvg_size
+                    event_boost += 0.01
+                if liq_sweep != 0:
+                    event_strength += 0.5
+                    event_boost += 0.02
+                    
+                h1_trend = int(processed_df['H1_trend'].iloc[-1]) if 'H1_trend' in processed_df.columns and not pd.isna(processed_df['H1_trend'].iloc[-1]) else 0
+
                 # ===== SESSION DETECTION (v4.0) =====
                 session = TradeManager.get_active_session(symbol)
 
@@ -373,13 +431,13 @@ def main():
                 decision_original = ensemble_predict(
                     lstm_prob=lstm_prob, rf_prob=rf_prob, current_adx=current_adx,
                     current_atr=current_atr, atr_series=atr_series, session=session,
-                    diagnostic=False
+                    diagnostic=False, event_boost=event_boost, h1_trend=h1_trend
                 )
                 
                 decision_diagnostic = ensemble_predict(
                     lstm_prob=lstm_prob, rf_prob=rf_prob, current_adx=current_adx,
                     current_atr=current_atr, atr_series=atr_series, session=session,
-                    diagnostic=True
+                    diagnostic=True, event_boost=event_boost, h1_trend=h1_trend
                 )
                 
                 # --- Dual Evaluation Logging ---
@@ -431,6 +489,9 @@ def main():
                     symbol, base_prob, context_boost, memory_bias_local, sym_perf_mod,
                     final_rank_score, session, decision.confidence_level
                 )
+                
+                # Multiply score with trend and event strength for opportunity ranking
+                final_rank_score = final_rank_score * max(0.1, trend_strength) * max(1.0, event_strength)
 
                 # Minimum score threshold check
                 if final_rank_score < Config.MIN_GLOBAL_SCORE:
@@ -456,6 +517,7 @@ def main():
                     "confidence_level": decision.confidence_level,
                     "session": session,
                     "regime_changed": regime_changed,
+                    "decision_reason": decision.decision_reason,
                 })
 
             # === RANK & EXECUTE PORTFOLIO ===
@@ -480,9 +542,10 @@ def main():
                 dir_ = opp["direction"]
                 score = opp["rank_score"]
                 atr = opp["current_atr"]
+                is_near_miss = opp.get("decision_reason") == "NEAR_MISS_ACTIVATION"
                 
                 # 1. Global Trade Guard
-                can_trade, guard_reason = manager.can_trade(sym, dir_, candle_index)
+                can_trade, guard_reason = manager.can_trade(sym, dir_, candle_index, is_near_miss=is_near_miss)
                 if not can_trade:
                     logger.warning("[GUARD PREVENTED %s]: %s", sym, guard_reason)
                     continue
@@ -506,6 +569,10 @@ def main():
                     regime_changed=opp.get("regime_changed", False),
                     confidence_level=opp.get("confidence_level", "MEDIUM"),
                 )
+                
+                if is_near_miss:
+                    assigned_risk *= 0.5
+                    logger.info("[NEAR_MISS RISK REDUCTION] %s risk halved to %.2f%%", sym, assigned_risk)
                 
                 # Drawdown Survival Mode
                 current_dd = manager.get_current_drawdown(get_account_balance())
@@ -554,7 +621,7 @@ def main():
                         entry_price=result["filled_price"], expected_price=result["expected_price"],
                         sl_price=result["sl_price"], tp1_price=result["tp_price"], tp2_price=tp2_price,
                         signal_time_ms=signal_time_ms, fill_time_ms=result["fill_time_ms"],
-                        risk_pct=final_risk_percent
+                        risk_pct=final_risk_percent, volatility=atr, is_near_miss=is_near_miss
                     )
                     manager.update_signal_tracker(sym, dir_, candle_index)
                     executed_this_cycle += 1

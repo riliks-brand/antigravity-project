@@ -177,6 +177,11 @@ class TradeManager:
         self.daily_pnl = 0.0
         self.daily_start_balance = None
         self.last_reset_date = None
+        
+        # Session Limits (Phase 3)
+        self.session_trades = 0
+        self.session_near_miss = 0
+        self.symbol_cooldowns = {}
 
         # Equity Curve
         self.equity_history = []
@@ -287,13 +292,7 @@ class TradeManager:
     # TRADE REGISTRATION
     # =========================================
 
-    def register_trade(self, ticket, symbol, direction, volume,
-                       entry_price, expected_price, sl_price,
-                       tp1_price, tp2_price, signal_time_ms, fill_time_ms, risk_pct=1.0):
-        """
-        Register a newly opened trade into the manager.
-        Calculates latency and slippage automatically.
-        """
+    def register_trade(self, ticket, symbol, direction, volume, entry_price, expected_price, sl_price, tp1_price, tp2_price, signal_time_ms, fill_time_ms, risk_pct, volatility=0.001, is_near_miss=False):
         with self.global_lock:
             import MetaTrader5 as mt5
             info = mt5.symbol_info(symbol)
@@ -333,6 +332,19 @@ class TradeManager:
                 ticket, direction, symbol, entry_price, volume,
                 sl_price, tp1_price, trade.slippage_points, trade.latency_ms,
             )
+            
+            # Phase 3: Increment session limits
+            self.session_trades += 1
+            if is_near_miss:
+                self.session_near_miss += 1
+                
+            # Phase 3: Dynamic Cooldown f(volatility)
+            # Higher volatility = longer cooldown. Base 5 min + extra depending on ATR (approx 1 min per 10 points of ATR)
+            atr_points = volatility / point
+            cooldown_mins = max(5, int(atr_points / 10))
+            self.symbol_cooldowns[symbol] = datetime.datetime.utcnow() + datetime.timedelta(minutes=cooldown_mins)
+            logger.info("[COOLDOWN] %s locked for %d minutes due to execution.", symbol, cooldown_mins)
+            
             return trade
 
     # =========================================
@@ -677,7 +689,7 @@ class TradeManager:
                         
         return True, "OK"
 
-    def can_trade(self, symbol, direction, candle_index):
+    def can_trade(self, symbol, direction, candle_index, is_near_miss=False):
         """
         Master gate: checks ALL conditions before allowing a trade.
         Returns (allowed: bool, reason: str)
@@ -687,12 +699,26 @@ class TradeManager:
             now = datetime.datetime.utcnow()
             if now < self.cooldown_until:
                 remaining = (self.cooldown_until - now).total_seconds() / 60
-                return False, f"COOLDOWN active. {remaining:.0f} min remaining after {self.consecutive_losses} losses."
+                return False, f"GLOBAL COOLDOWN active. {remaining:.0f} min remaining after {self.consecutive_losses} losses."
             else:
                 # Cooldown expired
                 self.cooldown_until = None
                 self.consecutive_losses = 0
                 logger.info("[COOLDOWN EXPIRED] Resuming trading.")
+                
+        # 1.1 Symbol Dynamic Cooldown (Phase 3)
+        sym_cooldown = self.symbol_cooldowns.get(symbol)
+        if sym_cooldown:
+            now = datetime.datetime.utcnow()
+            if now < sym_cooldown:
+                remaining = (sym_cooldown - now).total_seconds() / 60
+                return False, f"SYMBOL COOLDOWN active for {symbol}. {remaining:.0f} min remaining."
+                
+        # 1.2 Session Limits (Phase 3)
+        if self.session_trades >= 3:
+             return False, f"SESSION MAX TRADES REACHED ({self.session_trades}/3)."
+        if is_near_miss and self.session_near_miss >= 2:
+             return False, f"SESSION MAX NEAR-MISS REACHED ({self.session_near_miss}/2)."
 
         # 2. Max concurrent trades
         open_count = sum(1 for t in self.active_trades.values()
@@ -728,6 +754,9 @@ class TradeManager:
             self.daily_pnl = 0.0
             self.daily_start_balance = current_balance
             self.last_reset_date = today
+            self.session_trades = 0
+            self.session_near_miss = 0
+            self.symbol_cooldowns.clear()
             logger.info("[DAILY RESET] Balance: %.2f | Date: %s", current_balance, today)
 
     # =========================================
