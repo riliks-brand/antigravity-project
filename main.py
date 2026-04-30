@@ -384,6 +384,13 @@ def main():
                     "past_min": processed_df['low'].iloc[-10:].min() if len(processed_df) >= 10 else None,
                 }
 
+                # ===== PHASE 2: SMART EXIT CHECK (before entry evaluation) =====
+                if len(manager.active_trades) > 0:
+                    try:
+                        manager.evaluate_smart_exits(symbol, processed_df)
+                    except Exception as e:
+                        logger.error("[SmartExit] Evaluation error for %s: %s", symbol, e)
+
                 # ===== LSTM PREDICTION =====
                 latest_features = processed_df.drop(['Target'], axis=1, errors='ignore').values
                 latest_features_scaled = lstm_scaler.transform(latest_features)

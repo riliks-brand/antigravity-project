@@ -1,0 +1,6 @@
+timestamp,ticket,symbol,direction,danger_score,should_exit,candles_open,current_pnl,signals
+2026-04-30T15:10:00.114426,1001,EURUSD,BUY,2.00,False,10,0.00100,Engulf_Bear(+2.0)
+2026-04-30T15:10:00.118875,1001,EURUSD,BUY,5.00,True,10,0.00100,Engulf_Bear(+2.0) + RSI_BearDiv(+3.0)
+2026-04-30T15:10:00.123714,1004,EURUSD,SELL,4.50,True,10,0.00150,Engulf_Bull(+2.0) + MorningStar(+2.5)
+2026-04-30T15:10:00.127684,1001,EURUSD,BUY,2.40,False,10,0.00100,Engulf_Bear(+2.0) + vol_squeeze_amplify(x1.2)
+2026-04-30T15:10:00.130358,1001,EURUSD,BUY,12.00,True,10,0.00100,Engulf_Bear(+2.0) + EveningStar(+2.5) + RSI_BearDiv(+3.0) + HS_Flag(+2.5) + DoubleTop_Flag(+2.0)

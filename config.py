@@ -128,6 +128,17 @@ class Config:
     # Cooldown: pause after N consecutive losses
     COOLDOWN_AFTER_LOSSES = 3
     COOLDOWN_DURATION_MINUTES = 30       # How long to pause
+    
+    # =========================================
+    # Phase 2: Smart Exit Configuration
+    # AI-Driven Dynamic Exits using reversal patterns
+    # =========================================
+    SMART_EXIT_ENABLED = True
+    SMART_EXIT_DANGER_THRESHOLD = 3.0    # Danger score to trigger early close
+    SMART_EXIT_TIGHTEN_THRESHOLD = 2.0   # Danger score to tighten trailing stop
+    SMART_EXIT_MIN_CANDLES_OPEN = 3      # Minimum candles before smart exit evaluates
+    SMART_EXIT_ONLY_IN_PROFIT = True     # Only early-close if trade is in profit
+    SMART_EXIT_TIGHTEN_ATR_MULT = 0.5    # Tighter trailing stop multiplier when danger detected
 
     # Equity Curve Protection
     EQUITY_MA_PERIOD = 20                # Moving average window for equity curve

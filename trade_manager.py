@@ -406,6 +406,135 @@ class TradeManager:
                     if tp2_hit:
                         self._close_trade(trade, current_price, "TP2", mt5)
 
+    # =========================================
+    # PHASE 2: SMART EXIT EVALUATOR
+    # =========================================
+
+    def evaluate_smart_exits(self, symbol, processed_df):
+        """
+        Phase 2: AI-Driven Dynamic Exits.
+        Called on every candle close for symbols with active trades.
+        Uses reversal patterns from Phase 1 to detect danger and close early.
+        
+        Args:
+            symbol: The symbol being evaluated
+            processed_df: DataFrame with all Phase 1 detector columns
+        """
+        import MetaTrader5 as mt5
+        from smart_exit import evaluate_smart_exit, should_tighten_sl, get_tighten_atr_mult
+
+        if not getattr(Config, 'SMART_EXIT_ENABLED', True):
+            return
+
+        for ticket, trade in list(self.active_trades.items()):
+            if trade.symbol != symbol:
+                continue
+            if trade.state == TradeState.CLOSED:
+                continue
+
+            with trade.lock:
+                # Calculate how many candles the trade has been open
+                try:
+                    entry_time = datetime.datetime.fromisoformat(trade.fill_time)
+                    now = datetime.datetime.utcnow()
+                    minutes_open = (now - entry_time).total_seconds() / 60
+                    candles_open = int(minutes_open / 5)  # M5 candles
+                except Exception:
+                    candles_open = 999  # Assume old enough
+
+                # Calculate current unrealized P&L
+                tick = mt5.symbol_info_tick(symbol)
+                if not tick:
+                    continue
+                current_price = tick.bid if trade.direction == "BUY" else tick.ask
+                
+                if trade.direction == "BUY":
+                    current_pnl = current_price - trade.entry_price
+                else:
+                    current_pnl = trade.entry_price - current_price
+
+                # Build trade info for the evaluator
+                trade_info = {
+                    "ticket": trade.ticket,
+                    "symbol": trade.symbol,
+                    "entry_price": trade.entry_price,
+                    "candles_open": candles_open,
+                    "current_pnl": current_pnl,
+                }
+
+                # Run the smart exit evaluator
+                should_exit, reason, danger_score = evaluate_smart_exit(
+                    trade_direction=trade.direction,
+                    processed_df=processed_df,
+                    trade_info=trade_info,
+                )
+
+                # ===== ACT ON DECISION =====
+                if should_exit:
+                    logger.warning(
+                        "[SMART EXIT] Closing #%s %s %s | PnL: %.5f | %s",
+                        trade.ticket, trade.direction, trade.symbol,
+                        current_pnl, reason
+                    )
+                    self._close_trade(trade, current_price, "SMART_EXIT", mt5)
+
+                elif should_tighten_sl(danger_score):
+                    # Tighten trailing stop to protect profit
+                    info = mt5.symbol_info(symbol)
+                    if info:
+                        # Get current ATR from the processed data
+                        current_atr = processed_df['ATR'].iloc[-1] if 'ATR' in processed_df.columns else 0.001
+                        tight_distance = current_atr * get_tighten_atr_mult()
+
+                        if trade.direction == "BUY":
+                            new_sl = current_price - tight_distance
+                            if trade.trailing_sl is None or new_sl > trade.trailing_sl:
+                                old_sl = trade.trailing_sl or trade.sl_price
+                                trade.trailing_sl = new_sl
+                                trade.trailing_active = True
+                                
+                                # Modify on MT5
+                                request = {
+                                    "action": mt5.TRADE_ACTION_SLTP,
+                                    "symbol": trade.symbol,
+                                    "position": trade.ticket,
+                                    "sl": new_sl,
+                                    "tp": trade.tp2_price,
+                                    "magic": Config.MAGIC_NUMBER,
+                                }
+                                result = mt5.order_send(request)
+                                if result and result.retcode == mt5.TRADE_RETCODE_DONE:
+                                    trade.sl_price = new_sl
+                                    logger.info(
+                                        "[SMART EXIT] Tightened SL #%s: %.5f -> %.5f (danger=%.1f)",
+                                        trade.ticket, old_sl, new_sl, danger_score
+                                    )
+                                self._save_state()
+
+                        elif trade.direction == "SELL":
+                            new_sl = current_price + tight_distance
+                            if trade.trailing_sl is None or new_sl < trade.trailing_sl:
+                                old_sl = trade.trailing_sl or trade.sl_price
+                                trade.trailing_sl = new_sl
+                                trade.trailing_active = True
+                                
+                                request = {
+                                    "action": mt5.TRADE_ACTION_SLTP,
+                                    "symbol": trade.symbol,
+                                    "position": trade.ticket,
+                                    "sl": new_sl,
+                                    "tp": trade.tp2_price,
+                                    "magic": Config.MAGIC_NUMBER,
+                                }
+                                result = mt5.order_send(request)
+                                if result and result.retcode == mt5.TRADE_RETCODE_DONE:
+                                    trade.sl_price = new_sl
+                                    logger.info(
+                                        "[SMART EXIT] Tightened SL #%s: %.5f -> %.5f (danger=%.1f)",
+                                        trade.ticket, old_sl, new_sl, danger_score
+                                    )
+                                self._save_state()
+
     def _execute_partial_close(self, trade, current_price, mt5):
         """Close 50% of the position at TP1 and move SL to breakeven."""
         close_volume = round(trade.current_volume * Config.PARTIAL_CLOSE_PCT, 2)

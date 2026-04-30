@@ -1,34 +1,6 @@
 {
   "active_trades": [
     {
-      "ticket": 56462099346,
-      "symbol": "GBPUSD",
-      "direction": "SELL",
-      "original_volume": 2.05,
-      "current_volume": 2.05,
-      "entry_price": 1.35294,
-      "sl_price": 1.35408,
-      "tp1_price": 1.35063,
-      "tp2_price": 1.35064,
-      "magic": 121052,
-      "state": "OPEN",
-      "signal_time": "2026-04-30T11:35:10.826108",
-      "fill_time": "2026-04-30T11:35:11.034901",
-      "close_time": null,
-      "expected_price": 1.35293,
-      "filled_price": 1.35294,
-      "slippage_points": 1.0000000000065512,
-      "latency_ms": 2.633544921875,
-      "tp1_hit": false,
-      "sl_moved_to_be": false,
-      "trailing_active": false,
-      "trailing_sl": null,
-      "close_price": null,
-      "pnl": 0.0,
-      "close_reason": "",
-      "risk_pct": 0.25
-    },
-    {
       "ticket": 56462099486,
       "symbol": "XAUUSD",
       "direction": "SELL",
@@ -60,5 +32,5 @@
   "consecutive_losses": 0,
   "cooldown_until": null,
   "daily_pnl": 0.0,
-  "last_updated": "2026-04-30T11:38:06.136776"
+  "last_updated": "2026-04-30T14:56:22.284379"
 }
