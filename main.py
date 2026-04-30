@@ -173,6 +173,9 @@ def main():
     print(f"  💹 Symbols       : {', '.join(Config.SYMBOLS)}")
     print(f"  🔴 Daily Max Loss: {Config.MAX_DAILY_LOSS_PCT}%")
     print(f"  🧬 Global Min Thr: {Config.MIN_GLOBAL_SCORE}")
+    if getattr(Config, 'MICRO_ACCOUNT_MODE', False):
+        print(f"  💰 MICRO MODE    : ON (Balance < ${Config.MICRO_BALANCE_THRESHOLD})")
+        print(f"     └─ Lot: MIN | SL: {Config.MICRO_SL_ATR_MULT}x ATR | Max Trades: {Config.MICRO_MAX_CONCURRENT_TRADES}")
     print("=" * 65)
 
     # ===== PHASE 1: Connect to MT5 =====
@@ -594,9 +597,26 @@ def main():
                 import MetaTrader5 as mt5
                 info = mt5.symbol_info(sym)
                 point = info.point if info else 0.00001
-                sl_points = int((atr * Config.SL_ATR_MULT) / point)
-                tp1_points = int((atr * Config.TP1_ATR_MULT) / point)
-                tp2_points = int((atr * Config.TP2_ATR_MULT) / point)
+                
+                # ===== MICRO ACCOUNT MODE: Dynamic SL/TP/Lot =====
+                current_balance = get_account_balance()
+                is_micro = (getattr(Config, 'MICRO_ACCOUNT_MODE', False) and 
+                            current_balance < getattr(Config, 'MICRO_BALANCE_THRESHOLD', 100.0))
+                
+                if is_micro:
+                    sl_mult = getattr(Config, 'MICRO_SL_ATR_MULT', 1.0)
+                    tp1_mult = getattr(Config, 'MICRO_TP1_ATR_MULT', 1.5)
+                    tp2_mult = getattr(Config, 'MICRO_TP2_ATR_MULT', 2.5)
+                    logger.info("[MICRO MODE] Balance: $%.2f | SL: %.1f*ATR | TP1: %.1f*ATR | TP2: %.1f*ATR",
+                                current_balance, sl_mult, tp1_mult, tp2_mult)
+                else:
+                    sl_mult = Config.SL_ATR_MULT
+                    tp1_mult = Config.TP1_ATR_MULT
+                    tp2_mult = Config.TP2_ATR_MULT
+                
+                sl_points = int((atr * sl_mult) / point)
+                tp1_points = int((atr * tp1_mult) / point)
+                tp2_points = int((atr * tp2_mult) / point)
                 
                 # Apply base equity reduction
                 equity_risk_mult = manager.get_risk_multiplier(get_account_equity())

@@ -745,11 +745,18 @@ class TradeManager:
         if is_near_miss and self.session_near_miss >= Config.SESSION_MAX_NEAR_MISS:
              return False, f"SESSION MAX NEAR-MISS REACHED ({self.session_near_miss}/{Config.SESSION_MAX_NEAR_MISS})."
 
-        # 2. Max concurrent trades
+        # 2. Max concurrent trades (micro-aware)
+        import MetaTrader5 as mt5
+        account = mt5.account_info()
+        balance = account.balance if account else 0.0
+        is_micro = (getattr(Config, 'MICRO_ACCOUNT_MODE', False) and 
+                    balance < getattr(Config, 'MICRO_BALANCE_THRESHOLD', 100.0))
+        max_trades = getattr(Config, 'MICRO_MAX_CONCURRENT_TRADES', 1) if is_micro else Config.MAX_CONCURRENT_TRADES
+        
         open_count = sum(1 for t in self.active_trades.values()
                          if t.state in (TradeState.OPEN, TradeState.PARTIAL_CLOSED))
-        if open_count >= Config.MAX_CONCURRENT_TRADES:
-            return False, f"MAX_CONCURRENT_TRADES reached ({open_count}/{Config.MAX_CONCURRENT_TRADES})."
+        if open_count >= max_trades:
+            return False, f"MAX_CONCURRENT_TRADES reached ({open_count}/{max_trades}).{' [MICRO MODE]' if is_micro else ''}"
 
         # 3. Daily loss kill switch
         if self.daily_start_balance and self.daily_start_balance > 0:
@@ -978,24 +985,34 @@ class TradeManager:
         Calculate adaptive risk based on session, trend, regime stability, and confidence.
 
         Rules:
-            - Strong trend + HIGH confidence → 1.0%
-            - Weak/Range or MEDIUM confidence → 0.5%
+            - Strong trend + HIGH confidence → 1.0% (or MICRO: 2.0%)
+            - Weak/Range or MEDIUM confidence → 0.5% (or MICRO: 1.0%)
             - regime_changed == True → reduce base risk temporarily (×0.7)
 
-        Args:
-            session: str ("London", "New York", "Asia", "UNKNOWN")
-            trend_strength: float 0-1
-            regime_changed: bool
-            confidence_level: str ("HIGH", "MEDIUM", "LOW")
-
-        Returns:
-            float: risk percentage (e.g. 1.0 or 0.5)
+        MICRO MODE: Uses wider risk percentages because the lot size is forced
+        to broker minimum (0.01). The larger % just ensures the math doesn't
+        produce lot = 0.00 which would be rejected.
         """
+        import MetaTrader5 as mt5
+        account = mt5.account_info()
+        balance = account.balance if account else 0.0
+        
+        is_micro = (getattr(Config, 'MICRO_ACCOUNT_MODE', False) and 
+                    balance < getattr(Config, 'MICRO_BALANCE_THRESHOLD', 100.0))
+        
+        # Select risk tiers based on account mode
+        if is_micro:
+            strong_risk = getattr(Config, 'MICRO_RISK_TIER_STRONG', 2.0)
+            weak_risk = getattr(Config, 'MICRO_RISK_TIER_WEAK', 1.0)
+        else:
+            strong_risk = Config.RISK_TIER_STRONG
+            weak_risk = Config.RISK_TIER_WEAK
+        
         # Base risk from trend + confidence
         if trend_strength >= 0.5 and confidence_level == "HIGH":
-            base_risk = 1.0
+            base_risk = strong_risk
         else:
-            base_risk = 0.5
+            base_risk = weak_risk
 
         # Regime change → temporary risk reduction
         if regime_changed:
@@ -1006,8 +1023,8 @@ class TradeManager:
             )
 
         logger.debug(
-            "[AdaptiveRisk] session=%s, trend=%.3f, confidence=%s, regime_changed=%s → risk=%.2f%%",
-            session, trend_strength, confidence_level, regime_changed, base_risk
+            "[AdaptiveRisk] session=%s, trend=%.3f, confidence=%s, regime_changed=%s, micro=%s → risk=%.2f%%",
+            session, trend_strength, confidence_level, regime_changed, is_micro, base_risk
         )
 
         return base_risk

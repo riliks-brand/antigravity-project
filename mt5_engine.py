@@ -190,6 +190,10 @@ def calculate_lot_size(symbol, sl_points, risk_multiplier=1.0):
     - Equity curve risk multiplier
 
     Formula: lot = (balance * risk%) / (SL_points * tick_value)
+    
+    MICRO MODE: When MICRO_ACCOUNT_MODE is True and balance < threshold,
+    forces the broker's minimum lot size (typically 0.01) to ensure trades
+    are accepted and risk stays proportional to the tiny balance.
     """
     account = mt5.account_info()
     if not account:
@@ -201,6 +205,21 @@ def calculate_lot_size(symbol, sl_points, risk_multiplier=1.0):
         return 0.0
 
     balance = account.balance
+    
+    # ===== MICRO ACCOUNT MODE =====
+    is_micro = (getattr(Config, 'MICRO_ACCOUNT_MODE', False) and 
+                balance < getattr(Config, 'MICRO_BALANCE_THRESHOLD', 100.0))
+    
+    if is_micro and getattr(Config, 'MICRO_FORCE_MIN_LOT', True):
+        min_lot = info.volume_min  # Typically 0.01
+        logger.info(
+            "[LotSize] MICRO MODE | Balance: $%.2f | Forcing MIN LOT: %.2f | "
+            "SL: %d pts | Risk kept ultra-low for capital preservation.",
+            balance, min_lot, sl_points
+        )
+        return min_lot
+    
+    # ===== STANDARD LOT CALCULATION =====
     # risk_multiplier is passed as the final risk percentage (e.g. 0.25 for 0.25%)
     risk_pct = risk_multiplier / 100.0
     risk_amount = balance * risk_pct
