@@ -22,6 +22,11 @@ from ta.momentum import RSIIndicator, ROCIndicator
 from ta.trend import MACD, ADXIndicator, EMAIndicator
 from ta.volatility import BollingerBands, AverageTrueRange
 
+# Phase 1: PDF Vision Layer — Advanced Detectors
+from candles import add_candlestick_patterns
+from pattern_detector import add_chart_patterns
+from divergence import add_divergence_features
+
 logger = logging.getLogger("Features")
 logger.setLevel(logging.DEBUG)
 if not logger.handlers:
@@ -486,6 +491,13 @@ def feature_engineering_pipeline(df: pd.DataFrame, df_confirm=None, df_trend=Non
     df = add_order_block_features(df)
     df = add_fvg_features(df)
     df = add_liquidity_features(df)
+
+    # Phase 1: PDF Vision Layer — Advanced Detectors
+    logger.info("Applying PDF Vision Layer detectors...")
+    df = add_candlestick_patterns(df)     # 16 candle patterns + composite
+    df = add_chart_patterns(df)            # 14 chart patterns + composite + vol squeeze
+    df = add_divergence_features(df)       # 4 divergence types + composite
+    logger.info("PDF Vision Layer complete. +36 new features added.")
 
     # Time-based features
     if pd.api.types.is_datetime64_any_dtype(df.index):
