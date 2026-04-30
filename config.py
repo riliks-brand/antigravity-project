@@ -102,6 +102,10 @@ class Config:
     
     MAX_DAILY_LOSS_PCT = 5.0             # Kill switch: stop ALL trading if daily loss > X%
     MAX_CONCURRENT_TRADES = 3            # Overall portfolio max open positions
+    
+    # Session Limits
+    SESSION_MAX_TRADES = 10              # Max number of successful executions per session
+    SESSION_MAX_NEAR_MISS = 5            # Max number of near-miss activations per session
 
     # Cooldown: pause after N consecutive losses
     COOLDOWN_AFTER_LOSSES = 3

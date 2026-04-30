@@ -740,10 +740,10 @@ class TradeManager:
                 return False, f"SYMBOL COOLDOWN active for {symbol}. {remaining:.0f} min remaining."
                 
         # 1.2 Session Limits (Phase 3)
-        if self.session_trades >= 3:
-             return False, f"SESSION MAX TRADES REACHED ({self.session_trades}/3)."
-        if is_near_miss and self.session_near_miss >= 2:
-             return False, f"SESSION MAX NEAR-MISS REACHED ({self.session_near_miss}/2)."
+        if self.session_trades >= Config.SESSION_MAX_TRADES:
+             return False, f"SESSION MAX TRADES REACHED ({self.session_trades}/{Config.SESSION_MAX_TRADES})."
+        if is_near_miss and self.session_near_miss >= Config.SESSION_MAX_NEAR_MISS:
+             return False, f"SESSION MAX NEAR-MISS REACHED ({self.session_near_miss}/{Config.SESSION_MAX_NEAR_MISS})."
 
         # 2. Max concurrent trades
         open_count = sum(1 for t in self.active_trades.values()
