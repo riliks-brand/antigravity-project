@@ -13,7 +13,7 @@ Features:
 - Adjustment-to-Base Ratio Control (max 10% of base)
 - Session-Aware Weak Zone (Asia=0.05, others=0.04)
 - Symmetric Score Floor (distance < 0.015 = REJECT)
-- Regime Conflict Detection (session vs trend mismatch → HOLD)
+- Regime Conflict Detection (session vs trend mismatch -> HOLD)
 - ATR Double Filter (ratio + absolute)
 - Confidence Classification (HIGH / MEDIUM / LOW)
 - Decision Reason on every path (explainability)
@@ -64,6 +64,7 @@ class EnsembleDecision:
         self.trend_strength = 0.0
         self.session_bonus = 0.0
         self.volatility_adjustment = 0.0
+        self.dxy_influence = 0.0
         self.regime_conflict = False
         self.decision_reason = ""
         self.confidence_level = "LOW"
@@ -99,9 +100,9 @@ def get_dynamic_weights(trend_strength, session):
         RF_weight   = 0.5 - (trend_strength * 0.3)
 
     This means:
-        trend_strength = 0.0 → LSTM=50%, RF=50%  (pure ranging)
-        trend_strength = 0.5 → LSTM=65%, RF=35%  (moderate trend)
-        trend_strength = 1.0 → LSTM=80%, RF=20%  (strong trend)
+        trend_strength = 0.0 -> LSTM=50%, RF=50%  (pure ranging)
+        trend_strength = 0.5 -> LSTM=65%, RF=35%  (moderate trend)
+        trend_strength = 1.0 -> LSTM=80%, RF=20%  (strong trend)
 
     Session does NOT override this — it only provides bonuses via additive scoring.
     """
@@ -117,7 +118,7 @@ def get_dynamic_weights(trend_strength, session):
         state = "TRANSITIONING"
 
     logger.debug(
-        "[Ensemble] trend_strength=%.3f → %s | LSTM=%.1f%% RF=%.1f%% | Session=%s",
+        "[Ensemble] trend_strength=%.3f -> %s | LSTM=%.1f%% RF=%.1f%% | Session=%s",
         trend_strength, state, lstm_w * 100, rf_w * 100, session
     )
     return lstm_w, rf_w, state
@@ -132,9 +133,9 @@ def _compute_session_bonus(session, trend_strength):
     Compute additive session bonus based on session type and trend alignment.
 
     Session Strategy:
-        London  → Trend Following  → bonus when trend is strong
-        NY      → Balanced/Hybrid  → small neutral bonus
-        Asia    → Mean Reversion   → bonus when market is ranging
+        London  -> Trend Following  -> bonus when trend is strong
+        NY      -> Balanced/Hybrid  -> small neutral bonus
+        Asia    -> Mean Reversion   -> bonus when market is ranging
 
     Returns:
         float: session_bonus, ALWAYS clipped to [-0.03, +0.03]
@@ -164,7 +165,7 @@ def _compute_session_bonus(session, trend_strength):
         else:
             raw_bonus = -0.01  # Asia with strong trend = unusual, penalize
     else:
-        # UNKNOWN session → no bonus
+        # UNKNOWN session -> no bonus
         raw_bonus = 0.0
 
     # STRICT CLIP: session_bonus is ALWAYS in [-0.03, +0.03]
@@ -179,8 +180,8 @@ def _compute_volatility_adjustment(current_atr, atr_series):
     """
     Compute additive volatility adjustment based on ATR z-score.
 
-    High volatility → slight positive adjustment (momentum opportunities)
-    Low volatility  → slight negative adjustment (weak moves, avoid)
+    High volatility -> slight positive adjustment (momentum opportunities)
+    Low volatility  -> slight negative adjustment (weak moves, avoid)
 
     Returns:
         float: volatility_adjustment (small value, will be further capped)
@@ -197,8 +198,8 @@ def _compute_volatility_adjustment(current_atr, atr_series):
     z_score = (current_atr - atr_mean) / atr_std
 
     # Map z-score to a small adjustment
-    # z > 1: high vol → +0.01 to +0.02
-    # z < -1: low vol → -0.01 to -0.02
+    # z > 1: high vol -> +0.01 to +0.02
+    # z < -1: low vol -> -0.01 to -0.02
     adjustment = np.clip(z_score * 0.01, -0.02, 0.02)
 
     return float(adjustment)
@@ -230,8 +231,8 @@ def _detect_regime_conflict(session, trend_strength, distance_from_neutral=0.0,
     with a dynamic penalty instead of a hard block.
 
     Conflicts:
-        - London (expects trend) but trend_strength < 0.15  → CONFLICT
-        - Asia (expects range) but trend_strength > 0.8     → CONFLICT
+        - London (expects trend) but trend_strength < 0.15  -> CONFLICT
+        - Asia (expects range) but trend_strength > 0.8     -> CONFLICT
 
     Override conditions (ALL must be met):
         - distance_from_neutral > dynamic_distance (volatility-adaptive)
@@ -239,9 +240,9 @@ def _detect_regime_conflict(session, trend_strength, distance_from_neutral=0.0,
 
     Returns:
         tuple: (is_blocked: bool, regime_penalty: float)
-            - (True, 0.0)    → hard block, signal is too weak for override
-            - (False, 0.0)   → no conflict detected
-            - (False, penalty) → conflict overridden, penalty applied
+            - (True, 0.0)    -> hard block, signal is too weak for override
+            - (False, 0.0)   -> no conflict detected
+            - (False, penalty) -> conflict overridden, penalty applied
     """
     conflict_detected = False
     conflict_type = None
@@ -259,7 +260,7 @@ def _detect_regime_conflict(session, trend_strength, distance_from_neutral=0.0,
     # --- Adaptive Override Logic ---
 
     # Dynamic distance threshold: adapts to market volatility
-    # Higher volatility → requires stronger signal to override
+    # Higher volatility -> requires stronger signal to override
     dynamic_distance = 0.05 + (atr_normalized * 0.02)
 
     # Double safety gate: distance + confidence must both be sufficient
@@ -277,7 +278,7 @@ def _detect_regime_conflict(session, trend_strength, distance_from_neutral=0.0,
 
         logger.info(
             "[Ensemble] ✅ REGIME OVERRIDE: session=%s, ts=%.2f, dist=%.4f > dyn_dist=%.4f, "
-            "conf=%s → penalty=%.4f",
+            "conf=%s -> penalty=%.4f",
             session, trend_strength, distance_from_neutral, dynamic_distance,
             confidence_level, regime_penalty
         )
@@ -286,7 +287,7 @@ def _detect_regime_conflict(session, trend_strength, distance_from_neutral=0.0,
     # Hard block — signal not strong enough to override
     logger.warning(
         "[Ensemble] ⚠️ REGIME CONFLICT: session=%s, ts=%.2f, dist=%.4f, "
-        "dyn_dist=%.4f, conf=%s → HARD BLOCK",
+        "dyn_dist=%.4f, conf=%s -> HARD BLOCK",
         session, trend_strength, distance_from_neutral, dynamic_distance,
         confidence_level
     )
@@ -306,7 +307,9 @@ def ensemble_predict(
     session: str = "London",
     diagnostic: bool = False,
     event_boost: float = 0.0,
-    h1_trend: int = 0
+    h1_trend: int = 0,
+    dxy_strength: float = 0.0,
+    symbol: str = "EURUSD"
 ) -> EnsembleDecision:
     """
     The core ensemble prediction function — Session-Aware & Market-Adaptive.
@@ -330,9 +333,9 @@ def ensemble_predict(
     # =========================================
     # Step 1: Trend Strength Normalization
     # EXACT FORMULA: clip((ADX - 20) / 30, 0, 1)
-    # ADX < 20 → 0.0 (no trend)
-    # ADX = 35 → 0.5 (moderate)
-    # ADX ≥ 50 → 1.0 (strong trend)
+    # ADX < 20 -> 0.0 (no trend)
+    # ADX = 35 -> 0.5 (moderate)
+    # ADX ≥ 50 -> 1.0 (strong trend)
     # =========================================
     trend_strength = float(np.clip((current_adx - 20) / 30.0, 0.0, 1.0))
     decision.trend_strength = trend_strength
@@ -351,7 +354,7 @@ def ensemble_predict(
         decision.final_prob = 0.5
         decision.confidence_level = "LOW"
         logger.warning(
-            "[Ensemble] ⛔ LOW_ATR: atr_ratio=%.3f, current_atr=%.6f, threshold=%.6f → SKIP",
+            "[Ensemble] ⛔ LOW_ATR: atr_ratio=%.3f, current_atr=%.6f, threshold=%.6f -> SKIP",
             atr_ratio, current_atr, Config.ATR_THRESHOLD
         )
         _log_decision(decision, current_adx, current_atr)
@@ -381,7 +384,7 @@ def ensemble_predict(
     # =========================================
     disagreement = abs(lstm_prob - rf_prob)
 
-    # Hard conflict: disagreement >= 0.60 → always block
+    # Hard conflict: disagreement >= 0.60 -> always block
     if disagreement >= 0.60:
         decision.conflict = True
         decision.direction = None
@@ -393,7 +396,7 @@ def ensemble_predict(
             f"MODEL CONFLICT: |LSTM({lstm_prob:.3f}) - RF({rf_prob:.3f})| = "
             f"{disagreement:.3f} >= 0.60 (hard block)"
         )
-        logger.warning("[Ensemble] ⚠️ %s → HOLD", decision.skip_reason)
+        logger.warning("[Ensemble] ⚠️ %s -> HOLD", decision.skip_reason)
         _log_decision(decision, current_adx, current_atr)
         return decision
 
@@ -402,7 +405,7 @@ def ensemble_predict(
         same_direction = (lstm_prob > 0.5 and rf_prob > 0.5) or \
                          (lstm_prob < 0.5 and rf_prob < 0.5)
         if not same_direction:
-            # Opposite directions + high disagreement → hard block
+            # Opposite directions + high disagreement -> hard block
             decision.conflict = True
             decision.direction = None
             decision.final_prob = weighted_avg
@@ -411,16 +414,16 @@ def ensemble_predict(
             decision.confidence_level = "LOW"
             decision.skip_reason = (
                 f"MODEL CONFLICT: |LSTM({lstm_prob:.3f}) - RF({rf_prob:.3f})| = "
-                f"{disagreement:.3f} >= 0.45, opposite directions → block"
+                f"{disagreement:.3f} >= 0.45, opposite directions -> block"
             )
-            logger.warning("[Ensemble] ⚠️ %s → HOLD", decision.skip_reason)
+            logger.warning("[Ensemble] ⚠️ %s -> HOLD", decision.skip_reason)
             _log_decision(decision, current_adx, current_atr)
             return decision
         else:
-            # Same direction but magnitude differs → proceed with heavy penalty in Step 6
+            # Same direction but magnitude differs -> proceed with heavy penalty in Step 6
             logger.info(
                 "[Ensemble] ℹ️ MODEL MODERATE CONFLICT: |LSTM(%.3f) - RF(%.3f)| = %.3f, "
-                "same direction → proceed with penalty",
+                "same direction -> proceed with penalty",
                 lstm_prob, rf_prob, disagreement
             )
 
@@ -463,10 +466,10 @@ def ensemble_predict(
     decision.edge_case = abs(distance_from_neutral - weak_zone_threshold) < 0.005
 
     # =========================================
-    # Step 9: Score Floor — signal too weak → REJECT
+    # Step 9: Score Floor — signal too weak -> REJECT
     # Applied SYMMETRICALLY: distance from 0.5 < 0.015 means no signal
-    # For BUY: base_score in [0.485, 0.515] → reject
-    # For SELL: same mirror range → reject
+    # For BUY: base_score in [0.485, 0.515] -> reject
+    # For SELL: same mirror range -> reject
     # =========================================
     if distance_from_neutral < 0.002:
         decision.direction = None
@@ -477,7 +480,7 @@ def ensemble_predict(
         decision.confidence_level = "LOW"
         decision.skip_reason = f"SCORE FLOOR: base_score={base_score:.4f}, distance={distance_from_neutral:.4f} < 0.015"
         if not diagnostic:
-            logger.info("[Ensemble] ⛔ %s → REJECT", decision.skip_reason)
+            logger.info("[Ensemble] ⛔ %s -> REJECT", decision.skip_reason)
         else:
             logger.info("[Ensemble] 📉 [DIAGNOSTIC HOLD] base: %.4f | dist: %.4f | ts: %.2f | reason: SCORE_FLOOR",
                         base_score, distance_from_neutral, trend_strength)
@@ -501,7 +504,7 @@ def ensemble_predict(
         decision.confidence_level = "LOW"
         decision.skip_reason = f"{wz_label}: base_score={base_score:.4f}, distance={distance_from_neutral:.4f} < {weak_zone_threshold}"
         if not diagnostic:
-            logger.info("[Ensemble] ⚠️ %s → NO ENTRY", decision.skip_reason)
+            logger.info("[Ensemble] ⚠️ %s -> NO ENTRY", decision.skip_reason)
         else:
             logger.info("[Ensemble] 📉 [DIAGNOSTIC HOLD] base: %.4f | dist: %.4f | ts: %.2f | reason: WEAK_ZONE",
                         base_score, distance_from_neutral, trend_strength)
@@ -534,7 +537,7 @@ def ensemble_predict(
         decision.stage_reached = "CONFLICT"
         decision.confidence_level = "LOW"
         decision.skip_reason = f"REGIME CONFLICT: session={session}, trend_strength={trend_strength:.2f}"
-        logger.warning("[Ensemble] ⛔ %s → HOLD", decision.skip_reason)
+        logger.warning("[Ensemble] ⛔ %s -> HOLD", decision.skip_reason)
         _log_decision(decision, current_adx, current_atr)
         return decision
 
@@ -545,7 +548,7 @@ def ensemble_predict(
         else:
             base_score += regime_penalty
         base_score = float(np.clip(base_score, 0.0, 1.0))
-        logger.info("[Ensemble] Regime penalty applied: %.4f → adjusted base_score=%.4f",
+        logger.info("[Ensemble] Regime penalty applied: %.4f -> adjusted base_score=%.4f",
                     regime_penalty, base_score)
 
     # =========================================
@@ -574,15 +577,40 @@ def ensemble_predict(
     against_h1 = (decision.side == "BUY" and h1_trend == -1) or (decision.side == "SELL" and h1_trend == 1)
     mtf_penalty = -0.03 if against_h1 else 0.0
 
-    # 12e. Total Adjustment: clipped to [-0.06, +0.06]
-    raw_total_adjustment = float(np.clip(session_bonus + volatility_adjustment + actual_event_boost + mtf_penalty, -0.06, 0.06))
+    # 12e. DXY Macro Influence (Phase 3.5)
+    # Strength-based macro filter applied only to USD-sensitive pairs
+    dxy_influence = 0.0
+    usd_sensitive_pairs = ["EURUSD", "GBPUSD", "XAUUSD", "USDJPY"]
+    
+    if symbol in usd_sensitive_pairs and abs(dxy_strength) >= 0.2:
+        # Scale influence from 0.00 to 0.05 based on strength
+        raw_dxy_mod = abs(dxy_strength) * 0.05
+        
+        if symbol == "USDJPY":
+            # Buy USDJPY = Buy USD. If DXY is strong (+), boost. If DXY is weak (-), penalize.
+            if decision.side == "BUY":
+                dxy_influence = raw_dxy_mod if dxy_strength > 0 else -raw_dxy_mod
+            elif decision.side == "SELL":
+                dxy_influence = raw_dxy_mod if dxy_strength < 0 else -raw_dxy_mod
+        else:
+            # EURUSD, GBPUSD, XAUUSD
+            # Buy EURUSD = Sell USD. If DXY is strong (+), penalize. If DXY is weak (-), boost.
+            if decision.side == "BUY":
+                dxy_influence = raw_dxy_mod if dxy_strength < 0 else -raw_dxy_mod
+            elif decision.side == "SELL":
+                dxy_influence = raw_dxy_mod if dxy_strength > 0 else -raw_dxy_mod
+    
+    decision.dxy_influence = dxy_influence
 
-    # 12d. Adjustment-to-Base Ratio Control: adjustment ≤ 10% of base_score
+    # 12f. Total Adjustment: clipped to [-0.08, +0.08]
+    raw_total_adjustment = float(np.clip(session_bonus + volatility_adjustment + actual_event_boost + mtf_penalty + dxy_influence, -0.08, 0.08))
+
+    # 12g. Adjustment-to-Base Ratio Control: adjustment ≤ 15% of base_score
     # This GUARANTEES boosts cannot create a trade alone
     if raw_total_adjustment > 0:
-        total_adjustment = min(raw_total_adjustment, base_score * 0.1)
+        total_adjustment = min(raw_total_adjustment, base_score * 0.15)
     else:
-        total_adjustment = max(raw_total_adjustment, -(base_score * 0.1))
+        total_adjustment = max(raw_total_adjustment, -(base_score * 0.15))
 
     # 12e. Compute raw_score and clip
     raw_score = base_score + total_adjustment
@@ -667,7 +695,7 @@ def ensemble_predict(
 
     # =========================================
     # Step 15: Confidence Classification
-    # >0.65 → HIGH | 0.58–0.65 → MEDIUM | else → LOW
+    # >0.65 -> HIGH | 0.58–0.65 -> MEDIUM | else -> LOW
     # =========================================
     distance_from_center = abs(final_prob - 0.5)
     if distance_from_center > 0.15:  # final_prob > 0.65 or < 0.35
@@ -689,14 +717,14 @@ def ensemble_predict(
     conflict_flag = " ⚠️CONFLICT" if decision.conflict or decision.regime_conflict else ""
     edge_flag = " 🔶EDGE" if decision.edge_case else ""
     print(f"\n\033[92m{'='*65}\033[0m")
-    print(f"\033[92m       🧠 ENSEMBLE DECISION v4.1{conflict_flag}{edge_flag}\033[0m")
+    print(f"\033[92m        ENSEMBLE DECISION v4.1{conflict_flag}{edge_flag}\033[0m")
     print(f"\033[92m{'='*65}\033[0m")
     print(f"\033[92m  Session       : {session}\033[0m")
-    print(f"\033[92m  Market State  : {market_state} (ADX: {current_adx:.1f} → trend_strength: {trend_strength:.3f})\033[0m")
+    print(f"\033[92m  Market State  : {market_state} (ADX: {current_adx:.1f} -> trend_strength: {trend_strength:.3f})\033[0m")
     print(f"\033[92m  LSTM          : {lstm_prob:.4f} (weight: {lstm_w:.0%})\033[0m")
     print(f"\033[92m  Random Forest : {rf_prob:.4f} (weight: {rf_w:.0%})\033[0m")
     print(f"\033[92m  Weighted Avg  : {weighted_avg:.4f}\033[0m")
-    print(f"\033[92m  Disagreement  : {disagreement:.4f} → Penalty: {penalty:.4f}\033[0m")
+    print(f"\033[92m  Disagreement  : {disagreement:.4f} -> Penalty: {penalty:.4f}\033[0m")
     print(f"\033[92m  Base Score    : {base_score:.4f}\033[0m")
     print(f"\033[92m  Session Bonus : {session_bonus:+.4f}\033[0m")
     print(f"\033[92m  Vol. Adjust   : {volatility_adjustment:+.4f}\033[0m")

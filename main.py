@@ -193,6 +193,10 @@ def main():
     from trade_manager import TradeManager
     manager = TradeManager()
     manager.reset_daily_stats(get_account_balance())
+    global_dxy_strength = 0.0
+
+    # Retrain RF immediately on startup
+    logger.info("Initializing Random Forest Ensemble...")
 
     # ===== PHASE 3: Initialize Notifier =====
     from notifier import get_notifier
@@ -320,9 +324,17 @@ def main():
             if is_candle_close:
                 last_eval_candle = server_minute
                 candle_index += 1
+                
+                # Fetch DXY Macro Context once per candle
+                try:
+                    from macro_context import get_dxy_strength
+                    global_dxy_strength = get_dxy_strength()
+                except Exception as e:
+                    logger.error("[Macro] Failed to fetch DXY: %s", e)
+                
                 logger.info("\n" + "=" * 65)
-                logger.info("[PORTFOLIO EVALUATION] Candle #%d | Loop Trigger Time: %s",
-                            candle_index, now.strftime('%Y-%m-%d %H:%M:%S'))
+                logger.info("[PORTFOLIO EVALUATION] Candle #%d | DXY Strength: %+.2f | Time: %s",
+                            candle_index, global_dxy_strength, now.strftime('%Y-%m-%d %H:%M:%S'))
                 logger.info("=" * 65)
 
             opportunities = []
@@ -441,13 +453,15 @@ def main():
                 decision_original = ensemble_predict(
                     lstm_prob=lstm_prob, rf_prob=rf_prob, current_adx=current_adx,
                     current_atr=current_atr, atr_series=atr_series, session=session,
-                    diagnostic=False, event_boost=event_boost, h1_trend=h1_trend
+                    diagnostic=False, event_boost=event_boost, h1_trend=h1_trend,
+                    dxy_strength=global_dxy_strength, symbol=symbol
                 )
                 
                 decision_diagnostic = ensemble_predict(
                     lstm_prob=lstm_prob, rf_prob=rf_prob, current_adx=current_adx,
                     current_atr=current_atr, atr_series=atr_series, session=session,
-                    diagnostic=True, event_boost=event_boost, h1_trend=h1_trend
+                    diagnostic=True, event_boost=event_boost, h1_trend=h1_trend,
+                    dxy_strength=global_dxy_strength, symbol=symbol
                 )
                 
                 # --- Dual Evaluation Logging ---
@@ -578,6 +592,7 @@ def main():
                     trend_strength=opp.get("trend_strength", 0.0),
                     regime_changed=opp.get("regime_changed", False),
                     confidence_level=opp.get("confidence_level", "MEDIUM"),
+                    dxy_contradicts=opp.get("dxy_contradicts", False)
                 )
                 
                 if is_near_miss:

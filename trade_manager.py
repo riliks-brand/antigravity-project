@@ -1109,14 +1109,15 @@ class TradeManager:
     # ADAPTIVE RISK MANAGEMENT
     # =========================================
 
-    def get_adaptive_risk(self, session, trend_strength, regime_changed, confidence_level="MEDIUM"):
+    def get_adaptive_risk(self, session, trend_strength, regime_changed, confidence_level="MEDIUM", dxy_contradicts=False):
         """
-        Calculate adaptive risk based on session, trend, regime stability, and confidence.
+        Calculate adaptive risk based on session, trend, regime stability, confidence, and macro context.
 
         Rules:
             - Strong trend + HIGH confidence → 1.0% (or MICRO: 2.0%)
             - Weak/Range or MEDIUM confidence → 0.5% (or MICRO: 1.0%)
             - regime_changed == True → reduce base risk temporarily (×0.7)
+            - dxy_contradicts == True → reduce risk further (×0.5)
 
         MICRO MODE: Uses wider risk percentages because the lot size is forced
         to broker minimum (0.01). The larger % just ensures the math doesn't
@@ -1148,6 +1149,14 @@ class TradeManager:
             base_risk *= 0.7
             logger.info(
                 "[AdaptiveRisk] Regime changed recently → risk reduced to %.2f%%",
+                base_risk
+            )
+            
+        # Macro Context: DXY contradicts trade
+        if dxy_contradicts:
+            base_risk *= 0.5
+            logger.warning(
+                "[AdaptiveRisk] DXY contradicts trade direction! Risk halved to %.2f%%",
                 base_risk
             )
 
