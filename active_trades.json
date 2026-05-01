@@ -1,36 +1,7 @@
 {
-  "active_trades": [
-    {
-      "ticket": 56487397439,
-      "symbol": "GBPUSD",
-      "direction": "BUY",
-      "original_volume": 0.01,
-      "current_volume": 0.01,
-      "entry_price": 1.35808,
-      "sl_price": 1.35734,
-      "tp1_price": 1.35907,
-      "tp2_price": 1.35907,
-      "magic": 121052,
-      "state": "OPEN",
-      "signal_time": "2026-05-01T18:53:52.273775",
-      "fill_time": "2026-05-01T18:53:52.429394",
-      "close_time": null,
-      "expected_price": 1.35808,
-      "filled_price": 1.35808,
-      "slippage_points": 0.0,
-      "latency_ms": 4.854736328125,
-      "tp1_hit": false,
-      "sl_moved_to_be": false,
-      "trailing_active": false,
-      "trailing_sl": null,
-      "close_price": null,
-      "pnl": 0.0,
-      "close_reason": "",
-      "risk_pct": 0.35
-    }
-  ],
+  "active_trades": [],
   "consecutive_losses": 0,
   "cooldown_until": null,
   "daily_pnl": 0.0,
-  "last_updated": "2026-05-01T19:08:52.787870"
+  "last_updated": "2026-05-01T19:27:00.000000"
 }

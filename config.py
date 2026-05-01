@@ -111,7 +111,7 @@ class Config:
     # Micro Account Overrides (applied when MICRO_ACCOUNT_MODE = True)
     MICRO_RISK_TIER_STRONG = 2.0         # 2% of $10 = $0.20 risk per trade
     MICRO_RISK_TIER_WEAK = 1.0           # 1% of $10 = $0.10 risk per trade
-    MICRO_MAX_CONCURRENT_TRADES = 1      # Only 1 trade at a time with $10
+    MICRO_MAX_CONCURRENT_TRADES = 3      # Allow same number as normal mode (lot is already 0.01)
     MICRO_MAX_GLOBAL_RISK_PCT = 3.0      # Max 3% of balance at risk
     MICRO_SL_ATR_MULT = 1.0              # Tighter SL for small accounts
     MICRO_TP1_ATR_MULT = 1.0             # Proportional TP1 (Much closer to avoid reversals)
