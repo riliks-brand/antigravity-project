@@ -642,7 +642,7 @@ def main():
                 is_micro = getattr(Config, 'MICRO_ACCOUNT_MODE', False)
                 
                 if is_micro:
-                    sl_mult = getattr(Config, 'MICRO_SL_ATR_MULT', 1.0)
+                    sl_mult = getattr(Config, 'MICRO_SL_ATR_MULT', 2.0)
                     tp1_mult = getattr(Config, 'MICRO_TP1_ATR_MULT', 1.5)
                     tp2_mult = getattr(Config, 'MICRO_TP2_ATR_MULT', 2.5)
                     logger.info("[MICRO MODE] Simulated $10 | SL: %.1f*ATR | TP1: %.1f*ATR | TP2: %.1f*ATR",
@@ -651,6 +651,16 @@ def main():
                     sl_mult = Config.SL_ATR_MULT
                     tp1_mult = Config.TP1_ATR_MULT
                     tp2_mult = Config.TP2_ATR_MULT
+                
+                # Per-Symbol ATR Overrides (e.g., XAUUSD needs wider SL/TP)
+                symbol_overrides = getattr(Config, 'SYMBOL_ATR_OVERRIDES', {})
+                if sym in symbol_overrides:
+                    ovr = symbol_overrides[sym]
+                    sl_mult = ovr.get("sl_mult", sl_mult)
+                    tp1_mult = ovr.get("tp1_mult", tp1_mult)
+                    tp2_mult = ovr.get("tp2_mult", tp2_mult)
+                    logger.info("[SYMBOL OVERRIDE %s] SL: %.1f*ATR | TP1: %.1f*ATR | TP2: %.1f*ATR",
+                                sym, sl_mult, tp1_mult, tp2_mult)
                 
                 sl_points = int((atr * sl_mult) / point)
                 tp1_points = int((atr * tp1_mult) / point)

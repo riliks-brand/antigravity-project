@@ -113,10 +113,18 @@ class Config:
     MICRO_RISK_TIER_WEAK = 1.0           # 1% of $10 = $0.10 risk per trade
     MICRO_MAX_CONCURRENT_TRADES = 3      # Allow same number as normal mode (lot is already 0.01)
     MICRO_MAX_GLOBAL_RISK_PCT = 3.0      # Max 3% of balance at risk
-    MICRO_SL_ATR_MULT = 1.0              # Tighter SL for small accounts
-    MICRO_TP1_ATR_MULT = 1.0             # Proportional TP1 (Much closer to avoid reversals)
-    MICRO_TP2_ATR_MULT = 1.5             # Proportional TP2 (Much closer to avoid reversals)
+    MICRO_SL_ATR_MULT = 2.0              # Wider SL to survive noise (was 1.0 = too tight)
+    MICRO_TP1_ATR_MULT = 1.5             # Proportional TP1
+    MICRO_TP2_ATR_MULT = 2.5             # Proportional TP2
     MICRO_FORCE_MIN_LOT = True           # Always use broker minimum lot (0.01)
+    
+    # Per-Symbol ATR Multiplier Overrides
+    # Gold (XAUUSD) needs much wider SL/TP because it moves $5-15 per candle
+    SYMBOL_ATR_OVERRIDES = {
+        "XAUUSD": {"sl_mult": 3.0, "tp1_mult": 3.0, "tp2_mult": 4.5},
+        "US30":   {"sl_mult": 2.5, "tp1_mult": 2.5, "tp2_mult": 3.5},
+        # Forex pairs use default multipliers (no override needed)
+    }
     
     MAX_DAILY_LOSS_PCT = 5.0             # Kill switch: stop ALL trading if daily loss > X%
     MAX_CONCURRENT_TRADES = 3            # Overall portfolio max open positions
