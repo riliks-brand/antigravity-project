@@ -1037,6 +1037,16 @@ class TradeManager:
         if Config.SESSION_ASIA[0] <= hour < Config.SESSION_ASIA[1]:
             return "Asia"
 
+        # Fallback: use Python UTC time (server time might be offset)
+        utc_hour = datetime.datetime.utcnow().hour
+        logger.debug("[Session] Server hour=%d returned UNKNOWN, trying UTC fallback hour=%d", hour, utc_hour)
+        if Config.SESSION_LONDON[0] <= utc_hour < Config.SESSION_LONDON[1]:
+            return "London"
+        if Config.SESSION_NY[0] <= utc_hour < Config.SESSION_NY[1]:
+            return "New York"
+        if Config.SESSION_ASIA[0] <= utc_hour < Config.SESSION_ASIA[1]:
+            return "Asia"
+
         return "UNKNOWN"
 
     @staticmethod
@@ -1073,7 +1083,20 @@ class TradeManager:
             session_name = "London" if london else ("New York" if ny else "Asia")
             return False, f"In {session_name} session, but trading is disabled for this session (Server Hour: {hour})"
 
-        return False, f"Outside all sessions (Server Hour: {hour})"
+        # Fallback: use Python UTC time (MetaQuotes server may be UTC+3)
+        utc_hour = datetime.datetime.utcnow().hour
+        london_utc = Config.SESSION_LONDON[0] <= utc_hour < Config.SESSION_LONDON[1]
+        ny_utc = Config.SESSION_NY[0] <= utc_hour < Config.SESSION_NY[1]
+        asia_utc = Config.SESSION_ASIA[0] <= utc_hour < Config.SESSION_ASIA[1]
+
+        if london_utc and getattr(Config, "TRADE_SESSION_LONDON", True):
+            return True, f"In London session (UTC Fallback Hour: {utc_hour})"
+        if ny_utc and getattr(Config, "TRADE_SESSION_NY", True):
+            return True, f"In New York session (UTC Fallback Hour: {utc_hour})"
+        if asia_utc and getattr(Config, "TRADE_SESSION_ASIA", True):
+            return True, f"In Asia session (UTC Fallback Hour: {utc_hour})"
+
+        return False, f"Outside all sessions (Server Hour: {hour}, UTC Hour: {utc_hour})"
 
     # =========================================
     # REGIME PERSISTENCE (Anti Noise / Anti Flip-Flop)

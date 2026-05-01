@@ -583,8 +583,8 @@ def ensemble_predict(
     usd_sensitive_pairs = ["EURUSD", "GBPUSD", "XAUUSD", "USDJPY"]
     
     if symbol in usd_sensitive_pairs and abs(dxy_strength) >= 0.2:
-        # Scale influence from 0.00 to 0.05 based on strength
-        raw_dxy_mod = abs(dxy_strength) * 0.05
+        # Scale influence from 0.00 to 0.02 based on strength (gentle nudge, NOT a veto)
+        raw_dxy_mod = abs(dxy_strength) * 0.02
         
         if symbol == "USDJPY":
             # Buy USDJPY = Buy USD. If DXY is strong (+), boost. If DXY is weak (-), penalize.
@@ -602,15 +602,15 @@ def ensemble_predict(
     
     decision.dxy_influence = dxy_influence
 
-    # 12f. Total Adjustment: clipped to [-0.08, +0.08]
-    raw_total_adjustment = float(np.clip(session_bonus + volatility_adjustment + actual_event_boost + mtf_penalty + dxy_influence, -0.08, 0.08))
+    # 12f. Total Adjustment: clipped to [-0.04, +0.04] (gentle, not dominant)
+    raw_total_adjustment = float(np.clip(session_bonus + volatility_adjustment + actual_event_boost + mtf_penalty + dxy_influence, -0.04, 0.04))
 
-    # 12g. Adjustment-to-Base Ratio Control: adjustment ≤ 15% of base_score
-    # This GUARANTEES boosts cannot create a trade alone
+    # 12g. Adjustment-to-Base Ratio Control: adjustment ≤ 8% of base_score
+    # This GUARANTEES adjustments can never overpower the model signals
     if raw_total_adjustment > 0:
-        total_adjustment = min(raw_total_adjustment, base_score * 0.15)
+        total_adjustment = min(raw_total_adjustment, base_score * 0.08)
     else:
-        total_adjustment = max(raw_total_adjustment, -(base_score * 0.15))
+        total_adjustment = max(raw_total_adjustment, -(base_score * 0.08))
 
     # 12e. Compute raw_score and clip
     raw_score = base_score + total_adjustment
@@ -639,26 +639,8 @@ def ensemble_predict(
     decision.buy_threshold = buy_threshold
     decision.sell_threshold = sell_threshold
 
-    # =========================================
-    # Step 14: Direction Decision + Near-Miss Activation
-    # =========================================
-    # Calculate distance to threshold
-    if final_prob >= 0.5:
-        dist_to_thresh = buy_threshold - final_prob
-    else:
-        dist_to_thresh = final_prob - sell_threshold
-
-    allow_near_miss = False
-    if dist_to_thresh > 0:
-        is_trend = trend_strength > 0.15
-        
-        # Tightened near-miss: only genuinely close signals allowed
-        # AND must have at least MEDIUM confidence
-        if _pre_confidence in ["MEDIUM", "HIGH"]:
-            if is_trend and dist_to_thresh < 0.03:
-                allow_near_miss = True
-            elif not is_trend and dist_to_thresh < 0.015:
-                allow_near_miss = True
+    # Near-Miss DISABLED — only genuine threshold-passing signals execute
+    # Every losing trade came through near-miss. Quality over quantity.
 
     if final_prob > buy_threshold:
         decision.direction = "BUY"
@@ -668,13 +650,14 @@ def ensemble_predict(
         decision.direction = "SELL"
         decision.decision_reason = "VALID_SIGNAL"
         decision.stage_reached = "EXECUTION_READY"
-    elif allow_near_miss:
-        decision.direction = decision.side
-        decision.decision_reason = "NEAR_MISS_ACTIVATION"
-        decision.stage_reached = "EXECUTION_READY"
-        logger.info("[Ensemble] 🚀 [NEAR_MISS ACTIVATED] score: %.4f | ts: %.2f | dist_to_thresh: %.4f", 
-                    final_prob, trend_strength, dist_to_thresh)
     else:
+        decision.direction = None
+        decision.decision_reason = "BELOW_THRESHOLD"
+        decision.stage_reached = "THRESHOLD_CHECK"
+        decision.skip_reason = (
+            f"HOLD: Final {final_prob:.4f} between "
+            f"BUY>{buy_threshold:.4f} and SELL<{sell_threshold:.4f}"
+        )
         decision.direction = None
         decision.decision_reason = "BELOW_THRESHOLD"
         decision.stage_reached = "THRESHOLD_CHECK"
