@@ -293,7 +293,7 @@ class RFModel:
 
         # Print report
         print(f"\n\033[93m{'='*55}\033[0m")
-        print(f"\033[93m       🌲 RANDOM FOREST REPORT\033[0m")
+        print(f"\033[93m        RANDOM FOREST REPORT\033[0m")
         print(f"\033[93m{'='*55}\033[0m")
         print(f"\033[93m  Accuracy     : {self.accuracy * 100:.2f}%\033[0m")
         print(f"\033[93m  Trees        : {Config.RF_N_ESTIMATORS}\033[0m")

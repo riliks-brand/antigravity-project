@@ -45,7 +45,7 @@ def visualize_predictions(y_pred, name="Model"):
               "NOISE (0.45-0.55)", "Neutral BUY (0.55-0.6)", "Weak BUY (0.6-0.8)", "Strong BUY (>0.8)"]
     
     for count, label in zip(hist, labels):
-        bar = "█" * int(count / max(hist) * 40) if max(hist) > 0 else ""
+        bar = "#" * int(count / max(hist) * 40) if max(hist) > 0 else ""
         print(f"  {label:23s}: {count:5d} {bar}")
     print(f"{'='*40}\n")
 

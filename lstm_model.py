@@ -1,5 +1,5 @@
 """
-LSTM Model — Elite v3.0
+LSTM Model  Elite v3.0
 ========================
 Time-series LSTM model with:
 - RobustScaler (outlier-immune)
@@ -199,11 +199,11 @@ def train_and_evaluate(X_train, X_test, y_train, y_test, sample_weights=None):
 
     # Accuracy comparison report
     print(f"\n\033[95m{'='*55}\033[0m")
-    print(f"\033[95m       🧠 INTELLIGENCE REPORT: ACCURACY\033[0m")
+    print(f"\033[95m        INTELLIGENCE REPORT: ACCURACY\033[0m")
     print(f"\033[95m{'='*55}\033[0m")
     if has_weights and baseline_accuracy is not None:
         gain = (accuracy - baseline_accuracy) * 100
-        emoji = "📈" if gain >= 0 else "📉"
+        emoji = "" if gain >= 0 else ""
         print(f"\033[95m  WITHOUT Loss Weights : {baseline_accuracy * 100:.2f}%\033[0m")
         print(f"\033[95m  WITH Loss Weights    : {accuracy * 100:.2f}%\033[0m")
         print(f"\033[95m  {emoji} Gain from Learning : {gain:+.2f}%\033[0m")

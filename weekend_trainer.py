@@ -87,13 +87,13 @@ def run_weekend_retraining():
     # 1. Fetch Rolling Dataset (e.g., 50,000 candles = ~2-3 months of M5)
     # We use EURUSD as the baseline for training, or concatenate multiple.
     logger.info("Fetching rolling data (50,000 candles)...")
-    df = fetch_mt5_ohlc("EURUSD", mt5.TIMEFRAME_M5, 50000)
+    df = fetch_mt5_ohlc("EURUSD", mt5.TIMEFRAME_M5, 500)
     if df is None or len(df) < 1000:
         logger.error("Not enough data fetched.")
         return
         
-    df_m15 = fetch_mt5_ohlc("EURUSD", mt5.TIMEFRAME_M15, 20000)
-    df_h1 = fetch_mt5_ohlc("EURUSD", mt5.TIMEFRAME_H1, 5000)
+    df_m15 = fetch_mt5_ohlc("EURUSD", mt5.TIMEFRAME_M15, 2000)
+    df_h1 = fetch_mt5_ohlc("EURUSD", mt5.TIMEFRAME_H1, 500)
 
     # 2. Process Features
     logger.info("Running feature engineering pipeline...")
