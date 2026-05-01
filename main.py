@@ -125,13 +125,15 @@ def apply_hybrid_filters(processed_df, direction, symbol, server_time=None):
     if adx_val < Config.ADX_RANGING_THRESHOLD:
         reasons.append(f"RANGING: ADX={adx_val:.1f} < {Config.ADX_RANGING_THRESHOLD}")
 
-    # 2. Trend Alignment (H1)
+    # 2. Trend Alignment (H1) — Warning only (ensemble already applies -0.03 penalty)
     h1_trend = last.get('H1_trend', 0)
-    #if h1_trend != 0:
-    #    if direction == "BUY" and h1_trend == -1:
-    #        reasons.append("COUNTER-TREND: BUY against H1 downtrend")
-    #    elif direction == "SELL" and h1_trend == 1:
-    #        reasons.append("COUNTER-TREND: SELL against H1 uptrend")
+    if h1_trend != 0:
+        if direction == "BUY" and h1_trend == -1:
+            import logging
+            logging.getLogger("Main").warning("[H1 COUNTER-TREND] BUY against H1 downtrend — ensemble penalty applied")
+        elif direction == "SELL" and h1_trend == 1:
+            import logging
+            logging.getLogger("Main").warning("[H1 COUNTER-TREND] SELL against H1 uptrend — ensemble penalty applied")
 
     # 3. Low Volatility Filter
     volatility = last.get('Volatility', 0)
@@ -547,6 +549,17 @@ def main():
                     "session": session,
                     "regime_changed": regime_changed,
                     "decision_reason": decision.decision_reason,
+                    "market_context": {
+                        "rsi": float(processed_df['RSI'].iloc[-1]) if 'RSI' in processed_df.columns and not pd.isna(processed_df['RSI'].iloc[-1]) else 0.0,
+                        "adx": float(current_adx),
+                        "atr": float(current_atr),
+                        "volatility": float(processed_df['Volatility'].iloc[-1]) if 'Volatility' in processed_df.columns and not pd.isna(processed_df['Volatility'].iloc[-1]) else 0.0,
+                        "bb_position": float(processed_df['BB_position'].iloc[-1]) if 'BB_position' in processed_df.columns and not pd.isna(processed_df['BB_position'].iloc[-1]) else 0.5,
+                        "h1_trend": int(h1_trend) if not pd.isna(h1_trend) else 0,
+                        "trend_strength": float(trend_strength),
+                        "session": session,
+                        "decision_reason": decision.decision_reason,
+                    },
                 })
 
             # === RANK & EXECUTE PORTFOLIO ===
@@ -626,16 +639,14 @@ def main():
                 point = info.point if info else 0.00001
                 
                 # ===== MICRO ACCOUNT MODE: Dynamic SL/TP/Lot =====
-                current_balance = get_account_balance()
-                is_micro = (getattr(Config, 'MICRO_ACCOUNT_MODE', False) and 
-                            current_balance < getattr(Config, 'MICRO_BALANCE_THRESHOLD', 100.0))
+                is_micro = getattr(Config, 'MICRO_ACCOUNT_MODE', False)
                 
                 if is_micro:
                     sl_mult = getattr(Config, 'MICRO_SL_ATR_MULT', 1.0)
                     tp1_mult = getattr(Config, 'MICRO_TP1_ATR_MULT', 1.5)
                     tp2_mult = getattr(Config, 'MICRO_TP2_ATR_MULT', 2.5)
-                    logger.info("[MICRO MODE] Balance: $%.2f | SL: %.1f*ATR | TP1: %.1f*ATR | TP2: %.1f*ATR",
-                                current_balance, sl_mult, tp1_mult, tp2_mult)
+                    logger.info("[MICRO MODE] Simulated $10 | SL: %.1f*ATR | TP1: %.1f*ATR | TP2: %.1f*ATR",
+                                sl_mult, tp1_mult, tp2_mult)
                 else:
                     sl_mult = Config.SL_ATR_MULT
                     tp1_mult = Config.TP1_ATR_MULT
@@ -655,7 +666,7 @@ def main():
                     action=dir_,
                     symbol=sym,
                     sl_points=sl_points,
-                    tp_points=tp2_points,  # Native MT5 TP set to TP2 so partial close at TP1 can occur
+                    tp_points=tp1_points,  # Native MT5 TP set to TP1 for quick profit capture
                     risk_multiplier=final_risk_percent,
                     signal_time_ms=signal_time_ms,
                 )
@@ -668,7 +679,8 @@ def main():
                         entry_price=result["filled_price"], expected_price=result["expected_price"],
                         sl_price=result["sl_price"], tp1_price=result["tp_price"], tp2_price=tp2_price,
                         signal_time_ms=signal_time_ms, fill_time_ms=result["fill_time_ms"],
-                        risk_pct=final_risk_percent, volatility=atr, is_near_miss=is_near_miss
+                        risk_pct=final_risk_percent, volatility=atr, is_near_miss=is_near_miss,
+                        market_context=opp.get("market_context", {})
                     )
                     manager.update_signal_tracker(sym, dir_, candle_index)
                     executed_this_cycle += 1

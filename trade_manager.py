@@ -86,6 +86,17 @@ class ManagedTrade:
         self.pnl = 0.0
         self.close_reason = ""              # "TP1", "TP2", "SL", "TRAILING", "MANUAL", "KILL_SWITCH"
 
+        # Market Context at Entry (for deep memory learning)
+        self.entry_rsi = 0.0
+        self.entry_adx = 0.0
+        self.entry_atr = 0.0
+        self.entry_volatility = 0.0
+        self.entry_bb_position = 0.5
+        self.entry_h1_trend = 0
+        self.entry_trend_strength = 0.0
+        self.entry_session = "UNKNOWN"
+        self.entry_decision_reason = ""
+
         # Thread Safety
         self.lock = threading.Lock()
 
@@ -118,6 +129,15 @@ class ManagedTrade:
             "pnl": self.pnl,
             "close_reason": self.close_reason,
             "risk_pct": self.risk_pct,
+            "entry_rsi": self.entry_rsi,
+            "entry_adx": self.entry_adx,
+            "entry_atr": self.entry_atr,
+            "entry_volatility": self.entry_volatility,
+            "entry_bb_position": self.entry_bb_position,
+            "entry_h1_trend": self.entry_h1_trend,
+            "entry_trend_strength": self.entry_trend_strength,
+            "entry_session": self.entry_session,
+            "entry_decision_reason": self.entry_decision_reason,
         }
 
     @staticmethod
@@ -151,6 +171,15 @@ class ManagedTrade:
         trade.close_price = d.get("close_price")
         trade.pnl = d.get("pnl", 0.0)
         trade.close_reason = d.get("close_reason", "")
+        trade.entry_rsi = d.get("entry_rsi", 0.0)
+        trade.entry_adx = d.get("entry_adx", 0.0)
+        trade.entry_atr = d.get("entry_atr", 0.0)
+        trade.entry_volatility = d.get("entry_volatility", 0.0)
+        trade.entry_bb_position = d.get("entry_bb_position", 0.5)
+        trade.entry_h1_trend = d.get("entry_h1_trend", 0)
+        trade.entry_trend_strength = d.get("entry_trend_strength", 0.0)
+        trade.entry_session = d.get("entry_session", "UNKNOWN")
+        trade.entry_decision_reason = d.get("entry_decision_reason", "")
         return trade
 
 
@@ -292,7 +321,7 @@ class TradeManager:
     # TRADE REGISTRATION
     # =========================================
 
-    def register_trade(self, ticket, symbol, direction, volume, entry_price, expected_price, sl_price, tp1_price, tp2_price, signal_time_ms, fill_time_ms, risk_pct, volatility=0.001, is_near_miss=False):
+    def register_trade(self, ticket, symbol, direction, volume, entry_price, expected_price, sl_price, tp1_price, tp2_price, signal_time_ms, fill_time_ms, risk_pct, volatility=0.001, is_near_miss=False, market_context=None):
         with self.global_lock:
             import MetaTrader5 as mt5
             info = mt5.symbol_info(symbol)
@@ -320,6 +349,18 @@ class TradeManager:
             trade.latency_ms = fill_time_ms - signal_time_ms if signal_time_ms and fill_time_ms else 0
 
             trade.fill_time = datetime.datetime.utcnow().isoformat()
+
+            # Store Market Context for Deep Memory Learning
+            if market_context:
+                trade.entry_rsi = market_context.get("rsi", 0.0)
+                trade.entry_adx = market_context.get("adx", 0.0)
+                trade.entry_atr = market_context.get("atr", 0.0)
+                trade.entry_volatility = market_context.get("volatility", 0.0)
+                trade.entry_bb_position = market_context.get("bb_position", 0.5)
+                trade.entry_h1_trend = market_context.get("h1_trend", 0)
+                trade.entry_trend_strength = market_context.get("trend_strength", 0.0)
+                trade.entry_session = market_context.get("session", "UNKNOWN")
+                trade.entry_decision_reason = market_context.get("decision_reason", "")
 
             self.active_trades[ticket] = trade
             self._save_state()
@@ -878,8 +919,7 @@ class TradeManager:
         import MetaTrader5 as mt5
         account = mt5.account_info()
         balance = account.balance if account else 0.0
-        is_micro = (getattr(Config, 'MICRO_ACCOUNT_MODE', False) and 
-                    balance < getattr(Config, 'MICRO_BALANCE_THRESHOLD', 100.0))
+        is_micro = getattr(Config, 'MICRO_ACCOUNT_MODE', False)
         max_trades = getattr(Config, 'MICRO_MAX_CONCURRENT_TRADES', 1) if is_micro else Config.MAX_CONCURRENT_TRADES
         
         open_count = sum(1 for t in self.active_trades.values()
@@ -1127,8 +1167,7 @@ class TradeManager:
         account = mt5.account_info()
         balance = account.balance if account else 0.0
         
-        is_micro = (getattr(Config, 'MICRO_ACCOUNT_MODE', False) and 
-                    balance < getattr(Config, 'MICRO_BALANCE_THRESHOLD', 100.0))
+        is_micro = getattr(Config, 'MICRO_ACCOUNT_MODE', False)
         
         # Select risk tiers based on account mode
         if is_micro:
@@ -1197,6 +1236,9 @@ class TradeManager:
                 "slippage_points", "latency_ms",
                 "pnl", "close_reason",
                 "tp1_hit", "trailing_active",
+                # Market Context (for deep memory learning)
+                "RSI", "ADX", "ATR", "Volatility", "BB_position",
+                "h1_trend", "trend_strength", "session", "decision_reason",
             ]
 
             with open(filepath, "a", newline="", encoding="utf-8") as f:
@@ -1220,6 +1262,16 @@ class TradeManager:
                     "close_reason": trade.close_reason,
                     "tp1_hit": trade.tp1_hit,
                     "trailing_active": trade.trailing_active,
+                    # Market Context
+                    "RSI": trade.entry_rsi,
+                    "ADX": trade.entry_adx,
+                    "ATR": trade.entry_atr,
+                    "Volatility": trade.entry_volatility,
+                    "BB_position": trade.entry_bb_position,
+                    "h1_trend": trade.entry_h1_trend,
+                    "trend_strength": trade.entry_trend_strength,
+                    "session": trade.entry_session,
+                    "decision_reason": trade.entry_decision_reason,
                 })
         except Exception as e:
             logger.error("[TradeHistory] Log write failed: %s", e)

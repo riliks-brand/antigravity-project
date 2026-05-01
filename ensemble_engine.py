@@ -652,13 +652,13 @@ def ensemble_predict(
     if dist_to_thresh > 0:
         is_trend = trend_strength > 0.15
         
-        if is_trend and dist_to_thresh < 0.07:
-            allow_near_miss = True
-        elif not is_trend and dist_to_thresh < 0.03:
-            allow_near_miss = True
-            
-        if _pre_confidence in ["MEDIUM", "HIGH"] and dist_to_thresh < 0.05:
-            allow_near_miss = True
+        # Tightened near-miss: only genuinely close signals allowed
+        # AND must have at least MEDIUM confidence
+        if _pre_confidence in ["MEDIUM", "HIGH"]:
+            if is_trend and dist_to_thresh < 0.03:
+                allow_near_miss = True
+            elif not is_trend and dist_to_thresh < 0.015:
+                allow_near_miss = True
 
     if final_prob > buy_threshold:
         decision.direction = "BUY"
