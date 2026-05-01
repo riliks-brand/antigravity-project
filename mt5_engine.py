@@ -207,17 +207,20 @@ def calculate_lot_size(symbol, sl_points, risk_multiplier=1.0):
     balance = account.balance
     
     # ===== MICRO ACCOUNT MODE =====
-    is_micro = (getattr(Config, 'MICRO_ACCOUNT_MODE', False) and 
-                balance < getattr(Config, 'MICRO_BALANCE_THRESHOLD', 100.0))
+    # Ignore real balance if MICRO_ACCOUNT_MODE is explicitly True (for simulation)
+    is_micro = getattr(Config, 'MICRO_ACCOUNT_MODE', False)
     
-    if is_micro and getattr(Config, 'MICRO_FORCE_MIN_LOT', True):
-        min_lot = info.volume_min  # Typically 0.01
-        logger.info(
-            "[LotSize] MICRO MODE | Balance: $%.2f | Forcing MIN LOT: %.2f | "
-            "SL: %d pts | Risk kept ultra-low for capital preservation.",
-            balance, min_lot, sl_points
-        )
-        return min_lot
+    if is_micro:
+        # Override balance for logic simulating a small account
+        balance = 10.0
+        if getattr(Config, 'MICRO_FORCE_MIN_LOT', True):
+            min_lot = info.volume_min  # Typically 0.01
+            logger.info(
+                "[LotSize] MICRO MODE | Simulated Balance: $%.2f | Forcing MIN LOT: %.2f | "
+                "SL: %d pts | Risk kept ultra-low for capital preservation.",
+                balance, min_lot, sl_points
+            )
+            return min_lot
     
     # ===== STANDARD LOT CALCULATION =====
     # risk_multiplier is passed as the final risk percentage (e.g. 0.25 for 0.25%)

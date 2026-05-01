@@ -493,6 +493,11 @@ def main():
                 # ===== PORTFOLIO MACROS: CONTEXT BOOSTS & MEMORY =====
                 # 1. Symbol Memory Bias
                 memory_bias_local, sim_pct, sim_idx = compute_memory_similarity(processed_df)
+                
+                if hasattr(Config, 'MEMORY_HARD_BLOCK_THRESHOLD') and sim_pct >= Config.MEMORY_HARD_BLOCK_THRESHOLD:
+                    logger.warning("[%s] 🧠 MEMORY BLOCK: Current state matches a previous loss by %.1f%%. Skipping.", symbol, sim_pct)
+                    continue
+
                 sym_perf_mod = manager.get_symbol_performance_modifier(symbol)
                 
                 # 2. Context Boosts

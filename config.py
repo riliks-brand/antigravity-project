@@ -114,8 +114,8 @@ class Config:
     MICRO_MAX_CONCURRENT_TRADES = 1      # Only 1 trade at a time with $10
     MICRO_MAX_GLOBAL_RISK_PCT = 3.0      # Max 3% of balance at risk
     MICRO_SL_ATR_MULT = 1.0              # Tighter SL for small accounts
-    MICRO_TP1_ATR_MULT = 1.5             # Proportional TP1
-    MICRO_TP2_ATR_MULT = 2.5             # Proportional TP2
+    MICRO_TP1_ATR_MULT = 1.0             # Proportional TP1 (Much closer to avoid reversals)
+    MICRO_TP2_ATR_MULT = 1.5             # Proportional TP2 (Much closer to avoid reversals)
     MICRO_FORCE_MIN_LOT = True           # Always use broker minimum lot (0.01)
     
     MAX_DAILY_LOSS_PCT = 5.0             # Kill switch: stop ALL trading if daily loss > X%
@@ -157,8 +157,8 @@ class Config:
     # =========================================
     # ATR Multipliers for SL/TP
     SL_ATR_MULT = 1.5                    # Stop Loss = ATR * 1.5
-    TP1_ATR_MULT = 2.0                   # Take Profit 1 = ATR * 2.0
-    TP2_ATR_MULT = 3.0                   # Take Profit 2 (trailing target) = ATR * 3.0
+    TP1_ATR_MULT = 1.5                   # Take Profit 1 = ATR * 1.5 (Closer to avoid reversals)
+    TP2_ATR_MULT = 2.0                   # Take Profit 2 (trailing target) = ATR * 2.0
 
     # Partial Close
     PARTIAL_CLOSE_PCT = 0.5              # Close 50% at TP1
@@ -209,9 +209,10 @@ class Config:
     # =========================================
     # Memory Similarity (Probability Modifier)
     # =========================================
-    # Memory now MODIFIES probability instead of hard-blocking
-    MEMORY_BIAS_SCALE = 0.10             # Max probability adjustment (±10%)
-    MEMORY_SIMILARITY_THRESHOLD = 60     # Only apply bias if similarity > 60%
+    # Memory now heavily MODIFIES probability to fully learn from losses
+    MEMORY_BIAS_SCALE = 0.50             # Max probability adjustment (±50% penalty for bad setups)
+    MEMORY_SIMILARITY_THRESHOLD = 50     # Apply bias if similarity > 50%
+    MEMORY_HARD_BLOCK_THRESHOLD = 90     # If similarity > 90%, block the trade completely
 
     # =========================================
     # Telegram Notifications
