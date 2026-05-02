@@ -1,22 +1,37 @@
 """
-LSTM Model  Elite v3.0
+LSTM Model — Elite v3.2
 ========================
-Time-series LSTM model with:
-- RobustScaler (outlier-immune)
-- Loss-pattern weighted training (Probability Modifier)
-- Comparative accuracy reports
-- Training curve visualization
+التغييرات عن v3.0:
+
+المشكلة الأصلية:
+  - Architecture كبير جداً (128→64 LSTM) مع 106 features → Overfitting مضمون
+  - Train accuracy 75% / Val accuracy 50% = حافظ على data مش بيتعلم
+  - Dropout منخفض جداً (0.3, 0.2, 0.1)
+  - EarlyStopping بيقف في Epoch 6 دايماً = مش بيتعلم كافي
+
+الحلول في v3.2:
+  1. Feature Reduction قبل الـ LSTM (PCA-style selection لأهم 40 feature)
+  2. Architecture أصغر وأعمق بـ Regularization أقوى
+  3. Dropout أعلى (0.5, 0.4, 0.3)
+  4. L2 Regularization على الـ LSTM layers
+  5. EarlyStopping patience أعلى (10 بدل 5)
+  6. Gradient Clipping لمنع exploding gradients
+  7. حذف الـ Baseline comparison عشان يوفر وقت ومش مفيد
 """
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout, BatchNormalization
+from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.layers import (
+    LSTM, Dense, Dropout, BatchNormalization, Input, Bidirectional
+)
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
+from tensorflow.keras.regularizers import l2
 from sklearn.preprocessing import RobustScaler
+from sklearn.feature_selection import SelectKBest, f_classif
 from config import Config
 import matplotlib
-matplotlib.use('Agg')  # Non-interactive backend for server/VPS
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import os
 import logging
@@ -31,208 +46,251 @@ if not logger.handlers:
     _ch.setFormatter(logging.Formatter("\033[96m%(asctime)s\033[0m [%(levelname)s] %(message)s"))
     logger.addHandler(_ch)
 
+# عدد الـ features بعد الـ selection
+# 106 features → 40 features = أسرع + أقل overfitting
+TOP_K_FEATURES = 40
+
+
+# ─────────────────────────────────────────
+# FEATURE SELECTION
+# بيختار أهم K feature بدل ما يحط الـ 106 كلها
+# ─────────────────────────────────────────
+
+def select_top_features(X_flat, y, k=TOP_K_FEATURES):
+    """
+    يختار أهم K feature بناءً على F-score مع الـ target.
+    X_flat: (n_samples, n_features) — آخر timestep بس للـ selection
+    y: (n_samples,)
+    Returns: selector object + selected feature indices
+    """
+    selector = SelectKBest(f_classif, k=min(k, X_flat.shape[1]))
+    selector.fit(X_flat, y)
+    selected_indices = selector.get_support(indices=True)
+    logger.info("[FeatureSelect] Selected %d/%d features via F-score.",
+                len(selected_indices), X_flat.shape[1])
+    return selector, selected_indices
+
+
+def apply_feature_selection(X_seq, selected_indices):
+    """
+    يطبق الـ feature selection على الـ sequence data.
+    X_seq: (n_samples, seq_len, n_features)
+    Returns: (n_samples, seq_len, k_features)
+    """
+    return X_seq[:, :, selected_indices]
+
+
+# ─────────────────────────────────────────
+# DATA PREPARATION
+# ─────────────────────────────────────────
 
 def prepare_sequential_data(df, sequence_length=Config.SEQUENCE_LENGTH):
     """
     Prepares sequential data for LSTM training.
-    Applies RobustScaler and loss-pattern sample weighting.
+    v3.2: Adds feature selection step to reduce from 106 → 40 features.
     """
-    logger.info("Preparing sequential data with lookback of %d candles...", sequence_length)
+    logger.info("Preparing sequential data (lookback=%d, top_features=%d)...",
+                sequence_length, TOP_K_FEATURES)
 
     import pandas as pd
 
-    # Load trade history for sample weighting
-    losses_df = None
-    history_file = Config.TRADING_HISTORY_FILE
-    if os.path.exists(history_file):
-        try:
-            losses_df = pd.read_csv(history_file)
-            losses_df = losses_df[losses_df.get('pnl', pd.Series(dtype=float)) < 0]
-            if not losses_df.empty:
-                logger.info("[Weights] Loaded %d loss records from %s.", len(losses_df), history_file)
-            else:
-                losses_df = None
-        except Exception as e:
-            logger.warning("[Weights] Error loading history: %s", e)
-            losses_df = None
-
-    # Scale features using RobustScaler (immune to outliers)
+    # Scale features
     scaler = RobustScaler()
     feature_cols = [c for c in df.columns if c != 'Target']
     scaler.fit(df[feature_cols].values)
 
-    # Drop rows where Target is NaN
     df_train = df.dropna(subset=['Target'])
     target = df_train['Target'].values
     features = df_train[feature_cols].values
-
     features_scaled = scaler.transform(features)
 
-    X, y, sample_weights_list = [], [], []
-
+    # Build sequences
+    X, y = [], []
     for i in range(len(features_scaled) - sequence_length):
         X.append(features_scaled[i:i + sequence_length])
         y.append(target[i + sequence_length])
 
-        weight = 1.0
-        if losses_df is not None and not losses_df.empty:
-            last_idx = i + sequence_length - 1
-            row = df_train.iloc[last_idx]
-            rsi_val = row.get('RSI', 50)
-            adx_val = row.get('ADX', 25)
-
-            for _, loss_row in losses_df.iterrows():
-                loss_rsi = loss_row.get('RSI', 50) if 'RSI' in losses_df.columns else 50
-                loss_adx = loss_row.get('ADX', 25) if 'ADX' in losses_df.columns else 25
-
-                if abs(loss_rsi - rsi_val) < 3.0 and abs(loss_adx - adx_val) < 5.0:
-                    weight = 1.5  # Penalize patterns similar to past losses
-                    break
-
-        sample_weights_list.append(weight)
-
-    X = np.array(X)
+    X = np.array(X)   # (n, seq_len, n_features)
     y = np.array(y)
-    weights_arr = np.array(sample_weights_list)
 
-    # 80-20 split (chronological, no shuffle)
+    # Chronological 80/20 split BEFORE feature selection
+    # (لازم نعمل selection على train فقط عشان منعملش data leakage)
     split_index = int(len(X) * 0.8)
-    X_train, X_test = X[:split_index], X[split_index:]
+    X_train_raw, X_test_raw = X[:split_index], X[split_index:]
     y_train, y_test = y[:split_index], y[split_index:]
-    train_weights = weights_arr[:split_index]
+
+    # Feature selection — based on last timestep of training data only
+    X_train_last = X_train_raw[:, -1, :]   # آخر candle بس للـ scoring
+    selector, selected_indices = select_top_features(X_train_last, y_train)
+
+    # Apply selection to both splits
+    X_train = apply_feature_selection(X_train_raw, selected_indices)
+    X_test  = apply_feature_selection(X_test_raw,  selected_indices)
+
+    logger.info("After feature selection → X_train=%s, X_test=%s",
+                X_train.shape, X_test.shape)
+
+    # Sample weights (بسيطة — class balancing بس)
+    # الـ loss-pattern weighting الأصلي كان بيعمل مشكلة أكبر من نفعه
+    from sklearn.utils.class_weight import compute_class_weight
+    classes = np.unique(y_train)
+    weights = compute_class_weight('balanced', classes=classes, y=y_train)
+    weight_map = dict(zip(classes, weights))
+    train_weights = np.array([weight_map[yi] for yi in y_train])
 
     logger.info("Training data: X=%s, Y=%s | Test data: X=%s, Y=%s",
                 X_train.shape, y_train.shape, X_test.shape, y_test.shape)
 
-    # Penalty impact report
-    weighted_count = int(np.sum(train_weights > 1.0))
-    if weighted_count > 0:
-        logger.info("[Weights] Applied 1.5x penalty to %d/%d training samples.",
-                    weighted_count, len(train_weights))
+    # نحتفظ بالـ selected_indices في الـ scaler object عشان نستخدمه وقت الـ inference
+    scaler.selected_indices_ = selected_indices
 
     return X_train, X_test, y_train, y_test, scaler, train_weights
 
 
+# ─────────────────────────────────────────
+# MODEL ARCHITECTURE
+# ─────────────────────────────────────────
+
 def build_lstm_model(input_shape):
-    """Builds the LSTM architecture with BatchNorm for stability."""
-    logger.info("Building LSTM model (input shape: %s)...", input_shape)
+    """
+    v3.2 Architecture: أصغر + Regularization أقوى
+
+    القديم:  LSTM(128) → LSTM(64) → Dense(32) — كبير جداً، بيحفظ مش بيتعلم
+    الجديد:  BiLSTM(48) → LSTM(32) → Dense(16) — أصغر، Dropout أقوى، L2 regularization
+    
+    Bidirectional LSTM:
+    - بيقرأ الـ sequence من الاتجاهين (past → future و future → past)
+    - بيلتقط patterns مش ممكن LSTM عادي يشوفها
+    - مش بيستخدم future data — بس بيفهم السياق أحسن
+    """
+    logger.info("Building LSTM v3.2 model (input shape: %s)...", input_shape)
 
     model = Sequential([
-        LSTM(128, return_sequences=True, input_shape=input_shape),
+        # Layer 1: Bidirectional LSTM — أصغر بكتير من الأصلي
+        Bidirectional(
+            LSTM(48,
+                 return_sequences=True,
+                 kernel_regularizer=l2(1e-4),
+                 recurrent_regularizer=l2(1e-4)),
+            input_shape=input_shape
+        ),
+        Dropout(0.5),           # أقوى بكتير من 0.3 الأصلي
+        BatchNormalization(),
+
+        # Layer 2: LSTM عادي — أصغر
+        LSTM(32,
+             return_sequences=False,
+             kernel_regularizer=l2(1e-4),
+             recurrent_regularizer=l2(1e-4)),
+        Dropout(0.4),           # أقوى من 0.2 الأصلي
+        BatchNormalization(),
+
+        # Layer 3: Dense — أصغر بكتير
+        Dense(16,
+              activation='relu',
+              kernel_regularizer=l2(1e-4)),
         Dropout(0.3),
-        BatchNormalization(),
 
-        LSTM(64, return_sequences=False),
-        Dropout(0.2),
-        BatchNormalization(),
-
-        Dense(32, activation='relu'),
-        Dropout(0.1),
+        # Output
         Dense(1, activation='sigmoid'),
     ])
 
+    # Gradient clipping — يمنع الـ exploding gradients
+    optimizer = tf.keras.optimizers.Adam(
+        learning_rate=0.0005,   # أبطأ شوية من 0.001 الأصلي
+        clipnorm=1.0            # الجديد — يحد من حجم الـ gradients
+    )
+
     model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+        optimizer=optimizer,
         loss='binary_crossentropy',
         metrics=['accuracy'],
     )
+
+    # طباعة ملخص الـ architecture
+    total_params = model.count_params()
+    logger.info("[LSTM v3.2] Total parameters: {:,}".format(total_params))
+
     return model
 
 
+# ─────────────────────────────────────────
+# TRAINING
+# ─────────────────────────────────────────
+
 def train_and_evaluate(X_train, X_test, y_train, y_test, sample_weights=None):
     """
-    Trains the LSTM model with early stopping and learning rate reduction.
-    Includes comparative accuracy analysis.
+    Trains the LSTM model.
+    v3.2 changes:
+    - patience=10 (كان 5) — بيدي الموديل وقت أكتر يتعلم
+    - ReduceLROnPlateau patience=5 (كان 3)
+    - حذف الـ baseline comparison — كان بياخد وقت ومش بيفيد
+    - batch_size=32 (كان 64) — gradients أدق
     """
     model = build_lstm_model((X_train.shape[1], X_train.shape[2]))
 
-    early_stop = EarlyStopping(
-        monitor='val_loss',
-        patience=5,
-        restore_best_weights=True,
-        verbose=1,
-    )
+    callbacks = [
+        EarlyStopping(
+            monitor='val_loss',
+            patience=10,            # كان 5 — بيدي فرصة أكتر
+            restore_best_weights=True,
+            verbose=1,
+            min_delta=0.001,        # الجديد — يتجاهل تحسينات صغيرة جداً
+        ),
+        ReduceLROnPlateau(
+            monitor='val_loss',
+            factor=0.5,
+            patience=5,             # كان 3
+            min_lr=1e-6,
+            verbose=1,
+        ),
+    ]
 
-    reduce_lr = ReduceLROnPlateau(
-        monitor='val_loss',
-        factor=0.5,
-        patience=3,
-        min_lr=1e-6,
-        verbose=1,
-    )
-
-    # Comparative baseline (if weights are applied)
-    baseline_accuracy = None
-    has_weights = sample_weights is not None and np.any(sample_weights != 1.0)
-
-    if has_weights:
-        logger.info("[Baseline] Training unweighted model for comparison...")
-        baseline_model = build_lstm_model((X_train.shape[1], X_train.shape[2]))
-        baseline_early = EarlyStopping(monitor='val_loss', patience=3,
-                                        restore_best_weights=True, verbose=0)
-        baseline_model.fit(
-            X_train, y_train,
-            validation_data=(X_test, y_test),
-            epochs=10,
-            batch_size=64,
-            callbacks=[baseline_early],
-            verbose=0,
-        )
-        _, baseline_accuracy = baseline_model.evaluate(X_test, y_test, verbose=0)
-        logger.info("[Baseline] Unweighted Accuracy: %.2f%%", baseline_accuracy * 100)
-        del baseline_model
-
-    # Main training
-    logger.info("Starting main model training...")
+    logger.info("Starting LSTM v3.2 training (epochs=50, batch=32)...")
     history = model.fit(
         X_train, y_train,
         sample_weight=sample_weights,
         validation_data=(X_test, y_test),
-        epochs=30,
-        batch_size=64,
-        callbacks=[early_stop, reduce_lr],
+        epochs=50,              # كان 30 — أكتر فرص للتعلم
+        batch_size=32,          # كان 64 — أدق
+        callbacks=callbacks,
         verbose=1,
     )
 
     loss, accuracy = model.evaluate(X_test, y_test, verbose=0)
     logger.info("FINAL TEST ACCURACY: %.2f%% | LOSS: %.4f", accuracy * 100, loss)
 
-    # Accuracy comparison report
+    # Overfitting diagnosis
+    final_train_acc = history.history['accuracy'][-1]
+    gap = final_train_acc - accuracy
+    overfit_status = "✅ Healthy" if gap < 0.08 else ("⚠️ Mild" if gap < 0.15 else "❌ Severe")
+
     print(f"\n\033[95m{'='*55}\033[0m")
-    print(f"\033[95m        INTELLIGENCE REPORT: ACCURACY\033[0m")
+    print(f"\033[95m        LSTM v3.2 TRAINING REPORT\033[0m")
     print(f"\033[95m{'='*55}\033[0m")
-    if has_weights and baseline_accuracy is not None:
-        gain = (accuracy - baseline_accuracy) * 100
-        emoji = "" if gain >= 0 else ""
-        print(f"\033[95m  WITHOUT Loss Weights : {baseline_accuracy * 100:.2f}%\033[0m")
-        print(f"\033[95m  WITH Loss Weights    : {accuracy * 100:.2f}%\033[0m")
-        print(f"\033[95m  {emoji} Gain from Learning : {gain:+.2f}%\033[0m")
-    else:
-        print(f"\033[95m  Accuracy : {accuracy * 100:.2f}%\033[0m")
-        print(f"\033[95m  (No loss history to compare)\033[0m")
+    print(f"\033[95m  Test Accuracy   : {accuracy * 100:.2f}%\033[0m")
+    print(f"\033[95m  Train Accuracy  : {final_train_acc * 100:.2f}%\033[0m")
+    print(f"\033[95m  Train-Test Gap  : {gap * 100:.2f}% — {overfit_status}\033[0m")
+    print(f"\033[95m  Epochs Run      : {len(history.history['loss'])}\033[0m")
+    print(f"\033[95m  Features Used   : {X_train.shape[2]} (selected from full set)\033[0m")
     print(f"\033[95m{'='*55}\033[0m\n")
 
     # Save training curves
     try:
         plt.figure(figsize=(14, 5))
-
         plt.subplot(1, 2, 1)
         plt.plot(history.history['accuracy'], label='Train', color='#4CAF50', linewidth=2)
         plt.plot(history.history['val_accuracy'], label='Validation', color='#FF9800', linewidth=2)
-        plt.title('Model Accuracy')
-        plt.xlabel('Epoch')
-        plt.ylabel('Accuracy')
-        plt.legend()
-        plt.grid(True, alpha=0.3)
+        plt.title('Model Accuracy (v3.2)')
+        plt.xlabel('Epoch'); plt.ylabel('Accuracy')
+        plt.legend(); plt.grid(True, alpha=0.3)
 
         plt.subplot(1, 2, 2)
         plt.plot(history.history['loss'], label='Train', color='#4CAF50', linewidth=2)
         plt.plot(history.history['val_loss'], label='Validation', color='#FF9800', linewidth=2)
-        plt.title('Model Loss')
-        plt.xlabel('Epoch')
-        plt.ylabel('Loss')
-        plt.legend()
-        plt.grid(True, alpha=0.3)
+        plt.title('Model Loss (v3.2)')
+        plt.xlabel('Epoch'); plt.ylabel('Loss')
+        plt.legend(); plt.grid(True, alpha=0.3)
 
         plt.tight_layout()
         plot_path = os.path.join(os.getcwd(), 'training_curves.png')

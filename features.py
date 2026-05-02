@@ -449,7 +449,7 @@ def generate_target_column(df: pd.DataFrame, lookahead: int = 6) -> pd.DataFrame
     """
     df['future_close'] = df['close'].shift(-lookahead)
     future_move = df['future_close'] - df['close']
-    threshold = df['ATR'] * 1.2
+    threshold = df['ATR'] * getattr(Config, 'ATR_LOOKAHEAD_MULT', 1.2)
     
     # 1 = BUY, 0 = SELL, np.nan = HOLD (noise)
     df['Target'] = np.where(future_move > threshold, 1, 

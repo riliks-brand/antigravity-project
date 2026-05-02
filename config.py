@@ -206,6 +206,7 @@ class Config:
     # Feature Engineering
     # =========================================
     ATR_THRESHOLD = 0.0002               # Filter for low liquidity periods
+    ATR_LOOKAHEAD_MULT = 1.2             # Target generation: BUY if future_move > ATR * this. Overridden per-symbol in train_offline.py
     ADX_RANGING_THRESHOLD = 15           # Relaxed from 25
     DXY_TICKER = "DX-Y.NYB"
 

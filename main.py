@@ -212,25 +212,14 @@ def main():
     
     # Optional GPU suppression if needed
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-    from tensorflow.keras.models import load_model
 
-    # ===== PHASE 5: Initialize RF & LSTM Models =====
+    # ===== PHASE 5: Initialize Models via Registry =====
+    from model_registry import ModelRegistry
     from rf_model import RFModel
     from ensemble_engine import ensemble_predict
 
-    rf_model = RFModel()
-    
-    # Load Offline LSTM Model
-    lstm_model_path = "lstm_model.h5"
-    lstm_scaler_path = "lstm_scaler.joblib"
-    
-    if os.path.exists(lstm_model_path) and os.path.exists(lstm_scaler_path):
-        logger.info("Loading offline LSTM model and scaler...")
-        lstm_model = load_model(lstm_model_path)
-        lstm_scaler = joblib.load(lstm_scaler_path)
-    else:
-        logger.critical("[Fatal] Offline LSTM models not found. Please run train_offline.py first.")
-        return
+    registry = ModelRegistry()
+    rf_model = RFModel()  # Kept for daily summary feature importance (get_top_features)
 
     # State variables
     last_eval_candle = -1
@@ -405,20 +394,13 @@ def main():
                     except Exception as e:
                         logger.error("[SmartExit] Evaluation error for %s: %s", symbol, e)
 
-                # ===== LSTM PREDICTION =====
-                latest_features = processed_df.drop(['Target'], axis=1, errors='ignore').values
-                latest_features_scaled = lstm_scaler.transform(latest_features)
+                # ===== LSTM PREDICTION (via ModelRegistry — per-symbol) =====
+                lstm_prob = registry.predict_lstm(symbol, processed_df)
 
-                if len(latest_features_scaled) < Config.SEQUENCE_LENGTH: 
-                    continue
-                
-                X_live = np.array([latest_features_scaled[-Config.SEQUENCE_LENGTH:]])
-                lstm_prob = float(lstm_model.predict(X_live, verbose=0)[0][0])
-
-                # ===== RANDOM FOREST PREDICTION =====
+                # ===== RANDOM FOREST PREDICTION (via ModelRegistry — per-symbol) =====
                 rf_prob = 0.5
                 if Config.ENSEMBLE_ENABLED:
-                    rf_prob = rf_model.predict_proba(processed_df)
+                    rf_prob = registry.predict_rf(symbol, processed_df)
 
                 current_atr = processed_df['ATR'].iloc[-1] if not pd.isna(processed_df['ATR'].iloc[-1]) else 0.001
                 # Use H1_ADX for macro trend strength instead of noisy M5 ADX
