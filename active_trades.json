@@ -1,7 +1,45 @@
 {
-  "active_trades": [],
+  "active_trades": [
+    {
+      "ticket": 56488215600,
+      "symbol": "GBPUSD",
+      "direction": "BUY",
+      "original_volume": 0.01,
+      "current_volume": 0.01,
+      "entry_price": 1.35715,
+      "sl_price": 1.3565800000000001,
+      "tp1_price": 1.35758,
+      "tp2_price": 1.3578700000000001,
+      "magic": 121052,
+      "state": "OPEN",
+      "signal_time": "2026-05-01T20:46:16.014497",
+      "fill_time": "2026-05-01T20:46:16.147139",
+      "close_time": null,
+      "expected_price": 1.35715,
+      "filled_price": 1.35715,
+      "slippage_points": 0.0,
+      "latency_ms": 8.51904296875,
+      "tp1_hit": false,
+      "sl_moved_to_be": false,
+      "trailing_active": false,
+      "trailing_sl": null,
+      "close_price": null,
+      "pnl": 0.0,
+      "close_reason": "",
+      "risk_pct": 1.0,
+      "entry_rsi": 32.87705067758036,
+      "entry_adx": 37.55052171037067,
+      "entry_atr": 0.00028982094424094513,
+      "entry_volatility": 0.0002135810503663591,
+      "entry_bb_position": 0.178138237728797,
+      "entry_h1_trend": 1,
+      "entry_trend_strength": 0.5850173903456889,
+      "entry_session": "New York",
+      "entry_decision_reason": "VALID_SIGNAL"
+    }
+  ],
   "consecutive_losses": 0,
   "cooldown_until": null,
   "daily_pnl": 0.0,
-  "last_updated": "2026-05-01T20:38:07.570452"
+  "last_updated": "2026-05-01T20:58:13.776062"
 }
