@@ -80,7 +80,7 @@ class Config:
     # =========================================
     # Portfolio Smart Execution & Context Ranking
     # =========================================
-    MIN_GLOBAL_SCORE = 0.05              # Relaxed from 0.60 to allow trades
+    MIN_GLOBAL_SCORE = 0.35              # كان 0.05 — ده كان بيمرر signals ضعيفة جداً
     
     # Priority Context Boosts ( added to raw prediction )
     BOOST_STRONG_TREND = 0.02
@@ -114,8 +114,8 @@ class Config:
     MICRO_MAX_CONCURRENT_TRADES = 3      # Allow same number as normal mode (lot is already 0.01)
     MICRO_MAX_GLOBAL_RISK_PCT = 3.0      # Max 3% of balance at risk
     MICRO_SL_ATR_MULT = 2.0              # Wider SL to survive noise (was 1.0 = too tight)
-    MICRO_TP1_ATR_MULT = 1.5             # Proportional TP1
-    MICRO_TP2_ATR_MULT = 2.5             # Proportional TP2
+    MICRO_TP1_ATR_MULT = 3.0             # كان 1.5 → RR كان 0.75 (خسارة مضمونة). الجديد RR = 1.5 على الأقل
+    MICRO_TP2_ATR_MULT = 4.0             # كان 2.5 → الجديد يدي مجال أكبر للربح
     MICRO_FORCE_MIN_LOT = True           # Always use broker minimum lot (0.01)
     
     # Per-Symbol ATR Multiplier Overrides
@@ -132,6 +132,7 @@ class Config:
     # Session Limits
     SESSION_MAX_TRADES = 10              # Max number of successful executions per session
     SESSION_MAX_NEAR_MISS = 5            # Max number of near-miss activations per session
+    NEAR_MISS_RISK_REDUCTION = 0.25      # كان 0.50 hardcoded — Near-miss بياخد 25% من الـ risk بس
 
     # Cooldown: pause after N consecutive losses
     COOLDOWN_AFTER_LOSSES = 3
@@ -207,7 +208,7 @@ class Config:
     # =========================================
     ATR_THRESHOLD = 0.0002               # Filter for low liquidity periods
     ATR_LOOKAHEAD_MULT = 1.2             # Target generation: BUY if future_move > ATR * this. Overridden per-symbol in train_offline.py
-    ADX_RANGING_THRESHOLD = 15           # Relaxed from 25
+    ADX_RANGING_THRESHOLD = 20           # كان 15 — ده كان بيمرر ranging markets. ADX < 20 = noise
     DXY_TICKER = "DX-Y.NYB"
 
     # Feature Drift Detection

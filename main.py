@@ -596,8 +596,8 @@ def main():
                 )
                 
                 if is_near_miss:
-                    assigned_risk *= 0.5
-                    logger.info("[NEAR_MISS RISK REDUCTION] %s risk halved to %.2f%%", sym, assigned_risk)
+                    assigned_risk *= Config.NEAR_MISS_RISK_REDUCTION
+                    logger.info("[NEAR_MISS RISK REDUCTION] %s risk reduced to %.2f%% (×%.0f%%)", sym, assigned_risk, Config.NEAR_MISS_RISK_REDUCTION * 100)
                 
                 # Drawdown Survival Mode
                 current_dd = manager.get_current_drawdown(get_account_balance())
