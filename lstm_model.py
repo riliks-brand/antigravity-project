@@ -47,8 +47,9 @@ if not logger.handlers:
     logger.addHandler(_ch)
 
 # عدد الـ features بعد الـ selection
-# 106 features → 40 features = أسرع + أقل overfitting
-TOP_K_FEATURES = 40
+# v3.2: 40 features → v3.3: 25 features
+# أقل features = أقل overfitting + الموديل بيركز على أهم signals بس
+TOP_K_FEATURES = 25
 
 
 # ─────────────────────────────────────────

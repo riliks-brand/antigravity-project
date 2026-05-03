@@ -61,44 +61,44 @@ logger = logging.getLogger("TrainMultiSymbol")
 # ─────────────────────────────────────────
 SYMBOL_CONFIGS = {
     "EURUSD": {
-        "m5_candles":  50_000,
-        "m15_candles": 15_000,
-        "h1_candles":   5_000,
+        "m5_candles":  17_280,   # ~6 شهور (6×20×24×6) — أحدث داتا بس
+        "m15_candles":  5_760,   # proportional
+        "h1_candles":   2_880,
         "atr_lookahead_mult": 1.2,   # threshold عادي
         "description": "Baseline forex pair — stable"
     },
     "GBPUSD": {
-        "m5_candles":  50_000,
-        "m15_candles": 15_000,
-        "h1_candles":   5_000,
+        "m5_candles":  17_280,
+        "m15_candles":  5_760,
+        "h1_candles":   2_880,
         "atr_lookahead_mult": 1.2,
         "description": "GBP pair — slightly more volatile"
     },
     "USDJPY": {
-        "m5_candles":  50_000,
-        "m15_candles": 15_000,
-        "h1_candles":   5_000,
+        "m5_candles":  17_280,
+        "m15_candles":  5_760,
+        "h1_candles":   2_880,
         "atr_lookahead_mult": 1.2,
         "description": "JPY pair — range-bound tendency"
     },
     "XAUUSD": {
-        "m5_candles":  40_000,   # أقل لأن Gold بيتحرك بسرعة
-        "m15_candles": 12_000,
-        "h1_candles":   4_000,
+        "m5_candles":  17_280,
+        "m15_candles":  5_760,
+        "h1_candles":   2_880,
         "atr_lookahead_mult": 1.5,   # threshold أعلى — تجنب noise
         "description": "Gold — high volatility, $5-15/candle"
     },
     "US30": {
-        "m5_candles":  40_000,
-        "m15_candles": 12_000,
-        "h1_candles":   4_000,
+        "m5_candles":  17_280,
+        "m15_candles":  5_760,
+        "h1_candles":   2_880,
         "atr_lookahead_mult": 1.5,
         "description": "Dow Jones Index — news-driven"
     },
     "BTCUSD": {
-        "m5_candles":  40_000,
-        "m15_candles": 12_000,
-        "h1_candles":   4_000,
+        "m5_candles":  17_280,
+        "m15_candles":  5_760,
+        "h1_candles":   2_880,
         "atr_lookahead_mult": 1.8,   # Crypto noise كتير — threshold أعلى
         "description": "Bitcoin — extreme volatility"
     },
