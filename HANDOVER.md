@@ -1,4 +1,4 @@
-# 🤖 ELITE TRADING BOT v3.1 — COMPLETE HANDOVER DOCUMENT
+# 🤖 ELITE TRADING BOT v3.3 — COMPLETE HANDOVER DOCUMENT
 
 > **Purpose**: This document gives any AI assistant 100% understanding of this project — every file, every decision, every formula, every data flow.
 
@@ -26,8 +26,8 @@
 
 | Field | Value |
 |-------|-------|
-| **Name** | Elite MT5 Trading Bot v3.1 (Ensemble Edition) |
-| **Language** | Python 3.10+ |
+| **Name** | Elite MT5 Trading Bot v3.3 (Ensemble Edition) |
+| **Language** | Python 3.8+ |
 | **Platform** | Windows (MetaTrader 5 native) |
 | **Broker** | MetaQuotes-Demo (Account: 5049001425) |
 | **Directory** | `D:\Candlestick_Detection` |
@@ -324,7 +324,7 @@ SIGNAL → OPEN → PARTIAL_CLOSED → CLOSED
 
 **Time**: hour, day_of_week
 
-**Target Generation**: BUY(1) if future_move > 1.2×ATR, SELL(0) if < -1.2×ATR, HOLD(NaN) filtered out
+**Target Generation**: BUY(1) if future_move > ATR_LOOKAHEAD_MULT×ATR, SELL(0) if < -ATR_LOOKAHEAD_MULT×ATR, HOLD(NaN) filtered out. The `ATR_LOOKAHEAD_MULT` is per-symbol (1.2 for forex, 1.5 for Gold/US30, 1.8 for BTC). Target is generated as the **last step** in the feature pipeline — no future data leaks into features.
 
 ### RF De-Correlated Features (separate from LSTM):
 - Cross-products: RSI×ATR, ADX×Vol, MACD×RSI, BB_pos×ADX, body_ATR_ratio
@@ -345,7 +345,7 @@ SIGNAL → OPEN → PARTIAL_CLOSED → CLOSED
 
 ### SL/TP Calculation
 - Default: SL = 1.5×ATR, TP1 = 1.5×ATR, TP2 = 2.0×ATR
-- **MICRO overrides**: SL = 2.0×ATR, TP1 = 1.5×ATR, TP2 = 2.5×ATR
+- **MICRO overrides**: SL = 2.0×ATR, TP1 = 3.0×ATR, TP2 = 4.0×ATR (RR = 1.5:1)
 - **XAUUSD overrides**: SL = 3.0×ATR, TP1 = 3.0×ATR, TP2 = 4.5×ATR
 - **US30 overrides**: SL = 2.5×ATR, TP1 = 2.5×ATR, TP2 = 3.5×ATR
 
@@ -354,7 +354,7 @@ SIGNAL → OPEN → PARTIAL_CLOSED → CLOSED
 - Otherwise → 1.0% (micro) / 0.5% (standard)
 - Regime just changed → ×0.7
 - DXY contradicts → ×0.5
-- Near-miss signal → ×0.5
+- Near-miss signal (confidence_level == "LOW") → ×0.25 (`NEAR_MISS_RISK_REDUCTION`)
 - Drawdown > 2% → ×0.5 (survival mode)
 - Equity below MA(20) → ×0.5
 
@@ -366,7 +366,7 @@ SIGNAL → OPEN → PARTIAL_CLOSED → CLOSED
 
 ## 9. CONFIGURATION REFERENCE
 
-### Critical Config Values
+### Critical Config Values (v3.3)
 ```python
 MICRO_ACCOUNT_MODE = True          # Simulates $10 account
 SYMBOLS = ["EURUSD","GBPUSD","USDJPY","XAUUSD","US30","BTCUSD"]
@@ -377,7 +377,11 @@ SEQUENCE_LENGTH = 60               # LSTM lookback candles
 ENSEMBLE_ENABLED = True
 ENSEMBLE_CONFLICT_THRESHOLD = 0.50
 ENSEMBLE_DISAGREEMENT_PENALTY = 0.30
-MIN_GLOBAL_SCORE = 0.05           # Relaxed to allow trades
+MIN_GLOBAL_SCORE = 0.35            # v3.3: Raised from 0.05 to block weak signals
+ADX_RANGING_THRESHOLD = 20         # v3.3: Tightened from 25 to filter more noise
+NEAR_MISS_RISK_REDUCTION = 0.25    # v3.3: Added — risk multiplier for LOW confidence signals
+MICRO_TP1_ATR_MULT = 3.0           # v3.3: Was 1.5 — RR now 1.5:1
+MICRO_TP2_ATR_MULT = 4.0           # v3.3: Was 2.5 — more profit room
 MAX_CONCURRENT_TRADES = 3
 MAX_DAILY_LOSS_PCT = 5.0
 COOLDOWN_AFTER_LOSSES = 3
@@ -390,35 +394,55 @@ SESSION_NY = (13, 22)
 SESSION_ASIA = (0, 9)
 TRADE_SESSION_ASIA = False         # Asia disabled
 MAGIC_NUMBER = 121052              # Bot identifier in MT5
+ATR_LOOKAHEAD_MULT = 1.2           # Default target threshold, overridden per-symbol in training
 ```
 
 ---
 
 ## 10. ML MODELS
 
-### LSTM Architecture
+### LSTM Architecture (v3.2 — BiLSTM, smaller)
 ```
-Input: (batch, 60, num_features)  — 60 M5 candles of raw features
-  → LSTM(128, return_sequences=True)
-  → Dropout(0.3) → BatchNorm
-  → LSTM(64)
-  → Dropout(0.2) → BatchNorm
-  → Dense(32, relu)
-  → Dropout(0.1)
+Input: (batch, 60, 25)  — 60 M5 candles × 25 selected features
+  → Bidirectional LSTM(48, return_sequences=True, L2=1e-4)
+  → Dropout(0.5) → BatchNorm
+  → LSTM(32, L2=1e-4)
+  → Dropout(0.4) → BatchNorm
+  → Dense(16, relu, L2=1e-4)
+  → Dropout(0.3)
   → Dense(1, sigmoid)    — Output: probability ∈ [0,1]
 Output: P(bullish) — values > 0.5 indicate BUY tendency
+Total params: 45,985
 ```
 
-- **Scaler**: RobustScaler (outlier-immune)
-- **Training**: Binary crossentropy, Adam(lr=0.001), EarlyStopping(patience=5)
-- **Sample weighting**: 1.5× penalty for samples resembling past losses
-- **Data**: Trained on EURUSD M5 (50K candles) with MTF features
+- **Scaler**: RobustScaler — **fitted on TRAIN data only** (v3.3 leak fix)
+- **Feature Selection**: SelectKBest(f_classif, k=25) from 106 features, fitted on train only
+- **Training**: Binary crossentropy, Adam(lr=0.0005, clipnorm=1.0), EarlyStopping(patience=10)
+- **Sample weighting**: Balanced class weights via sklearn
+- **Data**: Per-symbol training (17,280 M5 candles each) with MTF features
+- **Split**: 80/20 chronological on raw data BEFORE scaling (leak-free)
 
 ### Random Forest
 - **Purpose**: De-correlated from LSTM (sees interaction features, NOT raw sequences)
 - **Config**: 200 trees, max_depth=10, balanced class weights
-- **Scaler**: RobustScaler
+- **Scaler**: RobustScaler (fitted on train only — was always correct)
 - **Retraining**: Every 24 hours or 288 candles (currently uses saved model)
+
+### Per-Symbol Model Registry
+- Each symbol has its own LSTM + RF models: `lstm_model_{SYMBOL}.h5`, `rf_model_{SYMBOL}.joblib`
+- `model_registry.py` auto-loads all models and routes predictions by symbol
+- Universal RF fallback trained on all symbols combined (for missing models)
+
+### ⚠️ HONEST MODEL PERFORMANCE (Post Leak-Fix, May 2026)
+| Symbol | LSTM Test | RF Test | LSTM Gap | Assessment |
+|--------|-----------|---------|----------|------------|
+| EURUSD | 49.6% | 55.2% | 10.6% | LSTM = random |
+| GBPUSD | 54.0% | 57.2% | 6.5% | Best performer |
+| USDJPY | 45.5% | 53.9% | 15.4% | LSTM below random |
+| XAUUSD | 45.5% | 52.1% | 9.1% | LSTM below random |
+| US30 | 49.9% | 53.9% | 11.5% | LSTM = random |
+
+**Reality**: LSTM predictions cluster in 0.45-0.55 noise zone. RF is the only useful model (52-57%). The ensemble thresholds (BUY>0.65) rarely trigger — bot mostly HOLDs.
 
 ---
 
@@ -468,21 +492,47 @@ DXY_strength = tanh(slope20 + slope50×0.5 + RSI_norm×1.5)  ∈ [-1, 1]
 2. **v2.0**: MT5 forex, single LSTM, basic SL/TP
 3. **v3.0**: Multi-symbol portfolio, Random Forest ensemble, trailing stops, partial closes
 4. **v3.1**: Dynamic weighted soft voting, conflict detection, Telegram notifications
-5. **v4.0**: Session-aware strategy, regime persistence, adaptive risk, event-driven evaluation
-6. **v4.1**: Full diagnostics (side, stage, distance), symmetric scoring, additive model
+5. **v3.2**: BiLSTM(48) architecture, feature selection (106→25), per-symbol training
+6. **v3.3**: **Data leakage fix** — scaler fit on train only, session filtering hardened, near-miss logic fixed
 
 ### Key Lessons Learned (from conversation history)
-- **Near-miss signals were unprofitable**: Every loss came through near-miss activation → DISABLED
+- **Near-miss signals were unprofitable**: Every loss came through near-miss activation → risk reduced to 0.25×
 - **XAUUSD needs wider SL/TP**: Gold moves $5-15 per candle, default ATR multipliers too tight → per-symbol overrides added
 - **Binary regime switching caused flip-flop**: Now requires 2 confirmation candles before regime change
 - **Multiplicative scoring was dangerous**: Small adjustments could amplify errors → switched to additive with 8% cap
 - **FOK vs IOC filling**: Some brokers reject IOC → fallback to FOK on error code 10013
+- **Data leakage inflated accuracy**: Scaler was fitted on ALL data (train+test) before split. After fix, LSTM accuracy dropped from ~52% to ~49% average — revealing the model was never truly learning
+- **Session filtering used stale tick time**: `tick.time` from MT5 can be hours old during low liquidity. Fixed to use `datetime.utcnow()` as sole time source
+- **LSTM is effectively dead weight**: Post leak-fix, predictions cluster in 0.45-0.55 noise zone. RF carries the ensemble alone
+
+### v3.3 Fixes Applied (May 2026 Session)
+
+**1. Data Leakage Fix (`lstm_model.py`)**
+- **Bug**: `scaler.fit(df[ALL].values)` fitted on entire dataset before train/test split
+- **Fix**: Split raw data first → `scaler.fit(features[:split_raw])` on train only
+- **Impact**: LSTM test accuracy dropped (expected — was artificially inflated)
+
+**2. Session Filtering Fix (`trade_manager.py`)**
+- **Bug**: `is_in_trading_session()` and `get_active_session()` used `tick.time` which can be stale
+- **Fix**: Both functions now use `datetime.datetime.utcnow()` as sole time source
+- **Impact**: Asia session leakage eliminated
+
+**3. Near-Miss Risk Logic (`main.py`)**
+- **Bug**: Checked `decision_reason == "NEAR_MISS_ACTIVATION"` — a deprecated string never set by ensemble v4.2
+- **Fix**: Now checks `confidence_level == "LOW"`, applies `Config.NEAR_MISS_RISK_REDUCTION` (0.25)
+
+**4. LSTM Feature Selection Mismatch (`model_registry.py`)**
+- **Bug**: Passed 106 features to model expecting 25 → `ValueError`
+- **Fix**: Applied `scaler.selected_indices_` during inference to select the correct 25 features
 
 ### Active Concerns
+- **LSTM is non-functional**: 45-54% accuracy on binary = coin flip. Consider replacing with gradient boosting or removing entirely
+- **Ensemble thresholds too high**: BUY>0.65 almost never triggers with LSTM~0.50 and RF~0.55. Bot mostly HOLDs
+- **M5 data window too short**: 17,280 candles = ~12 trading days. Non-stationary patterns don't generalize
 - MICRO_ACCOUNT_MODE should be set to False when balance grows past $100
 - Asia session trading is DISABLED (low liquidity)
 - Telegram is DISABLED (set TELEGRAM_ENABLED=True after setup)
-- `DIAGNOSTIC_MODE = False` — when True, uses relaxed thresholds (for testing only)
+- BTCUSD training fails — symbol not available in MT5 broker
 
 ---
 
@@ -490,8 +540,11 @@ DXY_strength = tanh(slope20 + slope50×0.5 + RSI_norm×1.5)  ∈ [-1, 1]
 
 ### Prerequisites
 1. MetaTrader 5 installed and open with "Allow Algorithmic Trading" checked
-2. Python 3.10+ with venv
-3. Trained models exist: `lstm_model.h5`, `lstm_scaler.joblib`, `rf_model.joblib`
+2. Python 3.8+ with venv
+3. Per-symbol trained models exist (generated by `train_offline.py`):
+   - `lstm_model_{SYMBOL}.h5` + `lstm_scaler_{SYMBOL}.joblib` per symbol
+   - `rf_model_{SYMBOL}.joblib` + `rf_scaler_{SYMBOL}.joblib` + `rf_features_{SYMBOL}.joblib` per symbol
+   - `rf_model_universal.joblib` (fallback)
 
 ### First-Time Setup
 ```powershell
@@ -572,82 +625,64 @@ macro_context.py imports:
 
 ---
 
-## 15. 🚨 IN-PROGRESS MIGRATION: Multi-Symbol Training
+## 15. MULTI-SYMBOL TRAINING (✅ COMPLETE)
 
-### The Problem (Critical)
-The LSTM and RF models are trained on **EURUSD only** (50K candles), but the bot trades **6 symbols** including XAUUSD, BTCUSD, and US30 — assets with completely different behavior. This means the models are effectively "blind" to 5 of 6 symbols.
+### Status: Fully Operational
+All per-symbol models are trained and integrated. `main.py` uses `ModelRegistry` for routing.
 
-### What Was Done (by Claude in a previous session)
-`train_offline.py` was **completely rewritten** (127 lines → 670 lines) to support per-symbol training:
+### Per-Symbol Config
+| Symbol | M5 Candles | ATR Mult | LSTM Acc | RF Acc | Status |
+|--------|-----------|----------|----------|--------|--------|
+| EURUSD | 17,280 | 1.2 | 49.6% | 55.2% | ✅ |
+| GBPUSD | 17,280 | 1.2 | 54.0% | 57.2% | ✅ |
+| USDJPY | 17,280 | 1.2 | 45.5% | 53.9% | ✅ |
+| XAUUSD | 17,280 | 1.5 | 45.5% | 52.1% | ✅ |
+| US30 | 17,280 | 1.5 | 49.9% | 53.9% | ✅ |
+| BTCUSD | 17,280 | 1.8 | — | — | ❌ Not in broker |
 
-**1. `SYMBOL_CONFIGS` dictionary** — per-symbol training parameters:
-| Symbol | M5 Candles | ATR Lookahead Mult | Reason |
-|--------|-----------|-------------------|--------|
-| EURUSD | 50,000 | 1.2 | Baseline, stable |
-| GBPUSD | 50,000 | 1.2 | Slightly more volatile |
-| USDJPY | 50,000 | 1.2 | Range-bound tendency |
-| XAUUSD | 40,000 | 1.5 | High volatility ($5-15/candle) |
-| US30 | 40,000 | 1.5 | News-driven index |
-| BTCUSD | 40,000 | 1.8 | Extreme crypto noise |
-
-**2. Per-symbol model files** (naming convention):
+### Model Files (per symbol)
 ```
-lstm_model_{SYMBOL}.h5      + lstm_scaler_{SYMBOL}.joblib
-rf_model_{SYMBOL}.joblib     + rf_scaler_{SYMBOL}.joblib + rf_features_{SYMBOL}.joblib
+lstm_model_{SYMBOL}.h5       + lstm_scaler_{SYMBOL}.joblib
+rf_model_{SYMBOL}.joblib      + rf_scaler_{SYMBOL}.joblib + rf_features_{SYMBOL}.joblib
+rf_model_universal.joblib     (fallback for missing symbols)
 ```
 
-**3. Universal fallback model** — trained on ALL symbols combined (with price normalized to % change + `symbol_id` feature). Used when a specific symbol's model is missing.
-
-**4. `model_registry.py`** — auto-generated by `train_offline.py` when training completes. Provides:
+### Integration
 ```python
 from model_registry import ModelRegistry
-registry = ModelRegistry()
-lstm_prob = registry.predict_lstm("XAUUSD", df_processed)  # auto-fallback
-rf_prob   = registry.predict_rf("XAUUSD", df_processed)    # auto-fallback
+registry = ModelRegistry()  # auto-loads all per-symbol models
+lstm_prob = registry.predict_lstm("XAUUSD", df_processed)  # with feature selection
+rf_prob   = registry.predict_rf("XAUUSD", df_processed)    # with column alignment
 ```
 
-### ⚠️ What Is NOT Done Yet (Action Required)
-
-> [!CAUTION]
-> The following 3 integration steps have NOT been completed. The bot currently still runs on the old single-model system.
-
-**Step 1: `config.py` — Missing `ATR_LOOKAHEAD_MULT`**
-`train_offline.py` references `Config.ATR_LOOKAHEAD_MULT` but it doesn't exist in `config.py`. Must add:
-```python
-ATR_LOOKAHEAD_MULT = 1.2  # Default, overridden per-symbol during training
+### Data Leakage Pipeline (v3.3 — Leak-Free)
 ```
-
-**Step 2: Run `python train_offline.py`**
-This generates:
-- 6 × LSTM models + scalers
-- 6 × RF models + scalers + feature lists
-- 1 × universal RF fallback
-- `model_registry.py` file
-
-**Step 3: Update `main.py` to use `ModelRegistry`**
-Currently `main.py` line 224 still loads: `lstm_model_path = "lstm_model.h5"` (single model).
-Must replace with:
-```python
-from model_registry import ModelRegistry
-registry = ModelRegistry()
-
-# In evaluation loop, change:
-# OLD: lstm_prob = lstm_model.predict(seq)
-# NEW: lstm_prob = registry.predict_lstm(symbol, df_processed)
-# OLD: rf_prob = rf_engine.predict_proba(df)
-# NEW: rf_prob = registry.predict_rf(symbol, df_processed)
+1. Drop rows without Target
+2. Split raw data 80/20 chronologically
+3. Fit RobustScaler on TRAIN portion ONLY  ← v3.3 fix
+4. Transform all data using train statistics
+5. Build sequences (lookback=60)
+6. Split sequences at boundary matching raw split
+7. SelectKBest(k=25) on train sequences only
+8. Train BiLSTM(48) + LSTM(32) with balanced class weights
 ```
-
-### Current State Summary
-| Component | Status |
-|-----------|--------|
-| `train_offline.py` rewrite | ✅ Complete (670 lines) |
-| `SYMBOL_CONFIGS` | ✅ Defined in train_offline.py |
-| `model_registry.py` code | ✅ Written (embedded in train_offline.py, auto-saved on run) |
-| `config.py` ATR_LOOKAHEAD_MULT | ❌ **Not added** |
-| Training execution | ❌ **Not run yet** (no per-symbol model files exist) |
-| `main.py` integration | ❌ **Not updated** (still uses single EURUSD model) |
 
 ---
 
-> **END OF HANDOVER** — This document covers 100% of the codebase. Any AI reading this should be able to modify, debug, or extend any part of the system.
+## 16. 🔴 CRITICAL: NEXT STEPS NEEDED
+
+The leak fix revealed that the LSTM component provides no value. The bot needs architectural changes:
+
+| Option | Description | Effort |
+|--------|-------------|--------|
+| **A: Remove LSTM** | Run RF-only ensemble, lower thresholds | Low |
+| **B: More data** | Increase to 100K+ candles per symbol | Low (config change) |
+| **C: Higher timeframe** | Switch from M5 to H1/H4 for stronger patterns | Medium |
+| **D: Replace LSTM** | Use XGBoost/LightGBM instead of deep learning | Medium |
+| **E: Walk-forward** | Rolling window retraining every N days | High |
+
+---
+
+> **END OF HANDOVER (Updated: May 4, 2026)** — This document covers 100% of the codebase. Any AI reading this should be able to modify, debug, or extend any part of the system.
+>
+> **Last session changes**: v3.3 data leakage fix (scaler fitted on train only), session filtering hardened (utcnow), near-miss risk logic fixed, LSTM feature selection mismatch resolved. All models retrained with leak-free pipeline.

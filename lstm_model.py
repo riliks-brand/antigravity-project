@@ -88,24 +88,43 @@ def apply_feature_selection(X_seq, selected_indices):
 def prepare_sequential_data(df, sequence_length=Config.SEQUENCE_LENGTH):
     """
     Prepares sequential data for LSTM training.
-    v3.2: Adds feature selection step to reduce from 106 → 40 features.
+    
+    v3.3 FIX: Scaler now fits on TRAIN data only (was fitting on ALL data = data leakage).
+    
+    Pipeline order (leak-free):
+    1. Drop rows without Target
+    2. Determine train/test split point on RAW data
+    3. Fit scaler on train portion ONLY
+    4. Transform all data using train statistics
+    5. Build sequences
+    6. Split sequences at boundary matching the raw split
+    7. Feature selection on train sequences only
     """
     logger.info("Preparing sequential data (lookback=%d, top_features=%d)...",
                 sequence_length, TOP_K_FEATURES)
 
     import pandas as pd
 
-    # Scale features
-    scaler = RobustScaler()
     feature_cols = [c for c in df.columns if c != 'Target']
-    scaler.fit(df[feature_cols].values)
 
-    df_train = df.dropna(subset=['Target'])
-    target = df_train['Target'].values
-    features = df_train[feature_cols].values
+    # Step 1: Keep only rows with valid Target
+    df_valid = df.dropna(subset=['Target'])
+    target = df_valid['Target'].values
+    features = df_valid[feature_cols].values
+
+    # Step 2: Determine split point on RAW data (80% train / 20% test)
+    split_raw = int(len(features) * 0.8)
+    logger.info("[LeakFix] Raw data: %d rows | Train boundary: row %d | Test: row %d+",
+                len(features), split_raw, split_raw)
+
+    # Step 3: Fit scaler on TRAIN portion ONLY (fixes the leakage)
+    scaler = RobustScaler()
+    scaler.fit(features[:split_raw])
+
+    # Step 4: Transform ALL data using train-derived statistics
     features_scaled = scaler.transform(features)
 
-    # Build sequences
+    # Step 5: Build sequences
     X, y = [], []
     for i in range(len(features_scaled) - sequence_length):
         X.append(features_scaled[i:i + sequence_length])
@@ -114,13 +133,19 @@ def prepare_sequential_data(df, sequence_length=Config.SEQUENCE_LENGTH):
     X = np.array(X)   # (n, seq_len, n_features)
     y = np.array(y)
 
-    # Chronological 80/20 split BEFORE feature selection
-    # (لازم نعمل selection على train فقط عشان منعملش data leakage)
-    split_index = int(len(X) * 0.8)
-    X_train_raw, X_test_raw = X[:split_index], X[split_index:]
-    y_train, y_test = y[:split_index], y[split_index:]
+    # Step 6: Split sequences at boundary matching raw split
+    # Sequence at index i has target = target[i + sequence_length]
+    # First test target should be target[split_raw], so seq_split = split_raw - sequence_length
+    seq_split = split_raw - sequence_length
+    seq_split = max(1, min(seq_split, len(X) - 1))  # safety clamp
 
-    # Feature selection — based on last timestep of training data only
+    X_train_raw, X_test_raw = X[:seq_split], X[seq_split:]
+    y_train, y_test = y[:seq_split], y[seq_split:]
+
+    logger.info("[LeakFix] Sequences: %d total | Train: %d | Test: %d",
+                len(X), len(X_train_raw), len(X_test_raw))
+
+    # Step 7: Feature selection — based on last timestep of training data only
     X_train_last = X_train_raw[:, -1, :]   # آخر candle بس للـ scoring
     selector, selected_indices = select_top_features(X_train_last, y_train)
 
@@ -132,7 +157,6 @@ def prepare_sequential_data(df, sequence_length=Config.SEQUENCE_LENGTH):
                 X_train.shape, X_test.shape)
 
     # Sample weights (بسيطة — class balancing بس)
-    # الـ loss-pattern weighting الأصلي كان بيعمل مشكلة أكبر من نفعه
     from sklearn.utils.class_weight import compute_class_weight
     classes = np.unique(y_train)
     weights = compute_class_weight('balanced', classes=classes, y=y_train)
