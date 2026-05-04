@@ -440,23 +440,25 @@ def main():
                     dxy_strength=global_dxy_strength, symbol=symbol
                 )
                 
-                decision_diagnostic = ensemble_predict(
-                    xgb_prob=xgb_prob, rf_prob=rf_prob, current_adx=current_adx,
-                    current_atr=current_atr, atr_series=atr_series, session=session,
-                    diagnostic=True, event_boost=event_boost, h1_trend=h1_trend,
-                    dxy_strength=global_dxy_strength, symbol=symbol
-                )
+                decision = decision_original
                 
-                # --- Dual Evaluation Logging ---
-                if decision_original.direction is None and decision_diagnostic.direction is not None:
-                    logger.info("[%s] 📊 [DUAL] THRESHOLD_BLOCK: Original=HOLD, Diagnostic=%s", symbol, decision_diagnostic.direction)
-                elif decision_original.direction is None and decision_diagnostic.direction is None:
-                    logger.info("[%s] 📊 [DUAL] MODEL_LIMITATION: Original=HOLD, Diagnostic=HOLD", symbol)
-                elif decision_original.direction is not None:
-                    logger.info("[%s] 📊 [DUAL] NATIVE_EXECUTION: Original=%s", symbol, decision_original.direction)
+                if getattr(Config, "DIAGNOSTIC_MODE", False):
+                    decision_diagnostic = ensemble_predict(
+                        xgb_prob=xgb_prob, rf_prob=rf_prob, current_adx=current_adx,
+                        current_atr=current_atr, atr_series=atr_series, session=session,
+                        diagnostic=True, event_boost=event_boost, h1_trend=h1_trend,
+                        dxy_strength=global_dxy_strength, symbol=symbol
+                    )
+                    
+                    # --- Dual Evaluation Logging ---
+                    if decision_original.direction is None and decision_diagnostic.direction is not None:
+                        logger.info("[%s] 📊 [DUAL] THRESHOLD_BLOCK: Original=HOLD, Diagnostic=%s", symbol, decision_diagnostic.direction)
+                    elif decision_original.direction is None and decision_diagnostic.direction is None:
+                        logger.info("[%s] 📊 [DUAL] MODEL_LIMITATION: Original=HOLD, Diagnostic=HOLD", symbol)
+                    elif decision_original.direction is not None:
+                        logger.info("[%s] 📊 [DUAL] NATIVE_EXECUTION: Original=%s", symbol, decision_original.direction)
 
-                # Use diagnostic decision to unblock execution if DIAGNOSTIC_MODE is enabled
-                decision = decision_diagnostic if getattr(Config, "DIAGNOSTIC_MODE", False) else decision_original
+                    decision = decision_diagnostic
 
                 direction = decision.direction
                 base_prob = decision.final_prob

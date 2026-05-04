@@ -68,6 +68,7 @@ def engineer_lagged_features(df: pd.DataFrame, lags: list = None) -> pd.DataFram
         lags = [1, 3, 5]
 
     df_out = df.copy()
+    new_features = {}
 
     # الـ features اللي بنعمل لها lag — أهم الـ indicators
     lag_cols = [
@@ -81,15 +82,19 @@ def engineer_lagged_features(df: pd.DataFrame, lags: list = None) -> pd.DataFram
         if col not in df_out.columns:
             continue
         for lag in lags:
-            df_out[f'{col}_lag{lag}'] = df_out[col].shift(lag)
+            new_features[f'{col}_lag{lag}'] = df_out[col].shift(lag)
 
         # Rolling stats على window 5
-        df_out[f'{col}_roll5_mean'] = df_out[col].rolling(5).mean()
-        df_out[f'{col}_roll5_std'] = df_out[col].rolling(5).std()
+        new_features[f'{col}_roll5_mean'] = df_out[col].rolling(5).mean()
+        new_features[f'{col}_roll5_std'] = df_out[col].rolling(5).std()
 
         # Delta (momentum)
-        df_out[f'{col}_delta1'] = df_out[col].diff(1)
-        df_out[f'{col}_delta3'] = df_out[col].diff(3)
+        new_features[f'{col}_delta1'] = df_out[col].diff(1)
+        new_features[f'{col}_delta3'] = df_out[col].diff(3)
+
+    if new_features:
+        new_df = pd.DataFrame(new_features, index=df_out.index)
+        df_out = pd.concat([df_out, new_df], axis=1)
 
     logger.info("[XGB] Lagged feature engineering complete. Shape: %s", df_out.shape)
     return df_out
