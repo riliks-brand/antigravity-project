@@ -1014,20 +1014,15 @@ class TradeManager:
     @staticmethod
     def get_active_session(symbol=None):
         """
-        Detect the current active trading session based on MT5 server time.
+        Detect the current active trading session based on UTC time.
+
+        v3.3 FIX: Uses datetime.utcnow() directly (same fix as is_in_trading_session).
+        Previously used tick.time which can be stale during low-liquidity hours.
 
         Returns:
             str: "London", "New York", "Asia", or "UNKNOWN"
         """
-        import MetaTrader5 as mt5
-
-        sym = symbol or getattr(Config, "SYMBOL", "EURUSD")
-        tick = mt5.symbol_info_tick(sym)
-        if not tick:
-            return "UNKNOWN"
-
-        server_time = datetime.datetime.utcfromtimestamp(tick.time)
-        hour = server_time.hour
+        hour = datetime.datetime.utcnow().hour
 
         # Check sessions in priority order (London > NY overlap prioritizes London)
         if Config.SESSION_LONDON[0] <= hour < Config.SESSION_LONDON[1]:
@@ -1035,16 +1030,6 @@ class TradeManager:
         if Config.SESSION_NY[0] <= hour < Config.SESSION_NY[1]:
             return "New York"
         if Config.SESSION_ASIA[0] <= hour < Config.SESSION_ASIA[1]:
-            return "Asia"
-
-        # Fallback: use Python UTC time (server time might be offset)
-        utc_hour = datetime.datetime.utcnow().hour
-        logger.debug("[Session] Server hour=%d returned UNKNOWN, trying UTC fallback hour=%d", hour, utc_hour)
-        if Config.SESSION_LONDON[0] <= utc_hour < Config.SESSION_LONDON[1]:
-            return "London"
-        if Config.SESSION_NY[0] <= utc_hour < Config.SESSION_NY[1]:
-            return "New York"
-        if Config.SESSION_ASIA[0] <= utc_hour < Config.SESSION_ASIA[1]:
             return "Asia"
 
         return "UNKNOWN"
