@@ -96,11 +96,18 @@ class ModelRegistry:
             feature_cols = [c for c in df_processed.columns if c != "Target"]
             scaled = scaler.transform(df_processed[feature_cols].values)
 
+            # Apply feature selection — the scaler stores selected_indices_
+            # from training (SelectKBest: 106 → 25 features)
+            selected_indices = getattr(scaler, 'selected_indices_', None)
+            if selected_indices is not None:
+                scaled = scaled[:, selected_indices]
+
             if len(scaled) < sequence_length:
                 return 0.5
 
+            n_features = scaled.shape[1]
             seq = scaled[-sequence_length:]
-            seq = seq.reshape(1, sequence_length, len(feature_cols))
+            seq = seq.reshape(1, sequence_length, n_features)
             prob = float(model.predict(seq, verbose=0)[0][0])
             return prob
 

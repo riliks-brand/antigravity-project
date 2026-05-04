@@ -566,7 +566,7 @@ def main():
                 dir_ = opp["direction"]
                 score = opp["rank_score"]
                 atr = opp["current_atr"]
-                is_near_miss = opp.get("decision_reason") == "NEAR_MISS_ACTIVATION"
+                is_near_miss = opp.get("confidence_level") == "LOW"
                 
                 # 1. Global Trade Guard
                 can_trade, guard_reason = manager.can_trade(sym, dir_, candle_index, is_near_miss=is_near_miss)

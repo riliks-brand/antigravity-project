@@ -1053,50 +1053,37 @@ class TradeManager:
     def is_in_trading_session(symbol=None):
         """
         Check if current server time is within an active session.
-        Uses MT5 server time, NOT local clock.
+        
+        v3.3 FIX: Uses datetime.utcnow() as PRIMARY time source.
+        Previously used tick.time which returns the LAST tick timestamp —
+        during Asia hours this was stale from London/NY, causing 45+ trades
+        to leak through despite TRADE_SESSION_ASIA = False.
         """
-        import MetaTrader5 as mt5
-
         if not Config.TRADE_ONLY_IN_SESSIONS:
             return True, "Session filter disabled"
 
-        sym = symbol or getattr(Config, "SYMBOL", "EURUSD")
-        tick = mt5.symbol_info_tick(sym)
-        if not tick:
-            return True, "Cannot get server time, allowing trade"
-
-        server_time = datetime.datetime.utcfromtimestamp(tick.time)
-        hour = server_time.hour
+        # PRIMARY: Use system UTC time (always current, never stale)
+        utc_now = datetime.datetime.utcnow()
+        hour = utc_now.hour
 
         london = Config.SESSION_LONDON[0] <= hour < Config.SESSION_LONDON[1]
         ny = Config.SESSION_NY[0] <= hour < Config.SESSION_NY[1]
         asia = Config.SESSION_ASIA[0] <= hour < Config.SESSION_ASIA[1]
 
+        # Check enabled sessions in priority order
         if london and getattr(Config, "TRADE_SESSION_LONDON", True):
-            return True, f"In London session (Server Hour: {hour})"
+            return True, f"In London session (UTC Hour: {hour})"
         if ny and getattr(Config, "TRADE_SESSION_NY", True):
-            return True, f"In New York session (Server Hour: {hour})"
+            return True, f"In New York session (UTC Hour: {hour})"
         if asia and getattr(Config, "TRADE_SESSION_ASIA", True):
-            return True, f"In Asia session (Server Hour: {hour})"
+            return True, f"In Asia session (UTC Hour: {hour})"
 
+        # We're in a session but it's disabled
         if london or ny or asia:
             session_name = "London" if london else ("New York" if ny else "Asia")
-            return False, f"In {session_name} session, but trading is disabled for this session (Server Hour: {hour})"
+            return False, f"In {session_name} session, but trading is disabled for this session (UTC Hour: {hour})"
 
-        # Fallback: use Python UTC time (MetaQuotes server may be UTC+3)
-        utc_hour = datetime.datetime.utcnow().hour
-        london_utc = Config.SESSION_LONDON[0] <= utc_hour < Config.SESSION_LONDON[1]
-        ny_utc = Config.SESSION_NY[0] <= utc_hour < Config.SESSION_NY[1]
-        asia_utc = Config.SESSION_ASIA[0] <= utc_hour < Config.SESSION_ASIA[1]
-
-        if london_utc and getattr(Config, "TRADE_SESSION_LONDON", True):
-            return True, f"In London session (UTC Fallback Hour: {utc_hour})"
-        if ny_utc and getattr(Config, "TRADE_SESSION_NY", True):
-            return True, f"In New York session (UTC Fallback Hour: {utc_hour})"
-        if asia_utc and getattr(Config, "TRADE_SESSION_ASIA", True):
-            return True, f"In Asia session (UTC Fallback Hour: {utc_hour})"
-
-        return False, f"Outside all sessions (Server Hour: {hour}, UTC Hour: {utc_hour})"
+        return False, f"Outside all sessions (UTC Hour: {hour})"
 
     # =========================================
     # REGIME PERSISTENCE (Anti Noise / Anti Flip-Flop)
