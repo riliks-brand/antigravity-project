@@ -1,13 +1,13 @@
 """
-model_registry.py — Elite Trading Bot v3.2
-===========================================
-Loads and serves per-symbol LSTM + RF models.
+model_registry.py — Elite Trading Bot v4.0 (XGBoost Edition)
+=============================================================
+Loads and serves per-symbol XGBoost + RF models.
 Falls back to universal model if symbol model missing.
 
 Usage in main.py:
     from model_registry import ModelRegistry
     registry = ModelRegistry()
-    lstm_prob = registry.predict_lstm("XAUUSD", df_processed)
+    xgb_prob = registry.predict_xgb("XAUUSD", df_processed)
     rf_prob   = registry.predict_rf("XAUUSD", df_processed)
 """
 
@@ -20,40 +20,39 @@ logger = logging.getLogger("ModelRegistry")
 
 SYMBOLS = ["EURUSD", "GBPUSD", "USDJPY", "XAUUSD", "US30", "BTCUSD"]
 
-def _lstm_path(sym):      return f"lstm_model_{sym}.h5"
-def _scaler_path(sym):    return f"lstm_scaler_{sym}.joblib"
-def _rf_path(sym):        return f"rf_model_{sym}.joblib"
-def _rf_scaler_path(sym): return f"rf_scaler_{sym}.joblib"
-def _rf_feat_path(sym):   return f"rf_features_{sym}.joblib"
+def _xgb_path(sym):       return f"xgb_model_{sym}.joblib"
+def _xgb_scaler_path(sym): return f"xgb_scaler_{sym}.joblib"
+def _xgb_feat_path(sym):  return f"xgb_features_{sym}.joblib"
+def _rf_path(sym):         return f"rf_model_{sym}.joblib"
+def _rf_scaler_path(sym):  return f"rf_scaler_{sym}.joblib"
+def _rf_feat_path(sym):    return f"rf_features_{sym}.joblib"
 
 
 class ModelRegistry:
 
     def __init__(self):
-        self.lstm_models  = {}   # symbol → keras model
-        self.lstm_scalers = {}   # symbol → scaler
+        self.xgb_models   = {}   # symbol → XGBClassifier
+        self.xgb_scalers  = {}   # symbol → scaler (with selected_indices_)
+        self.xgb_features = {}   # symbol → feature list
         self.rf_models    = {}   # symbol → RF model
         self.rf_scalers   = {}   # symbol → scaler
         self.rf_features  = {}   # symbol → feature list
         self._load_all()
 
     def _load_all(self):
-        try:
-            from tensorflow.keras.models import load_model as keras_load
-        except ImportError:
-            keras_load = None
-
         for sym in SYMBOLS + ["universal"]:
-            # LSTM
-            lp = _lstm_path(sym)
-            sp = _scaler_path(sym)
-            if keras_load and os.path.exists(lp) and os.path.exists(sp):
+            # XGBoost
+            xp  = _xgb_path(sym)
+            xsp = _xgb_scaler_path(sym)
+            xfp = _xgb_feat_path(sym)
+            if os.path.exists(xp) and os.path.exists(xsp) and os.path.exists(xfp):
                 try:
-                    self.lstm_models[sym]  = keras_load(lp)
-                    self.lstm_scalers[sym] = load(sp)
-                    logger.info("[Registry] Loaded LSTM for %s", sym)
+                    self.xgb_models[sym]   = load(xp)
+                    self.xgb_scalers[sym]  = load(xsp)
+                    self.xgb_features[sym] = load(xfp)
+                    logger.info("[Registry] Loaded XGB for %s", sym)
                 except Exception as e:
-                    logger.warning("[Registry] Failed to load LSTM %s: %s", sym, e)
+                    logger.warning("[Registry] Failed to load XGB %s: %s", sym, e)
 
             # RF
             rp  = _rf_path(sym)
@@ -68,11 +67,10 @@ class ModelRegistry:
                 except Exception as e:
                     logger.warning("[Registry] Failed to load RF %s: %s", sym, e)
 
-        logger.info("[Registry] Loaded LSTM for: %s", list(self.lstm_models.keys()))
+        logger.info("[Registry] Loaded XGB for: %s", list(self.xgb_models.keys()))
         logger.info("[Registry] Loaded RF for:   %s", list(self.rf_models.keys()))
 
     def _resolve_sym(self, symbol, model_dict):
-        """Returns symbol key — falls back to universal if missing."""
         if symbol in model_dict:
             return symbol
         if "universal" in model_dict:
@@ -80,32 +78,45 @@ class ModelRegistry:
             return "universal"
         return None
 
-    def predict_lstm(self, symbol: str, df_processed, sequence_length=60) -> float:
+    def predict_xgb(self, symbol: str, df_processed) -> float:
         """
-        Returns LSTM probability ∈ [0,1] for the given symbol.
+        Returns XGBoost probability ∈ [0,1] for the given symbol.
         Falls back to 0.5 if model unavailable.
         """
-        key = self._resolve_sym(symbol, self.lstm_models)
+        key = self._resolve_sym(symbol, self.xgb_models)
         if key is None:
             return 0.5
 
         try:
-            model  = self.lstm_models[key]
-            scaler = self.lstm_scalers[key]
+            from xgb_model import engineer_lagged_features
+            model    = self.xgb_models[key]
+            scaler   = self.xgb_scalers[key]
+            features = self.xgb_features[key]
 
-            feature_cols = [c for c in df_processed.columns if c != "Target"]
-            scaled = scaler.transform(df_processed[feature_cols].values)
+            df_lagged = engineer_lagged_features(df_processed)
+            df_lagged = df_lagged.drop("Target", axis=1, errors="ignore")
+            latest = df_lagged.iloc[-1:].fillna(0)
 
-            if len(scaled) < sequence_length:
-                return 0.5
+            all_cols = getattr(scaler, "all_feature_cols_", features)
+            for col in all_cols:
+                if col not in latest.columns:
+                    latest[col] = 0.0
 
-            seq = scaled[-sequence_length:]
-            seq = seq.reshape(1, sequence_length, len(feature_cols))
-            prob = float(model.predict(seq, verbose=0)[0][0])
-            return prob
+            selected_indices = getattr(scaler, "selected_indices_", None)
+            if selected_indices is not None:
+                X = latest[all_cols].values[:, selected_indices]
+            else:
+                for col in features:
+                    if col not in latest.columns:
+                        latest[col] = 0.0
+                X = latest[features].values
+
+            X_scaled = scaler.transform(X)
+            proba = model.predict_proba(X_scaled)[0]
+            return float(proba[1]) if len(proba) > 1 else 0.5
 
         except Exception as e:
-            logger.error("[Registry] LSTM predict error for %s: %s", symbol, e)
+            logger.error("[Registry] XGB predict error for %s: %s", symbol, e)
             return 0.5
 
     def predict_rf(self, symbol: str, df_processed) -> float:

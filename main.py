@@ -1,18 +1,17 @@
 """
-Main Loop — Elite v3.1 (Ensemble Edition)
-============================================
+Main Loop — Elite v4.0 (XGBoost Ensemble Edition)
+====================================================
 The master orchestrator that ties ALL systems together.
 
 Architecture:
-  Data (MT5) → Features → [LSTM + RF] → Ensemble Voting → Hybrid Filters
+  Data (MT5) → Features → [XGBoost + RF] → Ensemble Voting → Hybrid Filters
   → Trade Manager → Execute → Notify (Telegram)
 
-New in v3.1:
-- Ensemble Engine (Dynamic Weighted Soft Voting)
-- Conflict Detection & Disagreement Penalty
-- RF De-correlated Features
-- Telegram Notifications (Spam-Controlled)
-- Comprehensive Ensemble Decision Logging
+v4.0 Changes:
+- XGBoost replaced LSTM as primary model (LSTM was ~50% = random)
+- XGBoost + RF ensemble with 55-65% / 35-45% dynamic weighting
+- Per-symbol models via ModelRegistry
+- Lagged feature engineering for XGBoost tabular context
 """
 
 import sys
@@ -164,10 +163,10 @@ def apply_hybrid_filters(processed_df, direction, symbol, server_time=None):
 
 def main():
     print("\n" + "=" * 65)
-    print("  🚀 ELITE TRADING BOT v3.1 — MULTI-SYMBOL PORTFOLIO")
+    print("  🚀 ELITE TRADING BOT v4.0 — MULTI-SYMBOL PORTFOLIO (XGBoost Edition)")
     print("=" * 65)
     print("  📊 Data Source   : MetaTrader 5 (Native)")
-    print("  🧠 Intelligence : LSTM + Random Forest (Voting)")
+    print("  🧠 Intelligence : XGBoost + Random Forest (Voting)")
     print("  ⚙️  Execution     : Portfolio Manager & Ranker")
     print("  🛡️  Risk Engine   : Equity Curve + Kill Switch + Drawdown Survival")
     print("  📰 News Filter   : ForexFactory (High Impact)")
@@ -197,8 +196,8 @@ def main():
     manager.reset_daily_stats(get_account_balance())
     global_dxy_strength = 0.0
 
-    # Retrain RF immediately on startup
-    logger.info("Initializing Random Forest Ensemble...")
+    # Retrain XGBoost immediately on startup
+    logger.info("Initializing XGBoost + Random Forest Ensemble...")
 
     # ===== PHASE 3: Initialize Notifier =====
     from notifier import get_notifier
@@ -394,8 +393,8 @@ def main():
                     except Exception as e:
                         logger.error("[SmartExit] Evaluation error for %s: %s", symbol, e)
 
-                # ===== LSTM PREDICTION (via ModelRegistry — per-symbol) =====
-                lstm_prob = registry.predict_lstm(symbol, processed_df)
+                # ===== XGBoost PREDICTION (via ModelRegistry — per-symbol) =====
+                xgb_prob = registry.predict_xgb(symbol, processed_df)
 
                 # ===== RANDOM FOREST PREDICTION (via ModelRegistry — per-symbol) =====
                 rf_prob = 0.5
@@ -435,14 +434,14 @@ def main():
 
                 # ===== ENSEMBLE PREDICTION (Session-Aware) =====
                 decision_original = ensemble_predict(
-                    lstm_prob=lstm_prob, rf_prob=rf_prob, current_adx=current_adx,
+                    xgb_prob=xgb_prob, rf_prob=rf_prob, current_adx=current_adx,
                     current_atr=current_atr, atr_series=atr_series, session=session,
                     diagnostic=False, event_boost=event_boost, h1_trend=h1_trend,
                     dxy_strength=global_dxy_strength, symbol=symbol
                 )
                 
                 decision_diagnostic = ensemble_predict(
-                    lstm_prob=lstm_prob, rf_prob=rf_prob, current_adx=current_adx,
+                    xgb_prob=xgb_prob, rf_prob=rf_prob, current_adx=current_adx,
                     current_atr=current_atr, atr_series=atr_series, session=session,
                     diagnostic=True, event_boost=event_boost, h1_trend=h1_trend,
                     dxy_strength=global_dxy_strength, symbol=symbol
@@ -522,7 +521,7 @@ def main():
                     "symbol": symbol,
                     "direction": direction,
                     "rank_score": final_rank_score,
-                    "lstm_prob": lstm_prob,
+                    "xgb_prob": xgb_prob,
                     "rf_prob": rf_prob,
                     "penalty": decision.penalty,
                     "current_atr": current_atr,
@@ -683,7 +682,7 @@ def main():
                     # Telegram Notification
                     notifier.trade_opened(
                         direction=dir_, symbol=sym,
-                        lstm_prob=opp["lstm_prob"], rf_prob=opp["rf_prob"], final_prob=score,
+                        xgb_prob=opp["xgb_prob"], rf_prob=opp["rf_prob"], final_prob=score,
                         entry_price=result["filled_price"], sl_price=result["sl_price"],
                         tp_price=result["tp_price"], lot_size=result["volume"],
                         penalty=opp["penalty"]

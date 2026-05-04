@@ -175,13 +175,16 @@ class TelegramNotifier:
     # HIGH-LEVEL ALERT METHODS
     # =========================================
 
-    def trade_opened(self, direction, symbol, lstm_prob, rf_prob, final_prob,
-                     entry_price, sl_price, tp_price, lot_size, penalty=0):
-        """Send trade entry alert."""
+    def trade_opened(self, direction, symbol, xgb_prob=None, rf_prob=0.5, final_prob=0.5,
+                     entry_price=0, sl_price=0, tp_price=0, lot_size=0, penalty=0,
+                     lstm_prob=None, **kwargs):
+        """Send trade entry alert. Accepts xgb_prob or lstm_prob (backward compat)."""
+        # Backward compatibility: accept lstm_prob as alias
+        model_prob = xgb_prob if xgb_prob is not None else (lstm_prob if lstm_prob is not None else 0.5)
         emoji = "\U0001f7e2" if direction == "BUY" else "\U0001f534"
         text = (
             f"{emoji} *{direction} {symbol}*\n\n"
-            f"\U0001f9e0 LSTM: `{lstm_prob:.1%}` | RF: `{rf_prob:.1%}`\n"
+            f"\U0001f9e0 XGB: `{model_prob:.1%}` | RF: `{rf_prob:.1%}`\n"
             f"\U0001f3af Final: `{final_prob:.1%}` (penalty: `{penalty:.3f}`)\n\n"
             f"\U0001f4b0 Entry: `{entry_price:.5f}`\n"
             f"\U0001f534 SL: `{sl_price:.5f}`\n"

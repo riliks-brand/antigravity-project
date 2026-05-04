@@ -35,7 +35,7 @@ from pathlib import Path
 from config import Config
 from data_loader import fetch_mt5_ohlc
 from features import feature_engineering_pipeline
-from lstm_model import prepare_sequential_data, train_and_evaluate
+from xgb_model import train_and_evaluate_xgb, engineer_lagged_features
 from rf_model import RFModel
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -107,12 +107,13 @@ SYMBOL_CONFIGS = {
 # Symbols to train on (يمكن تغييرها وقت التشغيل)
 TRAIN_SYMBOLS = list(SYMBOL_CONFIGS.keys())
 
-# Model paths pattern: e.g. "lstm_model_EURUSD.h5"
-def lstm_path(symbol):     return f"lstm_model_{symbol}.h5"
-def lstm_scaler_path(symbol): return f"lstm_scaler_{symbol}.joblib"
-def rf_path(symbol):       return f"rf_model_{symbol}.joblib"
-def rf_scaler_path(symbol):  return f"rf_scaler_{symbol}.joblib"
-def rf_features_path(symbol): return f"rf_features_{symbol}.joblib"
+# Model paths pattern: e.g. "xgb_model_EURUSD.joblib"
+def xgb_path(symbol):          return f"xgb_model_{symbol}.joblib"
+def xgb_scaler_path(symbol):   return f"xgb_scaler_{symbol}.joblib"
+def xgb_features_path(symbol): return f"xgb_features_{symbol}.joblib"
+def rf_path(symbol):            return f"rf_model_{symbol}.joblib"
+def rf_scaler_path(symbol):     return f"rf_scaler_{symbol}.joblib"
+def rf_features_path(symbol):   return f"rf_features_{symbol}.joblib"
 
 
 # ─────────────────────────────────────────
@@ -168,7 +169,7 @@ def train_symbol(symbol: str, sym_cfg: dict) -> dict:
 
     result = {
         "symbol": symbol,
-        "lstm_accuracy": 0.0,
+        "xgb_accuracy": 0.0,
         "rf_accuracy": 0.0,
         "train_rows": 0,
         "status": "FAILED",
@@ -205,28 +206,41 @@ def train_symbol(symbol: str, sym_cfg: dict) -> dict:
         target_counts = df_processed['Target'].value_counts()
         logger.info("[%s] Label distribution:\n%s", symbol, target_counts.to_string())
 
-        # ── 3. Train LSTM ──────────────────────────────────────
-        logger.info("[%s] Training LSTM...", symbol)
-        X_train, X_test, y_train, y_test, scaler, base_weights = prepare_sequential_data(df_processed)
-
-        # Balanced class weights (not just loss penalty)
-        train_sample_weights = compute_class_weights(y_train)
-
-        lstm_model, history, lstm_acc = train_and_evaluate(
-            X_train, X_test, y_train, y_test,
-            sample_weights=train_sample_weights
+        # ── 3. Train XGBoost ──────────────────────────────────
+        logger.info("[%s] Training XGBoost...", symbol)
+        xgb_model_obj, xgb_scaler, xgb_acc, xgb_features = train_and_evaluate_xgb(
+            df_processed, symbol=symbol
         )
 
-        # Save LSTM
-        lstm_model.save(lstm_path(symbol))
-        dump(scaler, lstm_scaler_path(symbol))
-        logger.info("[%s] ✅ LSTM saved → %s (acc: %.2f%%)", symbol, lstm_path(symbol), lstm_acc * 100)
+        if xgb_model_obj is None:
+            raise ValueError(f"XGBoost training failed for {symbol}")
 
-        # LSTM prediction distribution
-        lstm_preds = lstm_model.predict(X_test, verbose=0).flatten()
-        visualize_predictions(lstm_preds, "LSTM", symbol)
+        # Save XGBoost
+        from joblib import dump as jdump
+        jdump(xgb_model_obj,  xgb_path(symbol))
+        jdump(xgb_scaler,     xgb_scaler_path(symbol))
+        jdump(xgb_features,   xgb_features_path(symbol))
+        logger.info("[%s] ✅ XGBoost saved → %s (acc: %.2f%%)", symbol, xgb_path(symbol), xgb_acc * 100)
 
-        result["lstm_accuracy"] = round(lstm_acc * 100, 2)
+        # XGBoost prediction distribution
+        from xgb_model import engineer_lagged_features
+        df_lagged = engineer_lagged_features(df_processed).drop('Target', axis=1, errors='ignore')
+        split_idx = int(len(df_lagged) * 0.8)
+        df_test_xgb = df_lagged.iloc[split_idx:].fillna(0)
+        xgb_selected = getattr(xgb_scaler, 'selected_indices_', None)
+        all_cols = getattr(xgb_scaler, 'all_feature_cols_', xgb_features)
+        for col in all_cols:
+            if col not in df_test_xgb.columns:
+                df_test_xgb[col] = 0.0
+        if xgb_selected is not None:
+            X_xgb_test = df_test_xgb[all_cols].values[:, xgb_selected]
+        else:
+            X_xgb_test = df_test_xgb[xgb_features].values
+        X_xgb_test_s = xgb_scaler.transform(X_xgb_test)
+        xgb_preds = xgb_model_obj.predict_proba(X_xgb_test_s)[:, 1]
+        visualize_predictions(xgb_preds, "XGBoost", symbol)
+
+        result["xgb_accuracy"] = round(xgb_acc * 100, 2)
 
         # ── 4. Train RF ────────────────────────────────────────
         logger.info("[%s] Training Random Forest...", symbol)
@@ -394,7 +408,7 @@ def print_summary(results: list):
     print("╔" + "═" * 62 + "╗")
     print("║     MULTI-SYMBOL TRAINING SUMMARY                           ║")
     print("╠" + "═" * 62 + "╣")
-    print(f"║  {'Symbol':<10} {'LSTM Acc':>10} {'RF Acc':>10} {'Rows':>8}  {'Status':<10} ║")
+    print(f"║  {'Symbol':<10} {'XGB Acc':>10} {'RF Acc':>10} {'Rows':>8}  {'Status':<10} ║")
     print("╠" + "═" * 62 + "╣")
 
     total_lstm = 0
@@ -403,10 +417,10 @@ def print_summary(results: list):
 
     for r in results:
         status_icon = "✅" if r["status"] == "SUCCESS" else "❌"
-        print(f"║  {r['symbol']:<10} {r['lstm_accuracy']:>9.1f}% {r['rf_accuracy']:>9.1f}% "
+        print(f"║  {r['symbol']:<10} {r['xgb_accuracy']:>9.1f}% {r['rf_accuracy']:>9.1f}% "
               f"{r['train_rows']:>8,}  {status_icon} {r['status']:<8} ║")
         if r["status"] == "SUCCESS":
-            total_lstm += r["lstm_accuracy"]
+            total_lstm += r["xgb_accuracy"]
             total_rf   += r["rf_accuracy"]
             success_count += 1
 
@@ -426,7 +440,7 @@ def print_summary(results: list):
     print(f"\n📁 Model files saved:")
     for r in results:
         if r["status"] == "SUCCESS":
-            print(f"   - {lstm_path(r['symbol'])} + {lstm_scaler_path(r['symbol'])}")
+            print(f"   - {xgb_path(r['symbol'])} + {xgb_scaler_path(r['symbol'])}")
             print(f"   - {rf_path(r['symbol'])} + {rf_scaler_path(r['symbol'])}")
 
     print(f"\n📁 Universal fallback:")
@@ -442,24 +456,18 @@ INTEGRATION_NOTES = """
 HOW TO INTEGRATE IN main.py / ensemble_engine.py
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. في main.py، غير load الـ models من:
-   ─────────────────────────────────────────
-   lstm_model = load_model("lstm_model.h5")
-   lstm_scaler = joblib.load("lstm_scaler.joblib")
-   rf_engine = RFModel()
-   ─────────────────────────────────────────
-   إلى:
+✅ ALREADY DONE (v4.0):
    ─────────────────────────────────────────
    from model_registry import ModelRegistry
    registry = ModelRegistry()  # بيلود كل الـ models
 
    # في evaluation loop:
-   lstm_prob = registry.predict_lstm(symbol, df_processed)
+   xgb_prob = registry.predict_xgb(symbol, df_processed)
    rf_prob   = registry.predict_rf(symbol, df_processed)
    ─────────────────────────────────────────
 
-2. الـ ModelRegistry موجود في ملف model_registry.py
-   اللي اتنشأ مع الـ training.
+   الـ ModelRegistry موجود في ملف model_registry.py
+   اللي بيتعمل regenerate مع كل training run.
 """
 
 
@@ -467,15 +475,15 @@ HOW TO INTEGRATE IN main.py / ensemble_engine.py
 # MODEL REGISTRY — يُشتغل في main.py
 # ─────────────────────────────────────────
 REGISTRY_CODE = '''"""
-model_registry.py — Elite Trading Bot v3.2
-===========================================
-Loads and serves per-symbol LSTM + RF models.
+model_registry.py — Elite Trading Bot v4.0 (XGBoost Edition)
+=============================================================
+Loads and serves per-symbol XGBoost + RF models.
 Falls back to universal model if symbol model missing.
 
 Usage in main.py:
     from model_registry import ModelRegistry
     registry = ModelRegistry()
-    lstm_prob = registry.predict_lstm("XAUUSD", df_processed)
+    xgb_prob = registry.predict_xgb("XAUUSD", df_processed)
     rf_prob   = registry.predict_rf("XAUUSD", df_processed)
 """
 
@@ -488,40 +496,39 @@ logger = logging.getLogger("ModelRegistry")
 
 SYMBOLS = ["EURUSD", "GBPUSD", "USDJPY", "XAUUSD", "US30", "BTCUSD"]
 
-def _lstm_path(sym):      return f"lstm_model_{sym}.h5"
-def _scaler_path(sym):    return f"lstm_scaler_{sym}.joblib"
-def _rf_path(sym):        return f"rf_model_{sym}.joblib"
-def _rf_scaler_path(sym): return f"rf_scaler_{sym}.joblib"
-def _rf_feat_path(sym):   return f"rf_features_{sym}.joblib"
+def _xgb_path(sym):       return f"xgb_model_{sym}.joblib"
+def _xgb_scaler_path(sym): return f"xgb_scaler_{sym}.joblib"
+def _xgb_feat_path(sym):  return f"xgb_features_{sym}.joblib"
+def _rf_path(sym):         return f"rf_model_{sym}.joblib"
+def _rf_scaler_path(sym):  return f"rf_scaler_{sym}.joblib"
+def _rf_feat_path(sym):    return f"rf_features_{sym}.joblib"
 
 
 class ModelRegistry:
 
     def __init__(self):
-        self.lstm_models  = {}   # symbol → keras model
-        self.lstm_scalers = {}   # symbol → scaler
+        self.xgb_models   = {}   # symbol → XGBClassifier
+        self.xgb_scalers  = {}   # symbol → scaler (with selected_indices_)
+        self.xgb_features = {}   # symbol → feature list
         self.rf_models    = {}   # symbol → RF model
         self.rf_scalers   = {}   # symbol → scaler
         self.rf_features  = {}   # symbol → feature list
         self._load_all()
 
     def _load_all(self):
-        try:
-            from tensorflow.keras.models import load_model as keras_load
-        except ImportError:
-            keras_load = None
-
         for sym in SYMBOLS + ["universal"]:
-            # LSTM
-            lp = _lstm_path(sym)
-            sp = _scaler_path(sym)
-            if keras_load and os.path.exists(lp) and os.path.exists(sp):
+            # XGBoost
+            xp  = _xgb_path(sym)
+            xsp = _xgb_scaler_path(sym)
+            xfp = _xgb_feat_path(sym)
+            if os.path.exists(xp) and os.path.exists(xsp) and os.path.exists(xfp):
                 try:
-                    self.lstm_models[sym]  = keras_load(lp)
-                    self.lstm_scalers[sym] = load(sp)
-                    logger.info("[Registry] Loaded LSTM for %s", sym)
+                    self.xgb_models[sym]   = load(xp)
+                    self.xgb_scalers[sym]  = load(xsp)
+                    self.xgb_features[sym] = load(xfp)
+                    logger.info("[Registry] Loaded XGB for %s", sym)
                 except Exception as e:
-                    logger.warning("[Registry] Failed to load LSTM %s: %s", sym, e)
+                    logger.warning("[Registry] Failed to load XGB %s: %s", sym, e)
 
             # RF
             rp  = _rf_path(sym)
@@ -536,11 +543,10 @@ class ModelRegistry:
                 except Exception as e:
                     logger.warning("[Registry] Failed to load RF %s: %s", sym, e)
 
-        logger.info("[Registry] Loaded LSTM for: %s", list(self.lstm_models.keys()))
+        logger.info("[Registry] Loaded XGB for: %s", list(self.xgb_models.keys()))
         logger.info("[Registry] Loaded RF for:   %s", list(self.rf_models.keys()))
 
     def _resolve_sym(self, symbol, model_dict):
-        """Returns symbol key — falls back to universal if missing."""
         if symbol in model_dict:
             return symbol
         if "universal" in model_dict:
@@ -548,32 +554,45 @@ class ModelRegistry:
             return "universal"
         return None
 
-    def predict_lstm(self, symbol: str, df_processed, sequence_length=60) -> float:
+    def predict_xgb(self, symbol: str, df_processed) -> float:
         """
-        Returns LSTM probability ∈ [0,1] for the given symbol.
+        Returns XGBoost probability ∈ [0,1] for the given symbol.
         Falls back to 0.5 if model unavailable.
         """
-        key = self._resolve_sym(symbol, self.lstm_models)
+        key = self._resolve_sym(symbol, self.xgb_models)
         if key is None:
             return 0.5
 
         try:
-            model  = self.lstm_models[key]
-            scaler = self.lstm_scalers[key]
+            from xgb_model import engineer_lagged_features
+            model    = self.xgb_models[key]
+            scaler   = self.xgb_scalers[key]
+            features = self.xgb_features[key]
 
-            feature_cols = [c for c in df_processed.columns if c != "Target"]
-            scaled = scaler.transform(df_processed[feature_cols].values)
+            df_lagged = engineer_lagged_features(df_processed)
+            df_lagged = df_lagged.drop("Target", axis=1, errors="ignore")
+            latest = df_lagged.iloc[-1:].fillna(0)
 
-            if len(scaled) < sequence_length:
-                return 0.5
+            all_cols = getattr(scaler, "all_feature_cols_", features)
+            for col in all_cols:
+                if col not in latest.columns:
+                    latest[col] = 0.0
 
-            seq = scaled[-sequence_length:]
-            seq = seq.reshape(1, sequence_length, len(feature_cols))
-            prob = float(model.predict(seq, verbose=0)[0][0])
-            return prob
+            selected_indices = getattr(scaler, "selected_indices_", None)
+            if selected_indices is not None:
+                X = latest[all_cols].values[:, selected_indices]
+            else:
+                for col in features:
+                    if col not in latest.columns:
+                        latest[col] = 0.0
+                X = latest[features].values
+
+            X_scaled = scaler.transform(X)
+            proba = model.predict_proba(X_scaled)[0]
+            return float(proba[1]) if len(proba) > 1 else 0.5
 
         except Exception as e:
-            logger.error("[Registry] LSTM predict error for %s: %s", symbol, e)
+            logger.error("[Registry] XGB predict error for %s: %s", symbol, e)
             return 0.5
 
     def predict_rf(self, symbol: str, df_processed) -> float:

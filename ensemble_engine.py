@@ -1,29 +1,22 @@
 """
-Ensemble Engine — Elite v4.2
+Ensemble Engine — Elite v5.0
 ==============================
-RF-First Edition — التغييرات عن v4.1:
+XGBoost Edition — التغييرات عن v4.2:
 
-المشكلة الأصلية في v4.1:
-  - الـ LSTM كان بياخد 80% weight لما trend_strength عالي
-  - لكن LSTM accuracy = 50% = عشوائي
-  - النتيجة: كلما السوق trending أكتر → القرار أسوأ
+المسار C — Hybrid: XGBoost بدل LSTM:
+  - LSTM accuracy = 50% = noise
+  - XGBoost أثبت نفسه في financial time series بشكل متكرر
+  - Gradient boosting على features مهندسة > sequence learning على بيانات قليلة
 
-الإصلاحات في v4.2:
-  1. عكس الـ weights: RF أساس، LSTM modifier بس
-     trend_strength=0 → RF=65%, LSTM=35%
-     trend_strength=1 → RF=55%, LSTM=45%  (RF لسه الأعلى دايماً)
-
-  2. RF Confidence Gate (جديد):
-     لو RF في الـ noise zone (0.43–0.57) → HOLD مباشرة
-     مش معنى يكمل الـ pipeline لو الـ signal ضعيف من الأساس
-
-  3. رفع الـ thresholds لتتوافق مع الـ RF distribution الحقيقية:
-     القديم: BUY > 0.55 (مش كفاية)
-     الجديد: BUY > 0.60 (يتوافق مع Weak BUY في الـ distribution)
-
-  4. الـ conflict detection يبقى على الـ RF direction بس:
-     لو RF بيقول BUY بثقة والـ LSTM بيقول noise → خد RF
-     مش تبلوك الكل عشان LSTM مش شايل حاجة
+التغييرات في v5.0:
+  1. استبدال LSTM بـ XGBoost في الـ ensemble
+  2. XGB-RF ensemble بدل LSTM-RF
+  3. الـ weights محسوبة على نفس المنطق: XGB أساس، RF مكمّل
+     XGB بيشوف lagged features + tabular context
+     RF بيشوف cross-product interactions + rolling stats
+     الاتنين بيكملوا بعض بدل ما يكونوا redundant
+  4. RF Confidence Gate محافظ عليه (أثبت فعاليته)
+  5. تحديث الـ labels في الـ logs من LSTM → XGB
 """
 
 import numpy as np
@@ -49,7 +42,7 @@ class EnsembleDecision:
     """Container for ensemble prediction results — fully explainable and traceable."""
 
     def __init__(self):
-        self.lstm_prob = 0.5
+        self.xgb_prob = 0.5
         self.rf_prob = 0.5
         self.weighted_avg = 0.5
         self.penalty = 0.0
@@ -57,8 +50,8 @@ class EnsembleDecision:
         self.final_prob = 0.5
         self.direction = None
         self.skip_reason = None
-        self.lstm_weight = 0.35
-        self.rf_weight = 0.65
+        self.xgb_weight = 0.55
+        self.rf_weight = 0.45
         self.buy_threshold = 0.60
         self.sell_threshold = 0.40
         self.market_state = "UNKNOWN"
@@ -81,7 +74,7 @@ class EnsembleDecision:
 
     def __repr__(self):
         return (
-            f"EnsembleDecision(LSTM={self.lstm_prob:.4f} x{self.lstm_weight:.0%}, "
+            f"EnsembleDecision(XGB={self.xgb_prob:.4f} x{self.xgb_weight:.0%}, "
             f"RF={self.rf_prob:.4f} x{self.rf_weight:.0%}, "
             f"Penalty={self.penalty:.4f}, Raw={self.raw_score:.4f}, Final={self.final_prob:.4f}, "
             f"Dir={self.direction}, Session={self.session}, Trend={self.trend_strength:.2f}, "
@@ -97,33 +90,28 @@ class EnsembleDecision:
 
 def get_dynamic_weights(trend_strength, session):
     """
-    v4.2: RF-First weighting — RF always dominates.
+    v5.0: XGB-RF dynamic weighting.
 
-    القديم (v4.1):
-        LSTM = 0.5 + (trend_strength * 0.3)  → LSTM يوصل 80% ❌
-        RF   = 0.5 - (trend_strength * 0.3)  → RF ينزل 20% ❌
+    XGBoost بيشوف lagged + tabular features — أقوى في capturing non-linear patterns
+    RF بيشوف interaction features — complementary perspective
+    الاتنين بيكملوا بعض في الـ ensemble.
 
-    الجديد (v4.2):
-        RF   = 0.65 - (trend_strength * 0.10)  → RF بين 55-65% ✅
-        LSTM = 0.35 + (trend_strength * 0.10)  → LSTM بين 35-45% ✅
-
-    Rationale:
-        - RF accuracy = 55-58% = signal حقيقي
-        - LSTM accuracy = 50-52% = noise قريب
-        - الـ LSTM بيضيف context مش بيقود القرار
-        - لما السوق trending: LSTM يبقى شوية أكتر relevant لكن RF لسه الأعلى
+    XGB accuracy متوقع 55-60% (أحسن من LSTM بشكل واضح)
+    لذلك XGB يبقى الـ primary model:
+        trend_strength=0 → XGB=55%, RF=45%  (ranging: RF context أهم)
+        trend_strength=1 → XGB=65%, RF=35%  (trending: XGB lagged features أكتر فائدة)
     """
-    rf_w   = 0.65 - (trend_strength * 0.10)
-    lstm_w = 0.35 + (trend_strength * 0.10)
+    xgb_w = 0.55 + (trend_strength * 0.10)
+    rf_w  = 0.45 - (trend_strength * 0.10)
 
-    # Clamp للأمان
-    rf_w   = float(np.clip(rf_w,   0.55, 0.70))
-    lstm_w = float(np.clip(lstm_w, 0.30, 0.45))
+    # Clamp
+    xgb_w = float(np.clip(xgb_w, 0.50, 0.70))
+    rf_w  = float(np.clip(rf_w,  0.30, 0.50))
 
-    # Re-normalize عشان يجمعوا 1.0
-    total = rf_w + lstm_w
-    rf_w   /= total
-    lstm_w /= total
+    # Re-normalize
+    total = xgb_w + rf_w
+    xgb_w /= total
+    rf_w  /= total
 
     if trend_strength >= 0.6:
         state = "TRENDING"
@@ -133,10 +121,10 @@ def get_dynamic_weights(trend_strength, session):
         state = "TRANSITIONING"
 
     logger.debug(
-        "[Ensemble v4.2] trend_strength=%.3f -> %s | RF=%.1f%% LSTM=%.1f%% | Session=%s",
-        trend_strength, state, rf_w * 100, lstm_w * 100, session
+        "[Ensemble v5.0] trend_strength=%.3f -> %s | XGB=%.1f%% RF=%.1f%% | Session=%s",
+        trend_strength, state, xgb_w * 100, rf_w * 100, session
     )
-    return lstm_w, rf_w, state
+    return xgb_w, rf_w, state
 
 
 # =========================================
@@ -257,7 +245,7 @@ def _rf_confidence_gate(rf_prob, diagnostic=False):
 # =========================================
 
 def ensemble_predict(
-    lstm_prob: float,
+    xgb_prob: float,
     rf_prob: float,
     current_adx: float,
     current_atr: float,
@@ -267,11 +255,17 @@ def ensemble_predict(
     event_boost: float = 0.0,
     h1_trend: int = 0,
     dxy_strength: float = 0.0,
-    symbol: str = "EURUSD"
+    symbol: str = "EURUSD",
+    # backward compat: accept lstm_prob as alias
+    lstm_prob: float = None,
 ) -> EnsembleDecision:
 
+    # Backward compatibility: if old code passes lstm_prob, use it as xgb_prob
+    if lstm_prob is not None and xgb_prob == 0.5:
+        xgb_prob = lstm_prob
+
     decision = EnsembleDecision()
-    decision.lstm_prob = lstm_prob
+    decision.xgb_prob = xgb_prob
     decision.rf_prob = rf_prob
     decision.session = session
 
@@ -289,12 +283,11 @@ def ensemble_predict(
         decision.stage_reached = "ATR_FILTER"
         decision.final_prob = 0.5
         decision.confidence_level = "LOW"
-        logger.warning("[Ensemble v4.2] ⛔ LOW_ATR: ratio=%.3f, atr=%.6f -> SKIP", atr_ratio, current_atr)
+        logger.warning("[Ensemble v5.0] ⛔ LOW_ATR: ratio=%.3f, atr=%.6f -> SKIP", atr_ratio, current_atr)
         _log_decision(decision, current_adx, current_atr)
         return decision
 
-    # ── Step 2.5: v4.2 RF Confidence Gate ──────────────────────
-    # جديد: لو RF في noise zone → HOLD مباشرة بدون تكملة الـ pipeline
+    # ── Step 2.5: RF Confidence Gate ────────────────────────────
     if not _rf_confidence_gate(rf_prob, diagnostic):
         decision.direction = None
         decision.decision_reason = "RF_NOISE_ZONE"
@@ -305,29 +298,27 @@ def ensemble_predict(
         _log_decision(decision, current_adx, current_atr)
         return decision
 
-    # ── Step 3: v4.2 RF-First Dynamic Weights ──────────────────
-    lstm_w, rf_w, market_state = get_dynamic_weights(trend_strength, session)
-    decision.lstm_weight = lstm_w
+    # ── Step 3: v5.0 XGB-RF Dynamic Weights ────────────────────
+    xgb_w, rf_w, market_state = get_dynamic_weights(trend_strength, session)
+    decision.xgb_weight = xgb_w
     decision.rf_weight = rf_w
     decision.market_state = market_state
 
     # ── Step 4: Weighted Average ────────────────────────────────
-    weighted_avg = (lstm_w * lstm_prob) + (rf_w * rf_prob)
+    weighted_avg = (xgb_w * xgb_prob) + (rf_w * rf_prob)
     decision.weighted_avg = weighted_avg
 
     # ── Step 5: Conflict Detection ──────────────────────────────
-    # v4.2 تغيير: الـ conflict يبنى على الـ RF direction كـ anchor
-    # لو RF > 0.57 (BUY) والـ LSTM < 0.43 (SELL) → hard block
-    # لو RF > 0.57 (BUY) والـ LSTM في noise (0.43-0.57) → خد RF، penalty بسيطة
-    disagreement = abs(lstm_prob - rf_prob)
+    # XGB أخذ مكان LSTM كـ primary signal
+    disagreement = abs(xgb_prob - rf_prob)
 
-    rf_says_buy  = rf_prob > RF_NOISE_UPPER
-    rf_says_sell = rf_prob < RF_NOISE_LOWER
-    lstm_says_buy  = lstm_prob > 0.55
-    lstm_says_sell = lstm_prob < 0.45
+    rf_says_buy   = rf_prob  > RF_NOISE_UPPER
+    rf_says_sell  = rf_prob  < RF_NOISE_LOWER
+    xgb_says_buy  = xgb_prob > 0.55
+    xgb_says_sell = xgb_prob < 0.45
 
-    # Hard conflict: RF و LSTM في اتجاهين مختلفين بثقة
-    if (rf_says_buy and lstm_says_sell) or (rf_says_sell and lstm_says_buy):
+    # Hard conflict: XGB و RF في اتجاهين مختلفين بثقة
+    if (rf_says_buy and xgb_says_sell) or (rf_says_sell and xgb_says_buy):
         decision.conflict = True
         decision.direction = None
         decision.final_prob = weighted_avg
@@ -335,13 +326,12 @@ def ensemble_predict(
         decision.stage_reached = "CONFLICT"
         decision.confidence_level = "LOW"
         decision.skip_reason = (
-            f"RF_LSTM_CONFLICT: RF={rf_prob:.3f} vs LSTM={lstm_prob:.3f} — opposite directions"
+            f"XGB_RF_CONFLICT: RF={rf_prob:.3f} vs XGB={xgb_prob:.3f} — opposite directions"
         )
-        logger.warning("[Ensemble v4.2] ⚠️ %s -> HOLD", decision.skip_reason)
+        logger.warning("[Ensemble v5.0] ⚠️ %s -> HOLD", decision.skip_reason)
         _log_decision(decision, current_adx, current_atr)
         return decision
 
-    # Legacy hard block للـ disagreement الكبير جداً (> 0.60)
     if disagreement >= 0.60:
         decision.conflict = True
         decision.direction = None
@@ -349,8 +339,8 @@ def ensemble_predict(
         decision.decision_reason = "CONFLICT"
         decision.stage_reached = "CONFLICT"
         decision.confidence_level = "LOW"
-        decision.skip_reason = f"HIGH_DISAGREEMENT: |LSTM-RF|={disagreement:.3f} >= 0.60"
-        logger.warning("[Ensemble v4.2] ⚠️ %s -> HOLD", decision.skip_reason)
+        decision.skip_reason = f"HIGH_DISAGREEMENT: |XGB-RF|={disagreement:.3f} >= 0.60"
+        logger.warning("[Ensemble v5.0] ⚠️ %s -> HOLD", decision.skip_reason)
         _log_decision(decision, current_adx, current_atr)
         return decision
 
@@ -542,12 +532,12 @@ def ensemble_predict(
     conflict_flag = " ⚠️CONFLICT" if decision.conflict or decision.regime_conflict else ""
     edge_flag = " 🔶EDGE" if decision.edge_case else ""
     print(f"\n\033[92m{'='*65}\033[0m")
-    print(f"\033[92m        ENSEMBLE DECISION v4.2 RF-First{conflict_flag}{edge_flag}\033[0m")
+    print(f"\033[92m        ENSEMBLE DECISION v5.0 XGB-RF{conflict_flag}{edge_flag}\033[0m")
     print(f"\033[92m{'='*65}\033[0m")
     print(f"\033[92m  Session       : {session}\033[0m")
     print(f"\033[92m  Market State  : {market_state} (ADX: {current_adx:.1f} -> ts: {trend_strength:.3f})\033[0m")
-    print(f"\033[92m  RF            : {rf_prob:.4f} (weight: {rf_w:.0%}) ← PRIMARY\033[0m")
-    print(f"\033[92m  LSTM          : {lstm_prob:.4f} (weight: {lstm_w:.0%}) ← MODIFIER\033[0m")
+    print(f"\033[92m  XGBoost       : {xgb_prob:.4f} (weight: {xgb_w:.0%}) ← PRIMARY\033[0m")
+    print(f"\033[92m  RF            : {rf_prob:.4f} (weight: {rf_w:.0%}) ← COMPLEMENT\033[0m")
     print(f"\033[92m  RF Gate       : {'PASS' if _rf_confidence_gate(rf_prob, True) else 'NOISE'}\033[0m")
     print(f"\033[92m  Weighted Avg  : {weighted_avg:.4f}\033[0m")
     print(f"\033[92m  Disagreement  : {disagreement:.4f} -> Penalty: {decision.penalty:.4f}\033[0m")
@@ -588,7 +578,7 @@ def _log_decision(decision, current_adx=0, current_atr=0):
         fieldnames = [
             "timestamp", "session", "market_state",
             "adx", "trend_strength", "atr",
-            "lstm_prob", "lstm_weight",
+            "xgb_prob", "xgb_weight",
             "rf_prob", "rf_weight",
             "weighted_avg", "disagreement", "penalty",
             "session_bonus", "volatility_adjustment",
@@ -612,12 +602,12 @@ def _log_decision(decision, current_adx=0, current_atr=0):
                 "adx": f"{current_adx:.2f}",
                 "trend_strength": f"{decision.trend_strength:.4f}",
                 "atr": f"{current_atr:.6f}",
-                "lstm_prob": f"{decision.lstm_prob:.6f}",
-                "lstm_weight": f"{decision.lstm_weight:.4f}",
+                "xgb_prob": f"{decision.xgb_prob:.6f}",
+                "xgb_weight": f"{decision.xgb_weight:.4f}",
                 "rf_prob": f"{decision.rf_prob:.6f}",
                 "rf_weight": f"{decision.rf_weight:.4f}",
                 "weighted_avg": f"{decision.weighted_avg:.6f}",
-                "disagreement": f"{abs(decision.lstm_prob - decision.rf_prob):.6f}",
+                "disagreement": f"{abs(decision.xgb_prob - decision.rf_prob):.6f}",
                 "penalty": f"{decision.penalty:.6f}",
                 "session_bonus": f"{decision.session_bonus:.4f}",
                 "volatility_adjustment": f"{decision.volatility_adjustment:.4f}",
@@ -676,7 +666,7 @@ class DecisionMetrics:
 
     def print_summary(self):
         print(f"\n\033[96m{'='*60}\033[0m")
-        print(f"\033[96m       📊 ENSEMBLE RUNTIME METRICS v4.2\033[0m")
+        print(f"\033[96m       📊 ENSEMBLE RUNTIME METRICS v5.0\033[0m")
         print(f"\033[96m{'='*60}\033[0m")
         print(f"\033[96m  TOTAL_SIGNALS     : {self.total_signals}\033[0m")
         print(f"\033[96m  HOLD_COUNT        : {self.hold_count}\033[0m")
