@@ -81,7 +81,7 @@ class Config:
     # RF Retraining Schedule
     RF_RETRAIN_EVERY_HOURS = 24            # Retrain RF every N hours
     RF_RETRAIN_EVERY_CANDLES = 288         # OR every N candles evaluated (288 = 24h of M5)
-    RF_N_ESTIMATORS = 200                  # Number of trees
+    RF_N_ESTIMATORS = 500                  # v5.1: 200 → 500 (more trees for large dataset)
     RF_MAX_DEPTH = 10                      # Max tree depth (prevent overfitting)
 
     # Ensemble Logging

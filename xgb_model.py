@@ -46,7 +46,8 @@ XGB_SCALER_PATH = "xgb_scaler.joblib"
 XGB_FEATURES_PATH = "xgb_features.joblib"
 
 # عدد الـ features بعد الـ selection
-TOP_K_FEATURES = 50  # XGBoost بيتعامل مع features أكتر من LSTM بدون overfitting
+# v5.1: 50 → 80 — مع 99K candle عندنا بيانات كافية لـ features أكتر
+TOP_K_FEATURES = 80
 
 
 # =========================================
@@ -385,18 +386,24 @@ def train_and_evaluate_xgb(df_full: pd.DataFrame, symbol: str = ""):
     n_neg = np.sum(y_train == 0)
     scale_pos_weight = n_neg / max(n_pos, 1)
 
+    # v5.1: Optimized hyperparameters for large dataset (99K candles)
+    # - n_estimators: 500 → 1000 (more trees = better generalization)
+    # - learning_rate: 0.02 → 0.01 (slower = more precise with large data)
+    # - early_stopping_rounds: 50 (stop if no improvement for 50 rounds)
+    # - min_child_weight: 10 → 20 (stronger regularization)
     model = XGBClassifier(
-        n_estimators=500,
+        n_estimators=1000,
         max_depth=4,
-        learning_rate=0.02,
+        learning_rate=0.01,
         subsample=0.8,
         colsample_bytree=0.8,
-        min_child_weight=10,
+        min_child_weight=20,
         reg_alpha=0.1,
         reg_lambda=1.0,
         scale_pos_weight=scale_pos_weight,
         use_label_encoder=False,
         eval_metric='logloss',
+        early_stopping_rounds=50,
         random_state=42,
         n_jobs=-1,
         verbosity=0,
@@ -408,6 +415,9 @@ def train_and_evaluate_xgb(df_full: pd.DataFrame, symbol: str = ""):
         verbose=False,
     )
 
+    # Best iteration (from early stopping)
+    best_iter = getattr(model, 'best_iteration', model.n_estimators)
+
     y_pred = model.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
 
@@ -417,16 +427,17 @@ def train_and_evaluate_xgb(df_full: pd.DataFrame, symbol: str = ""):
     top5 = sorted(feat_imp.items(), key=lambda x: x[1], reverse=True)[:5]
 
     print(f"\n\033[96m{'='*55}\033[0m")
-    print(f"\033[96m  XGBOOST [{symbol}] TRAINING REPORT\033[0m")
+    print(f"\033[96m  XGBOOST [{symbol}] TRAINING REPORT v5.1\033[0m")
     print(f"\033[96m{'='*55}\033[0m")
     print(f"\033[96m  Accuracy       : {accuracy * 100:.2f}%\033[0m")
+    print(f"\033[96m  Best Iteration : {best_iter} / 1000\033[0m")
     print(f"\033[96m  Features       : {len(selected_features)}\033[0m")
-    print(f"\033[96m  Train Size     : {len(X_train)}\033[0m")
-    print(f"\033[96m  Test Size      : {len(X_test)}\033[0m")
+    print(f"\033[96m  Train Size     : {len(X_train):,}\033[0m")
+    print(f"\033[96m  Test Size      : {len(X_test):,}\033[0m")
     print(f"\033[96m  Top Feature    : {top5[0][0]} ({top5[0][1]:.4f})\033[0m")
     print(f"\033[96m{'='*55}\033[0m\n")
 
-    logger.info("[XGB-%s] ✅ Accuracy: %.2f%%", symbol, accuracy * 100)
+    logger.info("[XGB-%s] Accuracy: %.2f%% | Best iter: %d", symbol, accuracy * 100, best_iter)
     logger.info("[XGB-%s] Top 5 features: %s", symbol, top5)
 
     return model, scaler, accuracy, selected_features
