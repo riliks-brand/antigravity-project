@@ -119,10 +119,12 @@ def apply_hybrid_filters(processed_df, direction, symbol, server_time=None):
     last = processed_df.iloc[-1]
     reasons = []
 
-    # 1. ADX Range Filter
-    adx_val = last.get('ADX', 30)
+    # 1. ADX Range Filter — use H1_ADX (same as ensemble) to avoid M5 noise
+    # M5 ADX is noisy and can show ranging even when H1 is trending
+    h1_adx = last.get('H1_ADX', None)
+    adx_val = float(h1_adx) if h1_adx is not None and not (h1_adx != h1_adx) else last.get('ADX', 30)
     if adx_val < Config.ADX_RANGING_THRESHOLD:
-        reasons.append(f"RANGING: ADX={adx_val:.1f} < {Config.ADX_RANGING_THRESHOLD}")
+        reasons.append(f"RANGING: H1_ADX={adx_val:.1f} < {Config.ADX_RANGING_THRESHOLD}")
 
     # 2. Trend Alignment (H1) â€” Warning only (ensemble already applies -0.03 penalty)
     h1_trend = last.get('H1_trend', 0)

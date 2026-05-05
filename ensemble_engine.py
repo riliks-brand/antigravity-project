@@ -273,7 +273,7 @@ def ensemble_predict(
     decision.session = session
 
     # â”€â”€ Step 1: Trend Strength â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    trend_strength = float(np.clip((current_adx - 20) / 30.0, 0.0, 1.0))
+    trend_strength = float(np.clip((current_adx - 15) / 35.0, 0.0, 1.0))  # v5.1: smoother gradient, starts at ADX=15
     decision.trend_strength = trend_strength
 
     # â”€â”€ Step 2: ATR Double Filter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -555,7 +555,7 @@ def ensemble_predict(
     print(f"\033[92m  Thresholds    : BUY>{buy_threshold:.4f} | SELL<{sell_threshold:.4f}\033[0m")
     print(f"\033[92m  Confidence    : {decision.confidence_level}\033[0m")
     print(f"\033[92m  Reason        : {decision.decision_reason}\033[0m")
-    print(f"\033[92m  â–¶ DECISION    : {status}\033[0m")
+    print(f"\033[92m  >> DECISION    : {status}\033[0m")
     print(f"\033[92m{'='*65}\033[0m\n")
 
     return decision
@@ -694,5 +694,7 @@ _metrics = DecisionMetrics()
 
 def get_metrics():
     return _metrics
+
+
 
 

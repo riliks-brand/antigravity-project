@@ -218,7 +218,8 @@ class Config:
     # =========================================
     ATR_THRESHOLD = 0.0002               # Filter for low liquidity periods
     ATR_LOOKAHEAD_MULT = 1.2             # Target generation: BUY if future_move > ATR * this. Overridden per-symbol in train_offline.py
-    ADX_RANGING_THRESHOLD = 20           # كان 15 — ده كان بيمرر ranging markets. ADX < 20 = noise
+    ADX_RANGING_THRESHOLD = 15           # v5.1: Lowered from 20 — H1 ADX 15-20 is weak trend not pure ranging
+                                         # Combined with H1_ADX usage in filter, this is more accurate
     DXY_TICKER = "DX-Y.NYB"
 
     # Feature Drift Detection
