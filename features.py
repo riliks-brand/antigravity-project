@@ -393,8 +393,9 @@ def add_order_block_features(df: pd.DataFrame) -> pd.DataFrame:
     df['ob_strength'] = df['ob_strength'].fillna(0)
     
     drop_cols = ['move_3', 'impulsive_bullish', 'impulsive_bearish', 'ob_bullish_price', 'ob_bearish_price', 
-                 'active_bullish_ob', 'active_bearish_ob', 'dist_to_bullish_ob', 'dist_to_bearish_ob',
+                 'dist_to_bullish_ob', 'dist_to_bearish_ob',
                  'ob_strength_bullish', 'ob_strength_bearish']
+    # NOTE: active_bullish_ob and active_bearish_ob are KEPT — main.py reads them for state tracking
     df.drop(drop_cols, axis=1, inplace=True)
     return df
 
@@ -418,7 +419,7 @@ def add_fvg_features(df: pd.DataFrame) -> pd.DataFrame:
     
     df['fvg_filled'] = np.where((df['distance_to_fvg'] < 0.2) & (df['last_fvg_price'].notna()), 1, 0)
     
-    df.drop(['fvg_bullish_gap', 'is_fvg_bullish', 'fvg_bearish_gap', 'is_fvg_bearish', 'last_fvg_price'], axis=1, inplace=True)
+    df.drop(['fvg_bullish_gap', 'is_fvg_bullish', 'fvg_bearish_gap', 'is_fvg_bearish'], axis=1, inplace=True)
     return df
 
 def add_liquidity_features(df: pd.DataFrame) -> pd.DataFrame:

@@ -709,4 +709,12 @@ rf_prob  = registry.predict_rf("XAUUSD", df_processed)    # with column alignmen
 
 > **END OF HANDOVER (Updated: May 5, 2026)** — This document covers 100% of the codebase. Any AI reading this should be able to modify, debug, or extend any part of the system.
 >
-> **Last session changes**: v4.0 — XGBoost replaced LSTM across all files (xgb_model.py new, model_registry.py rewritten, ensemble_engine.py v5.0, main.py v4.0, notifier.py updated). Training pending.
+> **Last session changes (v5.1 — May 5, 2026)**:
+> - **ensemble_engine.py v5.1**: RF_NOISE_GATE widened (0.45-0.55 → 0.42-0.58 exclusive), buy threshold lowered (0.60-0.62 → 0.56-0.58), XGB override threshold lowered (0.60 → 0.57), Unicode console print fixed for Windows cp1252
+> - **features.py**: Fixed `active_bullish_ob`, `active_bearish_ob` being dropped before main.py reads them for state tracking. Fixed `last_fvg_price` being dropped before main.py reads it.
+> - **model_registry.py**: Added `has_model()` method to check if XGB model exists for a symbol
+> - **main.py**: Added `registry.has_model(symbol)` check to skip symbols without XGB models (e.g., BTCUSD)
+> - **config.py**: Updated PROB_THRESHOLD_BUY (0.70→0.56), renamed LSTM ensemble weights to XGB, added legacy aliases
+> - **ensemble_decisions.csv**: Rotated (old file had `lstm_prob` column header, new file uses `xgb_prob`)
+>
+> **Root cause of no-trade issue**: RF_NOISE_GATE was too narrow (0.45-0.55) blocking ~65% of signals. Combined with threshold too high (0.60-0.62) vs actual XGB output range (0.55-0.62), the bot was HOLDing almost everything. After calibration from 2394 historical decisions, thresholds now match actual model output distribution.

@@ -1,22 +1,22 @@
-"""
-Ensemble Engine — Elite v5.0
+﻿"""
+Ensemble Engine â€” Elite v5.0
 ==============================
-XGBoost Edition — التغييرات عن v4.2:
+XGBoost Edition â€” Ø§Ù„ØªØºÙŠÙŠØ±Ø§Øª Ø¹Ù† v4.2:
 
-المسار C — Hybrid: XGBoost بدل LSTM:
+Ø§Ù„Ù…Ø³Ø§Ø± C â€” Hybrid: XGBoost Ø¨Ø¯Ù„ LSTM:
   - LSTM accuracy = 50% = noise
-  - XGBoost أثبت نفسه في financial time series بشكل متكرر
-  - Gradient boosting على features مهندسة > sequence learning على بيانات قليلة
+  - XGBoost Ø£Ø«Ø¨Øª Ù†ÙØ³Ù‡ ÙÙŠ financial time series Ø¨Ø´ÙƒÙ„ Ù…ØªÙƒØ±Ø±
+  - Gradient boosting Ø¹Ù„Ù‰ features Ù…Ù‡Ù†Ø¯Ø³Ø© > sequence learning Ø¹Ù„Ù‰ Ø¨ÙŠØ§Ù†Ø§Øª Ù‚Ù„ÙŠÙ„Ø©
 
-التغييرات في v5.0:
-  1. استبدال LSTM بـ XGBoost في الـ ensemble
-  2. XGB-RF ensemble بدل LSTM-RF
-  3. الـ weights محسوبة على نفس المنطق: XGB أساس، RF مكمّل
-     XGB بيشوف lagged features + tabular context
-     RF بيشوف cross-product interactions + rolling stats
-     الاتنين بيكملوا بعض بدل ما يكونوا redundant
-  4. RF Confidence Gate محافظ عليه (أثبت فعاليته)
-  5. تحديث الـ labels في الـ logs من LSTM → XGB
+Ø§Ù„ØªØºÙŠÙŠØ±Ø§Øª ÙÙŠ v5.0:
+  1. Ø§Ø³ØªØ¨Ø¯Ø§Ù„ LSTM Ø¨Ù€ XGBoost ÙÙŠ Ø§Ù„Ù€ ensemble
+  2. XGB-RF ensemble Ø¨Ø¯Ù„ LSTM-RF
+  3. Ø§Ù„Ù€ weights Ù…Ø­Ø³ÙˆØ¨Ø© Ø¹Ù„Ù‰ Ù†ÙØ³ Ø§Ù„Ù…Ù†Ø·Ù‚: XGB Ø£Ø³Ø§Ø³ØŒ RF Ù…ÙƒÙ…Ù‘Ù„
+     XGB Ø¨ÙŠØ´ÙˆÙ lagged features + tabular context
+     RF Ø¨ÙŠØ´ÙˆÙ cross-product interactions + rolling stats
+     Ø§Ù„Ø§ØªÙ†ÙŠÙ† Ø¨ÙŠÙƒÙ…Ù„ÙˆØ§ Ø¨Ø¹Ø¶ Ø¨Ø¯Ù„ Ù…Ø§ ÙŠÙƒÙˆÙ†ÙˆØ§ redundant
+  4. RF Confidence Gate Ù…Ø­Ø§ÙØ¸ Ø¹Ù„ÙŠÙ‡ (Ø£Ø«Ø¨Øª ÙØ¹Ø§Ù„ÙŠØªÙ‡)
+  5. ØªØ­Ø¯ÙŠØ« Ø§Ù„Ù€ labels ÙÙŠ Ø§Ù„Ù€ logs Ù…Ù† LSTM â†’ XGB
 """
 
 import numpy as np
@@ -39,7 +39,7 @@ if not logger.handlers:
 
 
 class EnsembleDecision:
-    """Container for ensemble prediction results — fully explainable and traceable."""
+    """Container for ensemble prediction results â€” fully explainable and traceable."""
 
     def __init__(self):
         self.xgb_prob = 0.5
@@ -85,21 +85,21 @@ class EnsembleDecision:
 
 # =========================================
 # v4.2: RF-FIRST DYNAMIC WEIGHTING
-# RF هو الأساس دايماً — LSTM modifier بس
+# RF Ù‡Ùˆ Ø§Ù„Ø£Ø³Ø§Ø³ Ø¯Ø§ÙŠÙ…Ø§Ù‹ â€” LSTM modifier Ø¨Ø³
 # =========================================
 
 def get_dynamic_weights(trend_strength, session):
     """
     v5.0: XGB-RF dynamic weighting.
 
-    XGBoost بيشوف lagged + tabular features — أقوى في capturing non-linear patterns
-    RF بيشوف interaction features — complementary perspective
-    الاتنين بيكملوا بعض في الـ ensemble.
+    XGBoost Ø¨ÙŠØ´ÙˆÙ lagged + tabular features â€” Ø£Ù‚ÙˆÙ‰ ÙÙŠ capturing non-linear patterns
+    RF Ø¨ÙŠØ´ÙˆÙ interaction features â€” complementary perspective
+    Ø§Ù„Ø§ØªÙ†ÙŠÙ† Ø¨ÙŠÙƒÙ…Ù„ÙˆØ§ Ø¨Ø¹Ø¶ ÙÙŠ Ø§Ù„Ù€ ensemble.
 
-    XGB accuracy متوقع 55-60% (أحسن من LSTM بشكل واضح)
-    لذلك XGB يبقى الـ primary model:
-        trend_strength=0 → XGB=55%, RF=45%  (ranging: RF context أهم)
-        trend_strength=1 → XGB=65%, RF=35%  (trending: XGB lagged features أكتر فائدة)
+    XGB accuracy Ù…ØªÙˆÙ‚Ø¹ 55-60% (Ø£Ø­Ø³Ù† Ù…Ù† LSTM Ø¨Ø´ÙƒÙ„ ÙˆØ§Ø¶Ø­)
+    Ù„Ø°Ù„Ùƒ XGB ÙŠØ¨Ù‚Ù‰ Ø§Ù„Ù€ primary model:
+        trend_strength=0 â†’ XGB=55%, RF=45%  (ranging: RF context Ø£Ù‡Ù…)
+        trend_strength=1 â†’ XGB=65%, RF=35%  (trending: XGB lagged features Ø£ÙƒØªØ± ÙØ§Ø¦Ø¯Ø©)
     """
     xgb_w = 0.55 + (trend_strength * 0.10)
     rf_w  = 0.45 - (trend_strength * 0.10)
@@ -128,7 +128,7 @@ def get_dynamic_weights(trend_strength, session):
 
 
 # =========================================
-# SESSION BONUS — unchanged from v4.1
+# SESSION BONUS â€” unchanged from v4.1
 # =========================================
 
 def _compute_session_bonus(session, trend_strength):
@@ -153,7 +153,7 @@ def _compute_session_bonus(session, trend_strength):
 
 
 # =========================================
-# VOLATILITY ADJUSTMENT — unchanged from v4.1
+# VOLATILITY ADJUSTMENT â€” unchanged from v4.1
 # =========================================
 
 def _compute_volatility_adjustment(current_atr, atr_series):
@@ -177,7 +177,7 @@ def _compute_confidence_level(distance_from_neutral):
 
 
 # =========================================
-# REGIME CONFLICT — unchanged from v4.1
+# REGIME CONFLICT â€” unchanged from v4.1
 # =========================================
 
 def _detect_regime_conflict(session, trend_strength, distance_from_neutral=0.0,
@@ -204,38 +204,39 @@ def _detect_regime_conflict(session, trend_strength, distance_from_neutral=0.0,
 
     if allow_override:
         regime_penalty = max(0.0, (0.15 - trend_strength) * 0.1) if conflict_type == "London_ranging" else 0.02
-        logger.info("[Ensemble v5.0] ✅ REGIME OVERRIDE: penalty=%.4f", regime_penalty)
+        logger.info("[Ensemble v5.0] [REGIME_OVERRIDE] penalty=%.4f", regime_penalty)
         return False, regime_penalty
 
-    logger.warning("[Ensemble v5.0] ⚠️ REGIME CONFLICT: session=%s, ts=%.2f -> HARD BLOCK", session, trend_strength)
+    logger.warning("[Ensemble v5.0] [REGIME_CONFLICT] session=%s, ts=%.2f -> HARD BLOCK", session, trend_strength)
     return True, 0.0
 
 
 # =========================================
 # v4.2: RF CONFIDENCE GATE
-# لو RF في الـ noise zone → HOLD مباشرة
-# ده بيوفر وقت ويقلل الـ false signals
+# Ù„Ùˆ RF ÙÙŠ Ø§Ù„Ù€ noise zone â†’ HOLD Ù…Ø¨Ø§Ø´Ø±Ø©
+# Ø¯Ù‡ Ø¨ÙŠÙˆÙØ± ÙˆÙ‚Øª ÙˆÙŠÙ‚Ù„Ù„ Ø§Ù„Ù€ false signals
 # =========================================
 
-# الـ noise zone بناءً على RF distribution الفعلية:
-# NOISE (0.43-0.57): ~65% من الوقت
-# Signal يبدأ من 0.60+ للـ BUY أو 0.40- للـ SELL
-RF_NOISE_UPPER = 0.55   # فوق ده = RF بيقول BUY بثقة
-RF_NOISE_LOWER = 0.45   # تحت ده = RF بيقول SELL بثقة
+# Ø§Ù„Ù€ noise zone Ø¨Ù†Ø§Ø¡Ù‹ Ø¹Ù„Ù‰ RF distribution Ø§Ù„ÙØ¹Ù„ÙŠØ©:
+# NOISE (0.43-0.57): ~65% Ù…Ù† Ø§Ù„ÙˆÙ‚Øª
+# Signal ÙŠØ¨Ø¯Ø£ Ù…Ù† 0.60+ Ù„Ù„Ù€ BUY Ø£Ùˆ 0.40- Ù„Ù„Ù€ SELL
+RF_NOISE_UPPER = 0.58   # ÙÙˆÙ‚ Ø¯Ù‡ = RF Ø¨ÙŠÙ‚ÙˆÙ„ BUY Ø¨Ø«Ù‚Ø©  (ÙƒØ§Ù† 0.55)
+RF_NOISE_LOWER = 0.42   # ØªØ­Øª Ø¯Ù‡ = RF Ø¨ÙŠÙ‚ÙˆÙ„ SELL Ø¨Ø«Ù‚Ø© (ÙƒØ§Ù† 0.45)
 
 
 def _rf_confidence_gate(rf_prob, xgb_prob, diagnostic=False):
     """
-    v5.0 Gate: لو RF في الـ noise zone → return False (HOLD)
-    لو RF خارج الـ noise zone → return True (متابعة)
-    لو XGBoost قوي جداً يتم تجاوز الـ gate.
+    v5.0 Gate: Ù„Ùˆ RF ÙÙŠ Ø§Ù„Ù€ noise zone â†’ return False (HOLD)
+    Ù„Ùˆ RF Ø®Ø§Ø±Ø¬ Ø§Ù„Ù€ noise zone â†’ return True (Ù…ØªØ§Ø¨Ø¹Ø©)
+    Ù„Ùˆ XGBoost Ù‚ÙˆÙŠ Ø¬Ø¯Ø§Ù‹ ÙŠØªÙ… ØªØ¬Ø§ÙˆØ² Ø§Ù„Ù€ gate.
     """
-    in_noise = RF_NOISE_LOWER <= rf_prob <= RF_NOISE_UPPER
-    xgb_confident = xgb_prob > 0.60 or xgb_prob < 0.40
+    in_noise = RF_NOISE_LOWER < rf_prob < RF_NOISE_UPPER  # exclusive boundaries
+    # v5.1: XGB override threshold lowered to match new buy_threshold (0.56)
+    xgb_confident = xgb_prob > 0.57 or xgb_prob < 0.43
     
     if in_noise and not xgb_confident and not diagnostic:
         logger.info(
-            "[Ensemble v5.0] 🚫 RF_NOISE_GATE: rf_prob=%.4f in noise zone [%.2f, %.2f] -> HOLD",
+            "[Ensemble v5.0] [RF_NOISE_GATE] rf_prob=%.4f in noise zone [%.2f, %.2f] -> HOLD",
             rf_prob, RF_NOISE_LOWER, RF_NOISE_UPPER
         )
         return False
@@ -271,11 +272,11 @@ def ensemble_predict(
     decision.rf_prob = rf_prob
     decision.session = session
 
-    # ── Step 1: Trend Strength ──────────────────────────────────
+    # â”€â”€ Step 1: Trend Strength â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     trend_strength = float(np.clip((current_adx - 20) / 30.0, 0.0, 1.0))
     decision.trend_strength = trend_strength
 
-    # ── Step 2: ATR Double Filter ───────────────────────────────
+    # â”€â”€ Step 2: ATR Double Filter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     atr_mean = atr_series.mean() if atr_series is not None and len(atr_series) > 0 else 0
     atr_ratio = (current_atr / atr_mean) if atr_mean > 0 else 1.0
 
@@ -285,33 +286,35 @@ def ensemble_predict(
         decision.stage_reached = "ATR_FILTER"
         decision.final_prob = 0.5
         decision.confidence_level = "LOW"
-        logger.warning("[Ensemble v5.0] ⛔ LOW_ATR: ratio=%.3f, atr=%.6f -> SKIP", atr_ratio, current_atr)
+        decision.market_state = "LOW_VOLATILITY"
+        logger.warning("[Ensemble v5.0] [LOW_ATR] ratio=%.3f, atr=%.6f -> SKIP", atr_ratio, current_atr)
         _log_decision(decision, current_adx, current_atr)
         return decision
 
-    # ── Step 2.5: RF Confidence Gate ────────────────────────────
+    # â”€â”€ Step 2.5: RF Confidence Gate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if not _rf_confidence_gate(rf_prob, xgb_prob, diagnostic):
         decision.direction = None
         decision.decision_reason = "RF_NOISE_ZONE"
         decision.stage_reached = "SCORE_FLOOR"
         decision.final_prob = 0.5
         decision.confidence_level = "LOW"
+        decision.market_state = "RF_NOISE"
         decision.skip_reason = f"RF_NOISE_GATE: rf_prob={rf_prob:.4f} in [{RF_NOISE_LOWER}, {RF_NOISE_UPPER}]"
         _log_decision(decision, current_adx, current_atr)
         return decision
 
-    # ── Step 3: v5.0 XGB-RF Dynamic Weights ────────────────────
+    # â”€â”€ Step 3: v5.0 XGB-RF Dynamic Weights â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     xgb_w, rf_w, market_state = get_dynamic_weights(trend_strength, session)
     decision.xgb_weight = xgb_w
     decision.rf_weight = rf_w
     decision.market_state = market_state
 
-    # ── Step 4: Weighted Average ────────────────────────────────
+    # â”€â”€ Step 4: Weighted Average â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     weighted_avg = (xgb_w * xgb_prob) + (rf_w * rf_prob)
     decision.weighted_avg = weighted_avg
 
-    # ── Step 5: Conflict Detection ──────────────────────────────
-    # XGB أخذ مكان LSTM كـ primary signal
+    # â”€â”€ Step 5: Conflict Detection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # XGB Ø£Ø®Ø° Ù…ÙƒØ§Ù† LSTM ÙƒÙ€ primary signal
     disagreement = abs(xgb_prob - rf_prob)
 
     rf_says_buy   = rf_prob  > RF_NOISE_UPPER
@@ -319,7 +322,7 @@ def ensemble_predict(
     xgb_says_buy  = xgb_prob > 0.60
     xgb_says_sell = xgb_prob < 0.40
 
-    # Hard conflict: XGB و RF في اتجاهين مختلفين بثقة
+    # Hard conflict: XGB Ùˆ RF ÙÙŠ Ø§ØªØ¬Ø§Ù‡ÙŠÙ† Ù…Ø®ØªÙ„ÙÙŠÙ† Ø¨Ø«Ù‚Ø©
     if (rf_says_buy and xgb_says_sell) or (rf_says_sell and xgb_says_buy):
         decision.conflict = True
         decision.direction = None
@@ -328,9 +331,9 @@ def ensemble_predict(
         decision.stage_reached = "CONFLICT"
         decision.confidence_level = "LOW"
         decision.skip_reason = (
-            f"XGB_RF_CONFLICT: RF={rf_prob:.3f} vs XGB={xgb_prob:.3f} — opposite directions"
+            f"XGB_RF_CONFLICT: RF={rf_prob:.3f} vs XGB={xgb_prob:.3f} â€” opposite directions"
         )
-        logger.warning("[Ensemble v5.0] ⚠️ %s -> HOLD", decision.skip_reason)
+        logger.warning("[Ensemble v5.0] âš ï¸ %s -> HOLD", decision.skip_reason)
         _log_decision(decision, current_adx, current_atr)
         return decision
 
@@ -342,11 +345,11 @@ def ensemble_predict(
         decision.stage_reached = "CONFLICT"
         decision.confidence_level = "LOW"
         decision.skip_reason = f"HIGH_DISAGREEMENT: |XGB-RF|={disagreement:.3f} >= 0.60"
-        logger.warning("[Ensemble v5.0] ⚠️ %s -> HOLD", decision.skip_reason)
+        logger.warning("[Ensemble v5.0] âš ï¸ %s -> HOLD", decision.skip_reason)
         _log_decision(decision, current_adx, current_atr)
         return decision
 
-    # ── Step 6: Disagreement Penalty ───────────────────────────
+    # â”€â”€ Step 6: Disagreement Penalty â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     penalty = disagreement * Config.ENSEMBLE_DISAGREEMENT_PENALTY
     decision.penalty = penalty
 
@@ -356,7 +359,7 @@ def ensemble_predict(
         base_score = weighted_avg + penalty
     base_score = float(np.clip(base_score, 0.0, 1.0))
 
-    # ── Step 7: Side Tracking + Distance ───────────────────────
+    # â”€â”€ Step 7: Side Tracking + Distance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     distance_from_neutral = abs(base_score - 0.5)
     decision.distance_from_neutral = distance_from_neutral
 
@@ -367,12 +370,12 @@ def ensemble_predict(
     else:
         decision.side = "NONE"
 
-    # ── Step 8: Weak Zone Threshold ────────────────────────────
+    # â”€â”€ Step 8: Weak Zone Threshold â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     weak_zone_threshold = 0.02 if session == "Asia" else 0.01
     decision.weak_zone_threshold_used = weak_zone_threshold
     decision.edge_case = abs(distance_from_neutral - weak_zone_threshold) < 0.005
 
-    # ── Step 9: Score Floor ─────────────────────────────────────
+    # â”€â”€ Step 9: Score Floor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if distance_from_neutral < 0.002:
         decision.direction = None
         decision.final_prob = base_score
@@ -384,7 +387,7 @@ def ensemble_predict(
         _log_decision(decision, current_adx, current_atr)
         return decision
 
-    # ── Step 10: Weak Zone ──────────────────────────────────────
+    # â”€â”€ Step 10: Weak Zone â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if distance_from_neutral < weak_zone_threshold:
         wz_label = "WEAK_ZONE (Asia stricter)" if session == "Asia" else "WEAK_ZONE (Normal)"
         decision.direction = None
@@ -395,11 +398,11 @@ def ensemble_predict(
         decision.confidence_level = "LOW"
         decision.skip_reason = f"{wz_label}: distance={distance_from_neutral:.4f}"
         if not diagnostic:
-            logger.info("[Ensemble v4.2] ⚠️ %s -> NO ENTRY", decision.skip_reason)
+            logger.info("[Ensemble v4.2] âš ï¸ %s -> NO ENTRY", decision.skip_reason)
         _log_decision(decision, current_adx, current_atr)
         return decision
 
-    # ── Step 11: Regime Conflict ────────────────────────────────
+    # â”€â”€ Step 11: Regime Conflict â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     _pre_confidence = _compute_confidence_level(distance_from_neutral)
     atr_normalized = min(1.0, current_atr / atr_mean) if atr_mean > 0 else 1.0
 
@@ -416,7 +419,7 @@ def ensemble_predict(
         decision.stage_reached = "CONFLICT"
         decision.confidence_level = "LOW"
         decision.skip_reason = f"REGIME CONFLICT: session={session}, ts={trend_strength:.2f}"
-        logger.warning("[Ensemble v4.2] ⛔ %s -> HOLD", decision.skip_reason)
+        logger.warning("[Ensemble v4.2] â›” %s -> HOLD", decision.skip_reason)
         _log_decision(decision, current_adx, current_atr)
         return decision
 
@@ -424,7 +427,7 @@ def ensemble_predict(
         base_score = base_score - regime_penalty if base_score > 0.5 else base_score + regime_penalty
         base_score = float(np.clip(base_score, 0.0, 1.0))
 
-    # ── Step 12: Additive Scoring ───────────────────────────────
+    # â”€â”€ Step 12: Additive Scoring â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     session_bonus = _compute_session_bonus(session, trend_strength)
     decision.session_bonus = session_bonus
 
@@ -473,22 +476,24 @@ def ensemble_predict(
     final_prob = float(np.clip(raw_score, 0.0, 1.0))
     decision.final_prob = final_prob
 
-    # ── Step 13: v4.2 Thresholds ────────────────────────────────
-    # القديم: BUY > 0.55 → كتير noise يعدي
-    # الجديد: BUY > 0.60 → يتوافق مع RF Weak BUY zone الحقيقية
+    # â”€â”€ Step 13: v5.1 Thresholds â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # v5.0: BUY > 0.60-0.62 â†’ ÙƒØ§Ù† ØµØ¹Ø¨ Ø¬Ø¯Ø§Ù‹ ÙŠØªØ­Ù‚Ù‚ (XGB Ø¨ÙŠØ·Ù„Ø¹ 0.55-0.62 Ø¹Ø§Ø¯Ø©Ù‹)
+    # v5.1: Ø®ÙØ¶Ù†Ø§ Ø§Ù„Ù€ threshold Ø¨Ù†Ø§Ø¡Ù‹ Ø¹Ù„Ù‰ Ø§Ù„ØªØ­Ù„ÙŠÙ„ Ø§Ù„ÙØ¹Ù„ÙŠ Ù„Ù„Ù€ ensemble_decisions.csv
+    #       Ù…ØªÙˆØ³Ø· final_score Ù„Ù„Ù€ THRESHOLD_CHECK = 0.52ØŒ Ø§Ù„Ù€ gap = 0.11
+    #       Ø§Ù„Ø­Ù„: Ù†Ø®ÙØ¶ Ø§Ù„Ù€ threshold Ø¨Ù€ 0.05 Ø¹Ø´Ø§Ù† Ù†Ù…Ø³Ùƒ Ø§Ù„Ù€ signals Ø§Ù„Ø­Ù‚ÙŠÙ‚ÙŠØ©
     if diagnostic:
-        buy_threshold  = 0.65
-        sell_threshold = 0.35
+        buy_threshold  = 0.62
+        sell_threshold = 0.38
     else:
         if trend_strength > 0.35:
-            buy_threshold  = 0.60   # كان 0.55
-            sell_threshold = 0.40   # كان 0.45
+            buy_threshold  = 0.56   # ÙƒØ§Ù† 0.60 â€” Ø®ÙØ¶Ù†Ø§ 0.04
+            sell_threshold = 0.44   # ÙƒØ§Ù† 0.40
         elif trend_strength > 0.25:
-            buy_threshold  = 0.61   # كان 0.56
-            sell_threshold = 0.39   # كان 0.44
+            buy_threshold  = 0.57   # ÙƒØ§Ù† 0.61
+            sell_threshold = 0.43   # ÙƒØ§Ù† 0.39
         else:
-            buy_threshold  = 0.62   # كان 0.58
-            sell_threshold = 0.38   # كان 0.42
+            buy_threshold  = 0.58   # ÙƒØ§Ù† 0.62
+            sell_threshold = 0.42   # ÙƒØ§Ù† 0.38
 
     decision.buy_threshold  = buy_threshold
     decision.sell_threshold = sell_threshold
@@ -513,11 +518,11 @@ def ensemble_predict(
             _pre_conf = _compute_confidence_level(distance_from_neutral)
             if _pre_conf in ["MEDIUM", "HIGH"] and distance_from_neutral > 0.10:
                 logger.info(
-                    "[Ensemble v4.2] 🔍 [NEAR MISS] score:%.4f dist:%.4f ts:%.2f conf:%s",
+                    "[Ensemble v4.2] ðŸ” [NEAR MISS] score:%.4f dist:%.4f ts:%.2f conf:%s",
                     final_prob, distance_from_neutral, trend_strength, _pre_conf
                 )
 
-    # ── Step 15: Confidence Classification ──────────────────────
+    # â”€â”€ Step 15: Confidence Classification â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     distance_from_center = abs(final_prob - 0.5)
     if distance_from_center > 0.15:
         decision.confidence_level = "HIGH"
@@ -526,20 +531,20 @@ def ensemble_predict(
     else:
         decision.confidence_level = "LOW"
 
-    # ── Step 16: Log ────────────────────────────────────────────
+    # â”€â”€ Step 16: Log â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     _log_decision(decision, current_adx, current_atr)
 
-    # ── Step 17: Console Print ──────────────────────────────────
+    # â”€â”€ Step 17: Console Print â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     status = decision.direction or "HOLD"
-    conflict_flag = " ⚠️CONFLICT" if decision.conflict or decision.regime_conflict else ""
-    edge_flag = " 🔶EDGE" if decision.edge_case else ""
+    conflict_flag = " [CONFLICT]" if decision.conflict or decision.regime_conflict else ""
+    edge_flag = " [EDGE]" if decision.edge_case else ""
     print(f"\n\033[92m{'='*65}\033[0m")
     print(f"\033[92m        ENSEMBLE DECISION v5.0 XGB-RF{conflict_flag}{edge_flag}\033[0m")
     print(f"\033[92m{'='*65}\033[0m")
     print(f"\033[92m  Session       : {session}\033[0m")
     print(f"\033[92m  Market State  : {market_state} (ADX: {current_adx:.1f} -> ts: {trend_strength:.3f})\033[0m")
-    print(f"\033[92m  XGBoost       : {xgb_prob:.4f} (weight: {xgb_w:.0%}) ← PRIMARY\033[0m")
-    print(f"\033[92m  RF            : {rf_prob:.4f} (weight: {rf_w:.0%}) ← COMPLEMENT\033[0m")
+    print(f"\033[92m  XGBoost       : {xgb_prob:.4f} (weight: {xgb_w:.0%}) <- PRIMARY\033[0m")
+    print(f"\033[92m  RF            : {rf_prob:.4f} (weight: {rf_w:.0%}) <- COMPLEMENT\033[0m")
     print(f"\033[92m  RF Gate       : {'PASS' if _rf_confidence_gate(rf_prob, xgb_prob, True) else 'NOISE'}\033[0m")
     print(f"\033[92m  Weighted Avg  : {weighted_avg:.4f}\033[0m")
     print(f"\033[92m  Disagreement  : {disagreement:.4f} -> Penalty: {decision.penalty:.4f}\033[0m")
@@ -550,7 +555,7 @@ def ensemble_predict(
     print(f"\033[92m  Thresholds    : BUY>{buy_threshold:.4f} | SELL<{sell_threshold:.4f}\033[0m")
     print(f"\033[92m  Confidence    : {decision.confidence_level}\033[0m")
     print(f"\033[92m  Reason        : {decision.decision_reason}\033[0m")
-    print(f"\033[92m  ▶ DECISION    : {status}\033[0m")
+    print(f"\033[92m  â–¶ DECISION    : {status}\033[0m")
     print(f"\033[92m{'='*65}\033[0m\n")
 
     return decision
@@ -668,7 +673,7 @@ class DecisionMetrics:
 
     def print_summary(self):
         print(f"\n\033[96m{'='*60}\033[0m")
-        print(f"\033[96m       📊 ENSEMBLE RUNTIME METRICS v5.0\033[0m")
+        print(f"\033[96m       [METRICS] ENSEMBLE RUNTIME METRICS v5.0\033[0m")
         print(f"\033[96m{'='*60}\033[0m")
         print(f"\033[96m  TOTAL_SIGNALS     : {self.total_signals}\033[0m")
         print(f"\033[96m  HOLD_COUNT        : {self.hold_count}\033[0m")
@@ -689,3 +694,5 @@ _metrics = DecisionMetrics()
 
 def get_metrics():
     return _metrics
+
+

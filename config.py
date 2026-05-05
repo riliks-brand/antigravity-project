@@ -40,33 +40,43 @@ class Config:
     DATA_POINTS = 2000                   # Candles to fetch per timeframe
 
     # =========================================
-    # LSTM Model Settings
+    # LSTM Model Settings (Legacy — kept for backward compatibility only)
+    # v5.0: XGBoost replaced LSTM as primary model
     # =========================================
-    SEQUENCE_LENGTH = 60  # Reduced for diagnostic phase
+    SEQUENCE_LENGTH = 60  # Legacy LSTM param — not used in v5.0
     PREDICT_LOOKAHEAD = 5
     
     # Phase 1 Diagnostic Mode
     DIAGNOSTIC_MODE = False
 
-    # Decision Thresholds (Adaptive base values — adjusted by volatility at runtime)
-    PROB_THRESHOLD_BUY = 0.70
-    PROB_THRESHOLD_SELL = 0.30
+    # Decision Thresholds (v5.1 — calibrated from ensemble_decisions.csv analysis)
+    # XGB typically outputs 0.55-0.62, after weighting final_score ~0.52-0.58
+    # Thresholds adjusted down by 0.04 to capture real signals
+    PROB_THRESHOLD_BUY = 0.56   # was 0.70 (LSTM era) → now matches ensemble_engine v5.1
+    PROB_THRESHOLD_SELL = 0.44  # was 0.30
     ADAPTIVE_THRESHOLD_ENABLED = True    # If True, thresholds shift with volatility
 
     # =========================================
-    # Ensemble Engine (LSTM + Random Forest)
+    # Ensemble Engine (XGBoost + Random Forest) — v5.0
     # =========================================
     ENSEMBLE_ENABLED = True
 
     # Dynamic Weighting (shifts based on ADX / market state)
-    ENSEMBLE_LSTM_WEIGHT_TRENDING = 0.70   # LSTM weight when ADX > threshold (trending)
-    ENSEMBLE_RF_WEIGHT_TRENDING = 0.30     # RF weight when trending
-    ENSEMBLE_LSTM_WEIGHT_RANGING = 0.50    # LSTM weight when ADX < threshold (ranging)
-    ENSEMBLE_RF_WEIGHT_RANGING = 0.50      # RF weight when ranging
+    # v5.0: XGB is primary, RF is complement
+    ENSEMBLE_XGB_WEIGHT_TRENDING = 0.65    # XGB weight when ADX > threshold (trending)
+    ENSEMBLE_RF_WEIGHT_TRENDING = 0.35     # RF weight when trending
+    ENSEMBLE_XGB_WEIGHT_RANGING = 0.55     # XGB weight when ADX < threshold (ranging)
+    ENSEMBLE_RF_WEIGHT_RANGING = 0.45      # RF weight when ranging
+
+    # Legacy aliases (kept for backward compatibility)
+    ENSEMBLE_LSTM_WEIGHT_TRENDING = 0.65
+    ENSEMBLE_RF_WEIGHT_TRENDING_LEGACY = 0.35
+    ENSEMBLE_LSTM_WEIGHT_RANGING = 0.55
+    ENSEMBLE_RF_WEIGHT_RANGING_LEGACY = 0.45
 
     # Conflict Handling
-    ENSEMBLE_CONFLICT_THRESHOLD = 0.50     # If |LSTM - RF| > this → SKIP trade
-    ENSEMBLE_DISAGREEMENT_PENALTY = 0.30   # Penalty factor: final -= |LSTM-RF| * penalty
+    ENSEMBLE_CONFLICT_THRESHOLD = 0.50     # If |XGB - RF| > this → SKIP trade
+    ENSEMBLE_DISAGREEMENT_PENALTY = 0.30   # Penalty factor: final -= |XGB-RF| * penalty
 
     # RF Retraining Schedule
     RF_RETRAIN_EVERY_HOURS = 24            # Retrain RF every N hours

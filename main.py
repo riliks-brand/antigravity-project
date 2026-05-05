@@ -1,11 +1,11 @@
-"""
-Main Loop — Elite v4.0 (XGBoost Ensemble Edition)
+﻿"""
+Main Loop â€” Elite v4.0 (XGBoost Ensemble Edition)
 ====================================================
 The master orchestrator that ties ALL systems together.
 
 Architecture:
-  Data (MT5) → Features → [XGBoost + RF] → Ensemble Voting → Hybrid Filters
-  → Trade Manager → Execute → Notify (Telegram)
+  Data (MT5) â†’ Features â†’ [XGBoost + RF] â†’ Ensemble Voting â†’ Hybrid Filters
+  â†’ Trade Manager â†’ Execute â†’ Notify (Telegram)
 
 v4.0 Changes:
 - XGBoost replaced LSTM as primary model (LSTM was ~50% = random)
@@ -17,7 +17,7 @@ v4.0 Changes:
 import sys
 import os
 
-# Fix Windows terminal Unicode encoding (cp1252 → utf-8)
+# Fix Windows terminal Unicode encoding (cp1252 â†’ utf-8)
 os.environ["PYTHONIOENCODING"] = "utf-8"
 if sys.platform == "win32":
     try:
@@ -113,7 +113,7 @@ def compute_memory_similarity(processed_df):
 
 def apply_hybrid_filters(processed_df, direction, symbol, server_time=None):
     """
-    The Hybrid Filter Layer — rejects bad signals before they reach execution.
+    The Hybrid Filter Layer â€” rejects bad signals before they reach execution.
     Returns (passed: bool, reason: str)
     """
     last = processed_df.iloc[-1]
@@ -124,15 +124,15 @@ def apply_hybrid_filters(processed_df, direction, symbol, server_time=None):
     if adx_val < Config.ADX_RANGING_THRESHOLD:
         reasons.append(f"RANGING: ADX={adx_val:.1f} < {Config.ADX_RANGING_THRESHOLD}")
 
-    # 2. Trend Alignment (H1) — Warning only (ensemble already applies -0.03 penalty)
+    # 2. Trend Alignment (H1) â€” Warning only (ensemble already applies -0.03 penalty)
     h1_trend = last.get('H1_trend', 0)
     if h1_trend != 0:
         if direction == "BUY" and h1_trend == -1:
             import logging
-            logging.getLogger("Main").warning("[H1 COUNTER-TREND] BUY against H1 downtrend — ensemble penalty applied")
+            logging.getLogger("Main").warning("[H1 COUNTER-TREND] BUY against H1 downtrend â€” ensemble penalty applied")
         elif direction == "SELL" and h1_trend == 1:
             import logging
-            logging.getLogger("Main").warning("[H1 COUNTER-TREND] SELL against H1 uptrend — ensemble penalty applied")
+            logging.getLogger("Main").warning("[H1 COUNTER-TREND] SELL against H1 uptrend â€” ensemble penalty applied")
 
     # 3. Low Volatility Filter
     volatility = last.get('Volatility', 0)
@@ -163,20 +163,20 @@ def apply_hybrid_filters(processed_df, direction, symbol, server_time=None):
 
 def main():
     print("\n" + "=" * 65)
-    print("  🚀 ELITE TRADING BOT v4.0 — MULTI-SYMBOL PORTFOLIO (XGBoost Edition)")
+    print("  ðŸš€ ELITE TRADING BOT v4.0 â€” MULTI-SYMBOL PORTFOLIO (XGBoost Edition)")
     print("=" * 65)
-    print("  📊 Data Source   : MetaTrader 5 (Native)")
-    print("  🧠 Intelligence : XGBoost + Random Forest (Voting)")
-    print("  ⚙️  Execution     : Portfolio Manager & Ranker")
-    print("  🛡️  Risk Engine   : Equity Curve + Kill Switch + Drawdown Survival")
-    print("  📰 News Filter   : ForexFactory (High Impact)")
-    print("  📲 Alerts        : Telegram (Spam-Controlled)")
-    print(f"  💹 Symbols       : {', '.join(Config.SYMBOLS)}")
-    print(f"  🔴 Daily Max Loss: {Config.MAX_DAILY_LOSS_PCT}%")
-    print(f"  🧬 Global Min Thr: {Config.MIN_GLOBAL_SCORE}")
+    print("  ðŸ“Š Data Source   : MetaTrader 5 (Native)")
+    print("  ðŸ§  Intelligence : XGBoost + Random Forest (Voting)")
+    print("  âš™ï¸  Execution     : Portfolio Manager & Ranker")
+    print("  ðŸ›¡ï¸  Risk Engine   : Equity Curve + Kill Switch + Drawdown Survival")
+    print("  ðŸ“° News Filter   : ForexFactory (High Impact)")
+    print("  ðŸ“² Alerts        : Telegram (Spam-Controlled)")
+    print(f"  ðŸ’¹ Symbols       : {', '.join(Config.SYMBOLS)}")
+    print(f"  ðŸ”´ Daily Max Loss: {Config.MAX_DAILY_LOSS_PCT}%")
+    print(f"  ðŸ§¬ Global Min Thr: {Config.MIN_GLOBAL_SCORE}")
     if getattr(Config, 'MICRO_ACCOUNT_MODE', False):
-        print(f"  💰 MICRO MODE    : ON (Balance < ${Config.MICRO_BALANCE_THRESHOLD})")
-        print(f"     └─ Lot: MIN | SL: {Config.MICRO_SL_ATR_MULT}x ATR | Max Trades: {Config.MICRO_MAX_CONCURRENT_TRADES}")
+        print(f"  ðŸ’° MICRO MODE    : ON (Balance < ${Config.MICRO_BALANCE_THRESHOLD})")
+        print(f"     â””â”€ Lot: MIN | SL: {Config.MICRO_SL_ATR_MULT}x ATR | Max Trades: {Config.MICRO_MAX_CONCURRENT_TRADES}")
     print("=" * 65)
 
     # ===== PHASE 1: Connect to MT5 =====
@@ -228,7 +228,7 @@ def main():
     last_eval_time = 0
     symbol_states = {}
 
-    print("\n\033[92m[STARTUP] ✅ All systems online. Entering main loop.\033[0m\n")
+    print("\n\033[92m[STARTUP] âœ… All systems online. Entering main loop.\033[0m\n")
 
     while True:
         try:
@@ -254,8 +254,8 @@ def main():
                 daily_loss = ((account_equity - account_balance) / account_balance * 100) if account_balance > 0 else 0
                 notifier.kill_switch_activated(abs(daily_loss), account_balance)
 
-                print("\n\033[91m⛔ KILL SWITCH ACTIVATED — Daily loss limit exceeded.\033[0m")
-                print("\033[91m⛔ All positions closed. Bot paused until next day.\033[0m\n")
+                print("\n\033[91mâ›” KILL SWITCH ACTIVATED â€” Daily loss limit exceeded.\033[0m")
+                print("\033[91mâ›” All positions closed. Bot paused until next day.\033[0m\n")
 
                 tomorrow = (now + datetime.timedelta(days=1)).replace(hour=0, minute=5, second=0)
                 wait_seconds = (tomorrow - now).total_seconds()
@@ -393,10 +393,14 @@ def main():
                     except Exception as e:
                         logger.error("[SmartExit] Evaluation error for %s: %s", symbol, e)
 
-                # ===== XGBoost PREDICTION (via ModelRegistry — per-symbol) =====
+                # ===== XGBoost PREDICTION (via ModelRegistry â€” per-symbol) =====
+                # Skip symbol if no XGB model available (e.g., BTCUSD has no trained model)
+                if not registry.has_model(symbol):
+                    logger.warning("[%s] No XGB model available â€” skipping symbol.", symbol)
+                    continue
                 xgb_prob = registry.predict_xgb(symbol, processed_df)
 
-                # ===== RANDOM FOREST PREDICTION (via ModelRegistry — per-symbol) =====
+                # ===== RANDOM FOREST PREDICTION (via ModelRegistry â€” per-symbol) =====
                 rf_prob = 0.5
                 if Config.ENSEMBLE_ENABLED:
                     rf_prob = registry.predict_rf(symbol, processed_df)
@@ -452,11 +456,11 @@ def main():
                     
                     # --- Dual Evaluation Logging ---
                     if decision_original.direction is None and decision_diagnostic.direction is not None:
-                        logger.info("[%s] 📊 [DUAL] THRESHOLD_BLOCK: Original=HOLD, Diagnostic=%s", symbol, decision_diagnostic.direction)
+                        logger.info("[%s] ðŸ“Š [DUAL] THRESHOLD_BLOCK: Original=HOLD, Diagnostic=%s", symbol, decision_diagnostic.direction)
                     elif decision_original.direction is None and decision_diagnostic.direction is None:
-                        logger.info("[%s] 📊 [DUAL] MODEL_LIMITATION: Original=HOLD, Diagnostic=HOLD", symbol)
+                        logger.info("[%s] ðŸ“Š [DUAL] MODEL_LIMITATION: Original=HOLD, Diagnostic=HOLD", symbol)
                     elif decision_original.direction is not None:
-                        logger.info("[%s] 📊 [DUAL] NATIVE_EXECUTION: Original=%s", symbol, decision_original.direction)
+                        logger.info("[%s] ðŸ“Š [DUAL] NATIVE_EXECUTION: Original=%s", symbol, decision_original.direction)
 
                     decision = decision_diagnostic
 
@@ -467,7 +471,7 @@ def main():
                 # ===== REGIME PERSISTENCE (v4.0) =====
                 current_regime, regime_changed = manager.update_regime(trend_strength)
 
-                # ===== SAFETY RULE: if direction is None → DO NOT EXECUTE =====
+                # ===== SAFETY RULE: if direction is None â†’ DO NOT EXECUTE =====
                 if direction is None:
                     logger.info(
                         "[%s] SKIP: direction=None | reason=%s | confidence=%s | session=%s",
@@ -480,7 +484,7 @@ def main():
                 memory_bias_local, sim_pct, sim_idx = compute_memory_similarity(processed_df)
                 
                 if hasattr(Config, 'MEMORY_HARD_BLOCK_THRESHOLD') and sim_pct >= Config.MEMORY_HARD_BLOCK_THRESHOLD:
-                    logger.warning("[%s] 🧠 MEMORY BLOCK: Current state matches a previous loss by %.1f%%. Skipping.", symbol, sim_pct)
+                    logger.warning("[%s] ðŸ§  MEMORY BLOCK: Current state matches a previous loss by %.1f%%. Skipping.", symbol, sim_pct)
                     continue
 
                 sym_perf_mod = manager.get_symbol_performance_modifier(symbol)
@@ -598,7 +602,7 @@ def main():
                 
                 if is_near_miss:
                     assigned_risk *= Config.NEAR_MISS_RISK_REDUCTION
-                    logger.info("[NEAR_MISS RISK REDUCTION] %s risk reduced to %.2f%% (×%.0f%%)", sym, assigned_risk, Config.NEAR_MISS_RISK_REDUCTION * 100)
+                    logger.info("[NEAR_MISS RISK REDUCTION] %s risk reduced to %.2f%% (Ã—%.0f%%)", sym, assigned_risk, Config.NEAR_MISS_RISK_REDUCTION * 100)
                 
                 # Drawdown Survival Mode
                 current_dd = manager.get_current_drawdown(get_account_balance())
@@ -706,3 +710,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
