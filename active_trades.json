@@ -1,7 +1,45 @@
 {
-  "active_trades": [],
+  "active_trades": [
+    {
+      "ticket": 56526310614,
+      "symbol": "XAUUSD",
+      "direction": "SELL",
+      "original_volume": 0.01,
+      "current_volume": 0.01,
+      "entry_price": 4553.96,
+      "sl_price": 4562.55,
+      "tp1_price": 4545.47,
+      "tp2_price": 4541.15,
+      "magic": 121052,
+      "state": "OPEN",
+      "signal_time": "2026-05-05T19:55:55.623533",
+      "fill_time": "2026-05-05T19:55:55.809801",
+      "close_time": null,
+      "expected_price": 4554.01,
+      "filled_price": 4553.96,
+      "slippage_points": 5.00000000001819,
+      "latency_ms": 184.273193359375,
+      "tp1_hit": false,
+      "sl_moved_to_be": false,
+      "trailing_active": false,
+      "trailing_sl": null,
+      "close_price": null,
+      "pnl": 0.0,
+      "close_reason": "",
+      "risk_pct": 1.0,
+      "entry_rsi": 38.56944613373438,
+      "entry_adx": 15.315414622107863,
+      "entry_atr": 2.8467861786207953,
+      "entry_volatility": 0.0006250971484502146,
+      "entry_bb_position": 0.053740880551741005,
+      "entry_h1_trend": -1,
+      "entry_trend_strength": 0.009011846345938932,
+      "entry_session": "New York",
+      "entry_decision_reason": "VALID_SIGNAL"
+    }
+  ],
   "consecutive_losses": 0,
   "cooldown_until": null,
-  "daily_pnl": 0.0,
-  "last_updated": "2026-05-05T19:37:31.061000"
+  "daily_pnl": 2.0000000000131025e-07,
+  "last_updated": "2026-05-05T20:36:23.575571"
 }

@@ -153,9 +153,9 @@ class Config:
     # AI-Driven Dynamic Exits using reversal patterns
     # =========================================
     SMART_EXIT_ENABLED = True
-    SMART_EXIT_DANGER_THRESHOLD = 3.0    # Danger score to trigger early close
-    SMART_EXIT_TIGHTEN_THRESHOLD = 2.0   # Danger score to tighten trailing stop
-    SMART_EXIT_MIN_CANDLES_OPEN = 3      # Minimum candles before smart exit evaluates
+    SMART_EXIT_DANGER_THRESHOLD = 4.0    # v5.1: Raised from 3.0 — was closing trades too early before TP
+    SMART_EXIT_TIGHTEN_THRESHOLD = 2.5   # v5.1: Raised from 2.0 — tighten SL only on stronger signals
+    SMART_EXIT_MIN_CANDLES_OPEN = 5      # v5.1: Raised from 3 — give trade more time to develop
     SMART_EXIT_ONLY_IN_PROFIT = True     # Only early-close if trade is in profit
     SMART_EXIT_TIGHTEN_ATR_MULT = 0.5    # Tighter trailing stop multiplier when danger detected
 
@@ -217,7 +217,17 @@ class Config:
     # Feature Engineering
     # =========================================
     ATR_THRESHOLD = 0.0002               # Filter for low liquidity periods
-    ATR_LOOKAHEAD_MULT = 1.2             # Target generation: BUY if future_move > ATR * this. Overridden per-symbol in train_offline.py
+    ATR_LOOKAHEAD_MULT = 1.2             # Default target threshold — overridden per-symbol below
+    # v5.1: Per-symbol ATR lookahead multipliers — MUST match train_offline.py values exactly
+    # These affect Target generation in generate_target_column() during live feature pipeline
+    ATR_LOOKAHEAD_MULT_PER_SYMBOL = {
+        "EURUSD": 1.2,
+        "GBPUSD": 1.2,
+        "USDJPY": 1.2,
+        "XAUUSD": 1.5,   # Gold moves $5-15/candle — needs wider target threshold
+        "US30":   1.5,   # Index moves 50-150pts/candle
+        "BTCUSD": 1.8,   # Crypto high volatility
+    }
     ADX_RANGING_THRESHOLD = 15           # v5.1: Lowered from 20 — H1 ADX 15-20 is weak trend not pure ranging
                                          # Combined with H1_ADX usage in filter, this is more accurate
     DXY_TICKER = "DX-Y.NYB"

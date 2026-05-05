@@ -41,3 +41,4 @@ timestamp,ticket,symbol,direction,danger_score,should_exit,candles_open,current_
 2026-05-01T18:53:51.678729,56487180094,GBPUSD,BUY,5.40,True,3,0.00030,Engulf_Bear(+2.0) + MarubozuBear(+1.5) + reversal_composite(-2.0) + vol_squeeze_amplify(x1.2)
 2026-05-01T18:55:16.425561,56487240560,XAUUSD,BUY,2.40,False,3,6.19000,DoubleTop_Flag(+2.0) + vol_squeeze_amplify(x1.2)
 2026-05-01T19:00:20.440790,56487240560,XAUUSD,BUY,2.40,False,4,6.46000,DoubleTop_Flag(+2.0) + vol_squeeze_amplify(x1.2)
+2026-05-05T20:20:44.646454,56526305877,EURUSD,SELL,4.20,True,5,0.00002,DoubleBottom_Flag(+2.0) + FallingWedge_Flag(+1.5) + vol_squeeze_amplify(x1.2)

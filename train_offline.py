@@ -194,7 +194,7 @@ def train_symbol(symbol: str, sym_cfg: dict) -> dict:
         Config.ATR_LOOKAHEAD_MULT = sym_cfg["atr_lookahead_mult"]
 
         logger.info("[%s] Running feature engineering pipeline...", symbol)
-        df_processed = feature_engineering_pipeline(df_m5, df_confirm=df_m15, df_trend=df_h1)
+        df_processed = feature_engineering_pipeline(df_m5, df_confirm=df_m15, df_trend=df_h1, symbol=symbol)
 
         # Restore
         Config.ATR_LOOKAHEAD_MULT = original_atr_mult

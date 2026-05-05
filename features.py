@@ -441,21 +441,31 @@ def add_liquidity_features(df: pd.DataFrame) -> pd.DataFrame:
 # TARGET GENERATION
 # =========================================
 
-def generate_target_column(df: pd.DataFrame, lookahead: int = 6) -> pd.DataFrame:
+def generate_target_column(df: pd.DataFrame, lookahead: int = 6, symbol: str = None) -> pd.DataFrame:
     """
     Creates the Target column with strict ATR-based noise filtering.
-    BUY (1) if future move > 1.5 * ATR
-    SELL (0) if future move < -1.5 * ATR
+    BUY (1) if future move > ATR_LOOKAHEAD_MULT * ATR
+    SELL (0) if future move < -ATR_LOOKAHEAD_MULT * ATR
     HOLD (NaN) otherwise.
+
+    v5.1: Uses per-symbol ATR_LOOKAHEAD_MULT to match training targets exactly.
     """
     df['future_close'] = df['close'].shift(-lookahead)
     future_move = df['future_close'] - df['close']
-    threshold = df['ATR'] * getattr(Config, 'ATR_LOOKAHEAD_MULT', 1.2)
-    
+
+    # v5.1: Use per-symbol multiplier if available, else fall back to global default
+    per_symbol_mults = getattr(Config, 'ATR_LOOKAHEAD_MULT_PER_SYMBOL', {})
+    if symbol and symbol in per_symbol_mults:
+        atr_mult = per_symbol_mults[symbol]
+    else:
+        atr_mult = getattr(Config, 'ATR_LOOKAHEAD_MULT', 1.2)
+
+    threshold = df['ATR'] * atr_mult
+
     # 1 = BUY, 0 = SELL, np.nan = HOLD (noise)
-    df['Target'] = np.where(future_move > threshold, 1, 
+    df['Target'] = np.where(future_move > threshold, 1,
                             np.where(future_move < -threshold, 0, np.nan))
-    
+
     df.drop(['future_close'], axis=1, inplace=True)
     return df
 
@@ -464,7 +474,7 @@ def generate_target_column(df: pd.DataFrame, lookahead: int = 6) -> pd.DataFrame
 # MASTER PIPELINE
 # =========================================
 
-def feature_engineering_pipeline(df: pd.DataFrame, df_confirm=None, df_trend=None) -> pd.DataFrame:
+def feature_engineering_pipeline(df: pd.DataFrame, df_confirm=None, df_trend=None, symbol: str = None) -> pd.DataFrame:
     """
     Runs the complete feature engineering pipeline.
 
@@ -472,9 +482,10 @@ def feature_engineering_pipeline(df: pd.DataFrame, df_confirm=None, df_trend=Non
         df: Primary timeframe DataFrame (M5)
         df_confirm: Confirmation timeframe DataFrame (M15) — optional
         df_trend: Trend timeframe DataFrame (H1) — optional
+        symbol: Trading symbol (e.g. 'XAUUSD') — used for per-symbol ATR_LOOKAHEAD_MULT
 
     Returns:
-        Fully featured DataFrame ready for LSTM.
+        Fully featured DataFrame ready for XGBoost/RF.
     """
     logger.info("Starting feature engineering pipeline...")
     df = df.copy()
@@ -512,8 +523,8 @@ def feature_engineering_pipeline(df: pd.DataFrame, df_confirm=None, df_trend=Non
     if df_confirm is not None or df_trend is not None:
         df = inject_mtf_features(df, df_confirm, df_trend)
 
-    # Target
-    df = generate_target_column(df)
+    # Target — pass symbol for per-symbol ATR_LOOKAHEAD_MULT
+    df = generate_target_column(df, symbol=symbol)
 
     # ATR Liquidity Filter
     initial_len = len(df)

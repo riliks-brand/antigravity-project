@@ -1,0 +1,2 @@
+close_time,ticket,symbol,direction,volume,entry_price,close_price,sl_price,tp1_price,tp2_price,slippage_points,latency_ms,pnl,close_reason,tp1_hit,trailing_active,RSI,ADX,ATR,Volatility,BB_position,h1_trend,trend_strength,session,decision_reason
+2026-05-05T20:20:44.755489,56526305877,EURUSD,SELL,0.01,1.16948,1.16946,1.16995,1.16877,1.16853,0.0,2.98828125,2.0000000000131025e-07,SMART_EXIT,False,False,37.69199433125737,15.801681458122047,0.0002397655426305825,0.00020501893198720216,0.1275847209345181,-1,0.022905184517772778,New York,VALID_SIGNAL

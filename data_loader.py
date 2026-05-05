@@ -34,7 +34,7 @@ def fetch_mt5_ohlc(symbol=None, timeframe=None, count=None):
     Fetches OHLC data directly from MT5.
 
     Args:
-        symbol: Trading symbol (default: Config.FOREX_SYMBOL)
+        symbol: Trading symbol (default: first symbol in Config.SYMBOLS)
         timeframe: MT5 timeframe constant (default: Config.TIMEFRAME)
         count: Number of candles to fetch (default: Config.DATA_POINTS)
 
@@ -43,7 +43,9 @@ def fetch_mt5_ohlc(symbol=None, timeframe=None, count=None):
         Index is datetime (timezone-naive UTC).
         Returns None on failure.
     """
-    symbol = symbol or Config.FOREX_SYMBOL
+    # v5.1 fix: Config.FOREX_SYMBOL doesn't exist — use first symbol in SYMBOLS list
+    if symbol is None:
+        symbol = getattr(Config, 'FOREX_SYMBOL', None) or getattr(Config, 'SYMBOL', None) or Config.SYMBOLS[0]
     timeframe = timeframe or Config.TIMEFRAME
     count = count or Config.DATA_POINTS
 
@@ -110,7 +112,9 @@ def fetch_mtf_data(symbol=None):
         dict with keys 'M5', 'M15', 'H1', each containing a DataFrame.
         Returns None if M5 (primary) fetch fails.
     """
-    symbol = symbol or Config.FOREX_SYMBOL
+    # v5.1 fix: use safe symbol resolution
+    if symbol is None:
+        symbol = getattr(Config, 'FOREX_SYMBOL', None) or Config.SYMBOLS[0]
 
     logger.info("[MTF] Fetching multi-timeframe data for %s...", symbol)
 
@@ -150,7 +154,8 @@ def fetch_tick_data(symbol=None):
         dict with keys: bid, ask, spread, time, volume
         or None on failure.
     """
-    symbol = symbol or Config.FOREX_SYMBOL
+    if symbol is None:
+        symbol = getattr(Config, 'FOREX_SYMBOL', None) or Config.SYMBOLS[0]
     tick = mt5.symbol_info_tick(symbol)
     if not tick:
         logger.warning("[Tick] No tick data for %s.", symbol)
@@ -175,7 +180,8 @@ def get_server_time_from_tick(symbol=None):
     Get server time from the latest tick.
     This is the CORRECT time source for session filtering.
     """
-    symbol = symbol or Config.FOREX_SYMBOL
+    if symbol is None:
+        symbol = getattr(Config, 'FOREX_SYMBOL', None) or Config.SYMBOLS[0]
     tick = mt5.symbol_info_tick(symbol)
     if tick:
         return datetime.datetime.utcfromtimestamp(tick.time)
@@ -189,7 +195,8 @@ def is_market_open(symbol=None):
     Check if the market is currently open for the symbol.
     Uses MT5's trade mode flag.
     """
-    symbol = symbol or Config.FOREX_SYMBOL
+    if symbol is None:
+        symbol = getattr(Config, 'FOREX_SYMBOL', None) or Config.SYMBOLS[0]
     info = mt5.symbol_info(symbol)
     if not info:
         return False
@@ -256,7 +263,10 @@ def fetch_data(trading_mode='FOREX', manual_symbol=None):
     Legacy-compatible wrapper.
     Now routes everything through MT5.
     """
-    symbol = manual_symbol or Config.FOREX_SYMBOL
+    if manual_symbol is None:
+        symbol = getattr(Config, 'FOREX_SYMBOL', None) or Config.SYMBOLS[0]
+    else:
+        symbol = manual_symbol
 
     if trading_mode == 'FOREX':
         return fetch_mt5_ohlc(symbol)

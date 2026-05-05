@@ -373,7 +373,9 @@ def main():
 
                 # ===== FEATURE ENGINEERING =====
                 processed_df = feature_engineering_pipeline(
-                    df_m5, df_confirm=df_m15 if not df_m15.empty else None, df_trend=df_h1 if not df_h1.empty else None
+                    df_m5, df_confirm=df_m15 if not df_m15.empty else None,
+                    df_trend=df_h1 if not df_h1.empty else None,
+                    symbol=symbol
                 )
                 if processed_df is None or processed_df.empty: continue
 

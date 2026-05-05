@@ -718,3 +718,26 @@ rf_prob  = registry.predict_rf("XAUUSD", df_processed)    # with column alignmen
 > - **ensemble_decisions.csv**: Rotated (old file had `lstm_prob` column header, new file uses `xgb_prob`)
 >
 > **Root cause of no-trade issue**: RF_NOISE_GATE was too narrow (0.45-0.55) blocking ~65% of signals. Combined with threshold too high (0.60-0.62) vs actual XGB output range (0.55-0.62), the bot was HOLDing almost everything. After calibration from 2394 historical decisions, thresholds now match actual model output distribution.
+>
+> **v5.1 second pass (May 5, 2026 — post first live run)**:
+> - **ensemble_engine.py**: trend_strength formula changed from `(ADX-20)/30` to `(ADX-15)/35` for smoother gradient at low ADX values. ADX=19.7 now gives ts=0.134 instead of 0.000.
+> - **main.py apply_hybrid_filters**: ADX ranging filter now uses `H1_ADX` (same as ensemble) instead of noisy M5 ADX. This fixed EURUSD SELL being rejected by M5 ADX=14.2 while H1_ADX=15.9 was valid.
+> - **config.py ADX_RANGING_THRESHOLD**: Lowered from 20 to 15. H1 ADX 15-20 is weak trend, not pure ranging.
+>
+> **v5.1 third pass (May 5, 2026 — bug fixes from Claude analysis)**:
+> - **data_loader.py**: Fixed `Config.FOREX_SYMBOL` AttributeError — all 5 functions now use `getattr(Config, 'FOREX_SYMBOL', None) or Config.SYMBOLS[0]` safe resolution. This was a latent crash bug if any function was called without explicit symbol.
+> - **features.py generate_target_column**: Added `symbol` parameter. Now uses `Config.ATR_LOOKAHEAD_MULT_PER_SYMBOL` dict to match training targets exactly (XAUUSD=1.5, US30=1.5, BTCUSD=1.8, forex=1.2). Previously live bot used 1.2 for all symbols while models were trained with different multipliers — causing label mismatch.
+> - **features.py feature_engineering_pipeline**: Added `symbol` parameter, passes it to `generate_target_column`.
+> - **main.py**: Updated `feature_engineering_pipeline` call to pass `symbol=symbol`.
+> - **train_offline.py**: Updated `feature_engineering_pipeline` call to pass `symbol=symbol` (was already using Config override but now consistent).
+> - **config.py ATR_LOOKAHEAD_MULT_PER_SYMBOL**: New dict with per-symbol values matching train_offline.py exactly.
+> - **config.py SMART_EXIT**: Raised `SMART_EXIT_DANGER_THRESHOLD` from 3.0 to 4.0, `SMART_EXIT_TIGHTEN_THRESHOLD` from 2.0 to 2.5, `SMART_EXIT_MIN_CANDLES_OPEN` from 3 to 5. Previous values caused trades to close early at small profit (0.02) before reaching TP.
+>
+> **Status of all reported issues**:
+> | Issue | Status | Fix |
+> |-------|--------|-----|
+> | Penalty always subtracts even when models agree | ✅ Already correct | Step 6 in ensemble_engine subtracts if weighted_avg>0.5, adds if <0.5 |
+> | Config.FOREX_SYMBOL AttributeError | ✅ Fixed | data_loader.py uses safe getattr resolution |
+> | ATR_LOOKAHEAD_MULT mismatch live vs training | ✅ Fixed | Per-symbol dict in config, passed through pipeline |
+> | Universal model trained without MTF features | ✅ Not a real issue | Universal is RF-only fallback, BTCUSD now skipped via has_model() |
+> | Smart Exit closing trades too early | ✅ Fixed | Thresholds raised: 3.0→4.0 danger, 3→5 min candles |
