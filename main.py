@@ -1,4 +1,4 @@
-﻿"""
+"""
 Main Loop â€” Elite v4.0 (XGBoost Ensemble Edition)
 ====================================================
 The master orchestrator that ties ALL systems together.
@@ -227,6 +227,7 @@ def main():
     last_heartbeat = time.time()
     candle_index = 0
     last_daily_summary_date = None
+    last_weekly_retrain_date = None   # v5.2: weekly walk-forward retraining
     last_eval_time = 0
     symbol_states = {}
 
@@ -276,6 +277,44 @@ def main():
                 top_features = rf_model.get_top_features(5) if rf_model.model else None
                 notifier.daily_summary(stats, top_features)
                 last_daily_summary_date = today
+
+            # ===== WEEKLY WALK-FORWARD RETRAINING (v5.2) =====
+            current_week = now.isocalendar()[1]
+            retrain_day  = getattr(Config, 'WEEKLY_RETRAIN_DAY', 6)
+            retrain_hour = getattr(Config, 'WEEKLY_RETRAIN_HOUR', 2)
+            retrain_enabled = getattr(Config, 'WEEKLY_RETRAIN_ENABLED', True)
+            is_retrain_time = (
+                retrain_enabled and
+                now.weekday() == retrain_day and
+                now.hour == retrain_hour and
+                now.minute < 2
+            )
+            if is_retrain_time and last_weekly_retrain_date != current_week:
+                logger.info("[WEEKLY RETRAIN] Starting walk-forward retraining (week %d)...", current_week)
+                try:
+                    import subprocess, sys
+                    retrain_proc = subprocess.Popen(
+                        [sys.executable, "train_offline.py"],
+                        stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                    )
+                    registry._retrain_proc = retrain_proc
+                    logger.info("[WEEKLY RETRAIN] train_offline.py started (PID=%d). Bot continues trading.", retrain_proc.pid)
+                    last_weekly_retrain_date = current_week
+                except Exception as e:
+                    logger.error("[WEEKLY RETRAIN] Failed to start retraining: %s", e)
+
+            # ===== MODEL HOT-RELOAD CHECK (v5.2) =====
+            # بعد الـ weekly retrain، نلود الـ models الجديدة بدون restart
+            if getattr(registry, '_retrain_proc', None) is not None:
+                proc = registry._retrain_proc
+                if proc.poll() is not None:  # process finished
+                    logger.info("[HOT-RELOAD] Retraining complete (exit=%d). Reloading models...", proc.returncode)
+                    try:
+                        registry._load_all()
+                        logger.info("[HOT-RELOAD] Models reloaded successfully.")
+                    except Exception as e:
+                        logger.error("[HOT-RELOAD] Reload failed: %s", e)
+                    registry._retrain_proc = None
 
             # ===== TICK MANAGEMENT (every cycle) =====
             for symbol in Config.SYMBOLS:

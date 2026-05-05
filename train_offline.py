@@ -178,6 +178,8 @@ def train_symbol(symbol: str, sym_cfg: dict) -> dict:
         "train_rows": 0,
         "status": "FAILED",
         "error": None,
+        "wfv_xgb": {},
+        "wfv_rf": {},
     }
 
     try:
@@ -232,7 +234,7 @@ def train_symbol(symbol: str, sym_cfg: dict) -> dict:
         jdump(xgb_model_obj,  xgb_path(symbol))
         jdump(xgb_scaler,     xgb_scaler_path(symbol))
         jdump(xgb_features,   xgb_features_path(symbol))
-        logger.info("[%s] XGB saved (acc: %.2f%%, time: %.1fs)", symbol, xgb_acc * 100, time.time() - t2)
+        logger.info("[%s] XGB saved (acc: %.2f%% WFV, time: %.1fs)", symbol, xgb_acc * 100, time.time() - t2)
 
         # XGBoost prediction distribution
         from xgb_model import engineer_lagged_features
@@ -303,9 +305,78 @@ class RFModelSymbol:
         self.scaler = None
         self.feature_names = []
         self.feature_importances = {}
+        self.wfv_result = {}
 
         from sklearn.preprocessing import RobustScaler as RS
         self.scaler = RS()
+
+    def _walk_forward_validate(self, X_all, y_all, n_folds=5):
+        """
+        Walk-Forward Validation للـ RF.
+        نفس المنطق بتاع XGB لكن بـ RF model.
+        """
+        from sklearn.ensemble import RandomForestClassifier
+        from sklearn.metrics import accuracy_score as acc_score
+
+        n = len(X_all)
+        train_size = int(n * 0.60)
+        test_size  = int(n * 0.10)
+        step_size  = (n - train_size - test_size) // max(n_folds - 1, 1)
+
+        fold_accuracies = []
+
+        for fold in range(n_folds):
+            train_start = fold * step_size
+            train_end   = train_start + train_size
+            test_start  = train_end
+            test_end    = test_start + test_size
+
+            if test_end > n:
+                break
+
+            X_tr = X_all[train_start:train_end]
+            y_tr = y_all[train_start:train_end]
+            X_te = X_all[test_start:test_end]
+            y_te = y_all[test_start:test_end]
+
+            sc = self.scaler.__class__()
+            sc.fit(X_tr)
+            X_tr_s = sc.transform(X_tr)
+            X_te_s = sc.transform(X_te)
+
+            # Lightweight RF for validation (fewer trees)
+            fold_rf = RandomForestClassifier(
+                n_estimators=100,
+                max_depth=Config.RF_MAX_DEPTH,
+                min_samples_split=20,
+                min_samples_leaf=10,
+                max_features='sqrt',
+                class_weight='balanced',
+                random_state=42 + fold,
+                n_jobs=-1,
+            )
+            fold_rf.fit(X_tr_s, y_tr)
+            fold_acc = acc_score(y_te, fold_rf.predict(X_te_s))
+            fold_accuracies.append(fold_acc)
+
+            logger.info(
+                "[WFV-RF-%s] Fold %d/%d: acc=%.2f%%",
+                self.symbol, fold + 1, n_folds, fold_acc * 100
+            )
+
+        if not fold_accuracies:
+            return {"mean_accuracy": 0.0, "fold_accuracies": [], "skipped": True}
+
+        mean_acc = float(np.mean(fold_accuracies))
+        std_acc  = float(np.std(fold_accuracies))
+        return {
+            "fold_accuracies": [round(a * 100, 2) for a in fold_accuracies],
+            "mean_accuracy":   round(mean_acc * 100, 2),
+            "std_accuracy":    round(std_acc * 100, 2),
+            "min_accuracy":    round(min(fold_accuracies) * 100, 2),
+            "max_accuracy":    round(max(fold_accuracies) * 100, 2),
+            "skipped":         False,
+        }
 
     def train(self, df_full: pd.DataFrame) -> float:
         from rf_model import engineer_rf_features
@@ -324,6 +395,15 @@ class RFModelSymbol:
         X = rf_df[feature_cols].values
         y = rf_df['Target'].values
 
+        # ── Walk-Forward Validation ───────────────────────────
+        logger.info("[RF-%s] Running Walk-Forward Validation (5 folds)...", self.symbol)
+        self.wfv_result = self._walk_forward_validate(X, y, n_folds=5)
+        if not self.wfv_result.get("skipped"):
+            folds_str = " | ".join([f"{a:.1f}%" for a in self.wfv_result["fold_accuracies"]])
+            print(f"  [RF-WFV-{self.symbol}] Folds: {folds_str}")
+            print(f"  [RF-WFV-{self.symbol}] Mean: {self.wfv_result['mean_accuracy']:.2f}% | Std: {self.wfv_result['std_accuracy']:.2f}%")
+
+        # ── Final Model Training (last 80% = most recent data) ─
         split = int(len(X) * 0.8)
         X_train, X_test = X[:split], X[split:]
         y_train, y_test = y[:split], y[split:]
@@ -333,10 +413,10 @@ class RFModelSymbol:
         X_test_s  = self.scaler.transform(X_test)
 
         self.model = RandomForestClassifier(
-            n_estimators=500,        # v5.1: 200 → 500 (أكتر trees مع بيانات أكبر)
+            n_estimators=500,
             max_depth=Config.RF_MAX_DEPTH,
-            min_samples_split=20,    # v5.1: 10 → 20 (أقل overfitting)
-            min_samples_leaf=10,     # v5.1: 5 → 10
+            min_samples_split=20,
+            min_samples_leaf=10,
             max_features='sqrt',
             class_weight='balanced',
             random_state=42,
@@ -344,7 +424,7 @@ class RFModelSymbol:
         )
         self.model.fit(X_train_s, y_train)
 
-        acc = accuracy_score(y_test, self.model.predict(X_test_s))
+        static_acc = accuracy_score(y_test, self.model.predict(X_test_s))
 
         # Save with symbol-specific paths
         dump(self.model,         rf_path(self.symbol))
@@ -356,7 +436,10 @@ class RFModelSymbol:
         top5 = sorted(self.feature_importances.items(), key=lambda x: x[1], reverse=True)[:5]
         logger.info("[RF-%s] Top 5 features: %s", self.symbol, top5)
 
-        return acc
+        # Return WFV mean if available, else static
+        if not self.wfv_result.get("skipped"):
+            return self.wfv_result["mean_accuracy"] / 100.0
+        return static_acc
 
 
 # ─────────────────────────────────────────
@@ -418,46 +501,53 @@ def train_universal_model(all_dataframes: dict):
 # ─────────────────────────────────────────
 def print_summary(results: list):
     print("\n")
-    print("╔" + "═" * 62 + "╗")
-    print("║     MULTI-SYMBOL TRAINING SUMMARY                           ║")
-    print("╠" + "═" * 62 + "╣")
-    print(f"║  {'Symbol':<10} {'XGB Acc':>10} {'RF Acc':>10} {'Rows':>8}  {'Status':<10} ║")
-    print("╠" + "═" * 62 + "╣")
+    print("=" * 68)
+    print("     MULTI-SYMBOL TRAINING SUMMARY v5.2 (Walk-Forward)")
+    print("=" * 68)
+    print(f"  {'Symbol':<10} {'XGB WFV':>10} {'RF WFV':>10} {'Rows':>8}  {'Status':<10}")
+    print("=" * 68)
 
-    total_lstm = 0
+    total_xgb = 0
     total_rf   = 0
     success_count = 0
 
     for r in results:
         status_icon = "OK" if r["status"] == "SUCCESS" else ("--" if r["status"] == "SKIPPED" else "XX")
-        print(f"||  {r['symbol']:<10} {r['xgb_accuracy']:>9.1f}% {r['rf_accuracy']:>9.1f}% "
-              f"{r['train_rows']:>8,}  {status_icon} {r['status']:<8} ||")
+        print(f"  {r['symbol']:<10} {r['xgb_accuracy']:>9.1f}% {r['rf_accuracy']:>9.1f}% "
+              f"{r['train_rows']:>8,}  {status_icon} {r['status']:<8}")
         if r["status"] == "SUCCESS":
-            total_lstm += r["xgb_accuracy"]
+            total_xgb += r["xgb_accuracy"]
             total_rf   += r["rf_accuracy"]
             success_count += 1
 
-    print("╠" + "═" * 62 + "╣")
+    print("=" * 68)
     if success_count > 0:
-        print(f"║  {'AVERAGE':<10} {total_lstm/success_count:>9.1f}% {total_rf/success_count:>9.1f}%"
-              f"{'':>9}  {success_count}/{len(results)} OK      ║")
-    print("╚" + "═" * 62 + "╝")
+        print(f"  {'AVERAGE':<10} {total_xgb/success_count:>9.1f}% {total_rf/success_count:>9.1f}%"
+              f"{'':>9}  {success_count}/{len(results)} OK")
+    print("=" * 68)
+
+    # Show WFV details per symbol
+    print("\n  Walk-Forward Validation Details:")
+    for r in results:
+        if r["status"] == "SUCCESS" and r.get("wfv_xgb"):
+            wfv = r["wfv_xgb"]
+            folds = " | ".join([f"{a:.1f}%" for a in wfv.get("fold_accuracies", [])])
+            print(f"  {r['symbol']} XGB: [{folds}] mean={wfv.get('mean_accuracy',0):.1f}% std={wfv.get('std_accuracy',0):.1f}%")
 
     # Show failed ones
-    failed = [r for r in results if r["status"] != "SUCCESS"]
+    failed = [r for r in results if r["status"] not in ("SUCCESS", "SKIPPED")]
     if failed:
-        print("\n⚠️  Failed symbols:")
+        print("\n  Failed symbols:")
         for r in failed:
             print(f"   - {r['symbol']}: {r['error']}")
 
-    print(f"\n📁 Model files saved:")
+    print(f"\n  Model files saved:")
     for r in results:
         if r["status"] == "SUCCESS":
-            print(f"   - {xgb_path(r['symbol'])} + {xgb_scaler_path(r['symbol'])}")
-            print(f"   - {rf_path(r['symbol'])} + {rf_scaler_path(r['symbol'])}")
+            print(f"   - xgb_model_{r['symbol']}.joblib + xgb_scaler_{r['symbol']}.joblib")
+            print(f"   - rf_model_{r['symbol']}.joblib  + rf_scaler_{r['symbol']}.joblib")
 
-    print(f"\n📁 Universal fallback:")
-    print(f"   - rf_model_universal.joblib (all symbols combined)\n")
+    print(f"\n  Universal fallback: rf_model_universal.joblib\n")
 
 
 # ─────────────────────────────────────────

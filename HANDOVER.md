@@ -699,8 +699,8 @@ rf_prob  = registry.predict_rf("XAUUSD", df_processed)    # with column alignmen
 | Step | Task | Status | Expected Gain |
 |------|------|--------|---------------|
 | **1** | Increase training data: 17K → 99K candles per symbol | ✅ Done | +3-5% accuracy |
-| **2** | Walk-forward validation: rolling window retraining | ⏳ Next | +2-3% stability |
-| **3** | SHAP feature importance + cleanup noisy features | ⏳ Pending | +1-2% accuracy |
+| **2** | Walk-forward validation: rolling window retraining | ✅ Done | +2-3% stability |
+| **3** | SHAP feature importance + cleanup noisy features | ⏳ Next | +1-2% accuracy |
 | **4** | Regime-specific thresholds (Trending/Ranging/Volatile) | ⏳ Pending | +2-3% win rate |
 | **5** | Add LightGBM to ensemble (XGB + RF + LGB) | ⏳ Pending | +1-2% accuracy |
 
@@ -708,33 +708,28 @@ rf_prob  = registry.predict_rf("XAUUSD", df_processed)    # with column alignmen
 
 > **END OF HANDOVER (Updated: May 6, 2026)**
 >
-> **v5.1 Step 1 — Large Dataset Training (May 6, 2026)**:
+> **v5.2 Step 2 — Walk-Forward Validation (May 6, 2026)**:
 >
 > **What changed:**
-> - **train_offline.py**: Dataset 17,280 → 99,000 M5 candles per symbol (~14 months). MTF proportional: M15=33K, H1=8,250. BTCUSD auto-skipped if not in MT5. Added timing per step.
-> - **xgb_model.py**: `train_and_evaluate_xgb` hyperparameters upgraded for large dataset: `n_estimators` 500→1000, `learning_rate` 0.02→0.01, added `early_stopping_rounds=50`, `min_child_weight` 10→20. `TOP_K_FEATURES` 50→80.
-> - **train_offline.py RFModelSymbol**: `n_estimators` 200→500, `min_samples_split` 10→20, `min_samples_leaf` 5→10.
-> - **config.py**: `RF_N_ESTIMATORS` 200→500.
+> - **xgb_model.py**: Added `walk_forward_validate()` — 5-fold rolling window WFV. Each fold: train 60% → test 10%, window slides forward. Per-fold feature selection + scaling (no leakage). Returns mean/std/min/max accuracy + stability score. Added `print_wfv_report()` with verdict. `train_and_evaluate_xgb()` now runs WFV first, then trains final model on last 80%. Reports WFV mean as accuracy (more realistic than static).
+> - **train_offline.py RFModelSymbol**: Added `_walk_forward_validate()` — same rolling logic for RF. 5 folds × 100-tree lightweight RF. Returns WFV mean as reported accuracy.
+> - **main.py**: Added weekly auto-retraining (Sunday 02:00 UTC). Runs `train_offline.py` as subprocess — bot keeps trading during retraining. Hot-reload: when subprocess finishes, `registry._load_all()` reloads new models without restart.
+> - **config.py**: Added `WEEKLY_RETRAIN_ENABLED`, `WEEKLY_RETRAIN_DAY=6` (Sunday), `WEEKLY_RETRAIN_HOUR=2`.
 >
-> **Why these numbers:**
-> - 99K = MT5 max per request (~14 months of M5 data)
-> - 1000 trees + early stopping: more trees but stops when no improvement (prevents overfitting)
-> - learning_rate 0.01: slower learning = more precise patterns with large data
-> - TOP_K_FEATURES 80: more features justified with 6x more data
->
-> **To retrain with new settings:**
+> **Walk-Forward vs Static Split:**
 > ```
-> python train_offline.py
+> Static:      [====Train 80%====][=Test 20%=]  ← one snapshot
+> Walk-Forward: fold1: [Train60%][Test10%]
+>               fold2:   [Train60%][Test10%]     ← rolling
+>               fold3:     [Train60%][Test10%]
+>               fold4:       [Train60%][Test10%]
+>               fold5:         [Train60%][Test10%]
+>               Final:   [====Train 80%====]     ← most recent data
 > ```
-> Expected training time: ~30-60 minutes total (all 5 symbols)
-> Expected accuracy improvement: +3-5% over previous 17K models
+> **Stability score** = 1 - (std/mean) × 100. Score > 90% = consistent across market regimes.
 >
-> **v5.1 previous changes (May 5, 2026)**:
-> - ensemble_engine.py: RF_NOISE_GATE widened, thresholds lowered, trend_strength formula improved
-> - features.py: OB/FVG columns preserved, per-symbol ATR_LOOKAHEAD_MULT
-> - data_loader.py: FOREX_SYMBOL AttributeError fixed
-> - config.py: SMART_EXIT thresholds raised, ADX_RANGING_THRESHOLD lowered to 15
-> - main.py: H1_ADX used in hybrid filter, symbol passed to pipeline
+> **v5.1 Step 1 — Large Dataset Training (May 6, 2026)**:
+> - train_offline.py: 17K → 99K candles, XGB 1000 trees + early stopping, RF 500 trees
 > - **features.py**: Fixed `active_bullish_ob`, `active_bearish_ob` being dropped before main.py reads them for state tracking. Fixed `last_fvg_price` being dropped before main.py reads it.
 > - **model_registry.py**: Added `has_model()` method to check if XGB model exists for a symbol
 > - **main.py**: Added `registry.has_model(symbol)` check to skip symbols without XGB models (e.g., BTCUSD)

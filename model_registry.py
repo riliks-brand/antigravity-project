@@ -76,12 +76,7 @@ class ModelRegistry:
         if "universal" in model_dict:
             logger.debug("[Registry] %s not found, using universal fallback.", symbol)
             return "universal"
-        logger.warning("[Registry] No model found for %s and no universal fallback. Will return 0.5.", symbol)
         return None
-
-    def has_model(self, symbol: str) -> bool:
-        """Returns True if XGB model exists for this symbol (or universal fallback)."""
-        return self._resolve_sym(symbol, self.xgb_models) is not None
 
     def predict_xgb(self, symbol: str, df_processed) -> float:
         """

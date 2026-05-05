@@ -270,6 +270,11 @@ class Config:
     # =========================================
     HEARTBEAT_INTERVAL_SECONDS = 30      # Check MT5 connection every N seconds
 
+    # v5.2: Weekly Walk-Forward Retraining Schedule
+    WEEKLY_RETRAIN_ENABLED = True        # Auto-retrain every week
+    WEEKLY_RETRAIN_DAY = 6               # 0=Monday ... 6=Sunday (Sunday = least volatile)
+    WEEKLY_RETRAIN_HOUR = 2              # 02:00 UTC (markets closed / low activity)
+
     # Legacy (kept for backward compatibility)
     TRADING_MODE = "FOREX"
     SYMBOL = "BTCUSD"
