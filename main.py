@@ -504,8 +504,8 @@ def main():
                     final_rank_score, session, decision.confidence_level
                 )
                 
-                # Multiply score with trend and event strength for opportunity ranking
-                final_rank_score = final_rank_score * max(0.1, trend_strength) * max(1.0, event_strength)
+                # Multiply score with event strength for opportunity ranking (don't multiply by trend_strength as it blocks ranging trades)
+                final_rank_score = final_rank_score * max(1.0, event_strength)
 
                 # Minimum score threshold check
                 if final_rank_score < Config.MIN_GLOBAL_SCORE:

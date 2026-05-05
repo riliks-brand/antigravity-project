@@ -185,7 +185,7 @@ def _detect_regime_conflict(session, trend_strength, distance_from_neutral=0.0,
     conflict_detected = False
     conflict_type = None
 
-    if session == "London" and trend_strength < 0.05:
+    if session == "London" and trend_strength < 0.02:
         conflict_detected = True
         conflict_type = "London_ranging"
     elif session == "Asia" and trend_strength > 0.8:
@@ -198,14 +198,16 @@ def _detect_regime_conflict(session, trend_strength, distance_from_neutral=0.0,
     dynamic_distance = 0.05 + (atr_normalized * 0.02)
     confidence_map = {"HIGH": 3, "MEDIUM": 2, "LOW": 1}
     confidence_score = confidence_map.get(str(confidence_level).upper(), 1)
-    allow_override = (distance_from_neutral > dynamic_distance) and (confidence_score >= 2)
+    
+    # Make override easier (only need LOW confidence or lower distance)
+    allow_override = (distance_from_neutral > dynamic_distance * 0.5) or (confidence_score >= 2)
 
     if allow_override:
         regime_penalty = max(0.0, (0.15 - trend_strength) * 0.1) if conflict_type == "London_ranging" else 0.02
-        logger.info("[Ensemble v4.2] ✅ REGIME OVERRIDE: penalty=%.4f", regime_penalty)
+        logger.info("[Ensemble v5.0] ✅ REGIME OVERRIDE: penalty=%.4f", regime_penalty)
         return False, regime_penalty
 
-    logger.warning("[Ensemble v4.2] ⚠️ REGIME CONFLICT: session=%s, ts=%.2f -> HARD BLOCK", session, trend_strength)
+    logger.warning("[Ensemble v5.0] ⚠️ REGIME CONFLICT: session=%s, ts=%.2f -> HARD BLOCK", session, trend_strength)
     return True, 0.0
 
 
@@ -218,22 +220,22 @@ def _detect_regime_conflict(session, trend_strength, distance_from_neutral=0.0,
 # الـ noise zone بناءً على RF distribution الفعلية:
 # NOISE (0.43-0.57): ~65% من الوقت
 # Signal يبدأ من 0.60+ للـ BUY أو 0.40- للـ SELL
-RF_NOISE_UPPER = 0.57   # فوق ده = RF بيقول BUY بثقة
-RF_NOISE_LOWER = 0.43   # تحت ده = RF بيقول SELL بثقة
+RF_NOISE_UPPER = 0.55   # فوق ده = RF بيقول BUY بثقة
+RF_NOISE_LOWER = 0.45   # تحت ده = RF بيقول SELL بثقة
 
 
-def _rf_confidence_gate(rf_prob, diagnostic=False):
+def _rf_confidence_gate(rf_prob, xgb_prob, diagnostic=False):
     """
-    v4.2 Gate: لو RF في الـ noise zone → return False (HOLD)
+    v5.0 Gate: لو RF في الـ noise zone → return False (HOLD)
     لو RF خارج الـ noise zone → return True (متابعة)
-
-    Noise zone: 0.43 ≤ rf_prob ≤ 0.57
-    Signal zone: rf_prob > 0.57 (BUY) or rf_prob < 0.43 (SELL)
+    لو XGBoost قوي جداً يتم تجاوز الـ gate.
     """
     in_noise = RF_NOISE_LOWER <= rf_prob <= RF_NOISE_UPPER
-    if in_noise and not diagnostic:
+    xgb_confident = xgb_prob > 0.60 or xgb_prob < 0.40
+    
+    if in_noise and not xgb_confident and not diagnostic:
         logger.info(
-            "[Ensemble v4.2] 🚫 RF_NOISE_GATE: rf_prob=%.4f in noise zone [%.2f, %.2f] -> HOLD",
+            "[Ensemble v5.0] 🚫 RF_NOISE_GATE: rf_prob=%.4f in noise zone [%.2f, %.2f] -> HOLD",
             rf_prob, RF_NOISE_LOWER, RF_NOISE_UPPER
         )
         return False
@@ -288,7 +290,7 @@ def ensemble_predict(
         return decision
 
     # ── Step 2.5: RF Confidence Gate ────────────────────────────
-    if not _rf_confidence_gate(rf_prob, diagnostic):
+    if not _rf_confidence_gate(rf_prob, xgb_prob, diagnostic):
         decision.direction = None
         decision.decision_reason = "RF_NOISE_ZONE"
         decision.stage_reached = "SCORE_FLOOR"
@@ -314,8 +316,8 @@ def ensemble_predict(
 
     rf_says_buy   = rf_prob  > RF_NOISE_UPPER
     rf_says_sell  = rf_prob  < RF_NOISE_LOWER
-    xgb_says_buy  = xgb_prob > 0.55
-    xgb_says_sell = xgb_prob < 0.45
+    xgb_says_buy  = xgb_prob > 0.60
+    xgb_says_sell = xgb_prob < 0.40
 
     # Hard conflict: XGB و RF في اتجاهين مختلفين بثقة
     if (rf_says_buy and xgb_says_sell) or (rf_says_sell and xgb_says_buy):
@@ -538,7 +540,7 @@ def ensemble_predict(
     print(f"\033[92m  Market State  : {market_state} (ADX: {current_adx:.1f} -> ts: {trend_strength:.3f})\033[0m")
     print(f"\033[92m  XGBoost       : {xgb_prob:.4f} (weight: {xgb_w:.0%}) ← PRIMARY\033[0m")
     print(f"\033[92m  RF            : {rf_prob:.4f} (weight: {rf_w:.0%}) ← COMPLEMENT\033[0m")
-    print(f"\033[92m  RF Gate       : {'PASS' if _rf_confidence_gate(rf_prob, True) else 'NOISE'}\033[0m")
+    print(f"\033[92m  RF Gate       : {'PASS' if _rf_confidence_gate(rf_prob, xgb_prob, True) else 'NOISE'}\033[0m")
     print(f"\033[92m  Weighted Avg  : {weighted_avg:.4f}\033[0m")
     print(f"\033[92m  Disagreement  : {disagreement:.4f} -> Penalty: {decision.penalty:.4f}\033[0m")
     print(f"\033[92m  Base Score    : {base_score:.4f}\033[0m")
