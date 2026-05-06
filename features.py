@@ -523,6 +523,9 @@ def feature_engineering_pipeline(df: pd.DataFrame, df_confirm=None, df_trend=Non
     if df_confirm is not None or df_trend is not None:
         df = inject_mtf_features(df, df_confirm, df_trend)
 
+    # Defragment before target generation (fixes PerformanceWarning)
+    df = df.copy()
+
     # Target — pass symbol for per-symbol ATR_LOOKAHEAD_MULT
     df = generate_target_column(df, symbol=symbol)
 
@@ -541,5 +544,8 @@ def feature_engineering_pipeline(df: pd.DataFrame, df_confirm=None, df_trend=Non
     subset_cols = [c for c in df.columns if c != 'Target']
     df.dropna(subset=subset_cols, inplace=True)
     logger.info("Data shape: %s → %s (after NaN cleanup)", pre_shape, df.shape)
+
+    # Defragment DataFrame (fixes PerformanceWarning from many column insertions)
+    df = df.copy()
 
     return df

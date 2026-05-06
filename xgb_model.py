@@ -129,6 +129,15 @@ def prepare_tabular_data(df: pd.DataFrame):
     X = df_valid[feature_cols].values
     y = df_valid['Target'].values.astype(int)
 
+    # Remove constant features before selection (fixes sklearn UserWarning)
+    col_std = X.std(axis=0)
+    non_constant_mask = col_std > 0
+    if not non_constant_mask.all():
+        n_removed = (~non_constant_mask).sum()
+        logger.info("[XGB] Removed %d constant features before selection.", n_removed)
+        X = X[:, non_constant_mask]
+        feature_cols = [f for f, keep in zip(feature_cols, non_constant_mask) if keep]
+
     # Step 3: Chronological split
     split = int(len(X) * 0.8)
     X_train, X_test = X[:split], X[split:]
