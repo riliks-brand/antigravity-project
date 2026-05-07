@@ -28,14 +28,8 @@ from enum import Enum
 from config import Config
 
 # ===== Setup Persistent Logger =====
-logger = logging.getLogger("TradeManager")
-logger.setLevel(logging.DEBUG)
-_fh = logging.FileHandler(Config.LOG_FILE, encoding="utf-8")
-_fh.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
-logger.addHandler(_fh)
-_ch = logging.StreamHandler()
-_ch.setFormatter(logging.Formatter("\033[96m%(asctime)s\033[0m [%(levelname)s] %(message)s"))
-logger.addHandler(_ch)
+from logging_setup import setup_module_logger
+logger = setup_module_logger("TradeManager", Config.LOG_FILE, console_color="\033[96m")
 
 
 class TradeState(Enum):

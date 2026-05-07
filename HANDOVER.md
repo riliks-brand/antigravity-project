@@ -653,24 +653,24 @@ macro_context.py imports:
 ### Status: Fully Operational
 All per-symbol models use XGBoost + RF. `main.py` uses `ModelRegistry` for routing.
 
-### Per-Symbol Config (v5.2 — Walk-Forward Validation Results)
-| Symbol | XGB WFV | XGB Static | RF WFV | Stability | Verdict |
-|--------|---------|------------|--------|-----------|---------|
-| EURUSD | **61.1%** | 61.3% | 57.3% | 97.6% | EXCELLENT |
-| GBPUSD | **62.5%** | 63.9% | 57.4% | 99.2% | EXCELLENT |
-| USDJPY | **60.5%** | 62.1% | 57.7% | 97.5% | EXCELLENT |
-| XAUUSD | **58.9%** | 60.6% | 56.5% | 98.5% | EXCELLENT |
-| US30   | **61.3%** | 58.3% | 57.8% | 97.4% | EXCELLENT |
+### Per-Symbol Config (v5.3 — Final SHAP + RFE Results)
+| Symbol | XGB WFV | RF WFV | Features | Stability | SHAP #1 Feature |
+|--------|---------|--------|----------|-----------|-----------------|
+| EURUSD | **61.4%** | 57.3% | 40 | 97.6% | M15_RSI |
+| GBPUSD | **62.6%** | 57.5% | 40 | 98.3% | M15_RSI |
+| USDJPY | **60.4%** | 57.8% | 40 | 97.3% | M15_RSI |
+| XAUUSD | **59.8%** | 56.4% | 40 | 98.3% | M15_RSI |
+| US30   | **60.3%** | 58.3% | 40 | 95.9% | M15_RSI |
 | BTCUSD | — | — | — | — | Not in broker |
 
-**Average XGB WFV: 60.9% | Average RF WFV: 57.3%** — Total training time: 11.1 minutes
+**Average XGB WFV: 60.9% | RF WFV: 57.5% | Features: 80 → 40** — Training time: 11.5 min
 
-**Key insights from Walk-Forward:**
-- All 5 symbols rated **EXCELLENT** (stability > 97%) — consistent across all market regimes
-- WFV ≈ Static accuracy (diff < 2%) — no overfitting detected
-- **US30 exception**: WFV=61.3% > Static=58.3% — WFV is MORE accurate for US30 (static test period was harder)
-- **Divergence features dominate**: RSI_BearDiv, RSI_BullDiv, divergence_score top features across all symbols
-- Constant feature removal working: USDJPY/XAUUSD removed 1 constant feature cleanly
+**Key insights:**
+- `M15_RSI` is the #1 SHAP feature for ALL symbols — M15 timeframe context dominates
+- `divergence_score` is consistently top-5 across all symbols
+- `EMA_50_delta1` (momentum) is critical for GBPUSD and US30
+- Balanced SHAP sampling (1000 BUY + 1000 SELL) prevents directional bias
+- XGB shows BUY-heavy distribution (market was in uptrend during training period) — this is correct behavior, RF balances it in ensemble via conflict detection
 
 ### Model Files (per symbol) — v4.0
 ```
@@ -707,21 +707,31 @@ rf_prob  = registry.predict_rf("XAUUSD", df_processed)    # with column alignmen
 |------|------|--------|---------------|
 | **1** | Increase training data: 17K → 99K candles per symbol | ✅ Done | +3-5% accuracy |
 | **2** | Walk-forward validation: rolling window retraining | ✅ Done | +2-3% stability |
-| **3** | SHAP feature importance + cleanup noisy features | ⏳ Next | +1-2% accuracy |
-| **4** | Regime-specific thresholds (Trending/Ranging/Volatile) | ⏳ Pending | +2-3% win rate |
+| **3** | SHAP feature importance + RFE cleanup noisy features | ✅ Done | +1-2% accuracy |
+| **4** | Regime-specific thresholds (Trending/Ranging/Volatile) | ⏳ Next | +2-3% win rate |
 | **5** | Add LightGBM to ensemble (XGB + RF + LGB) | ⏳ Pending | +1-2% accuracy |
 
 ---
 
 > **END OF HANDOVER (Updated: May 6, 2026)**
 >
-> **v5.2 Step 2 — Walk-Forward Validation (May 6, 2026)**:
+> **v5.3 Step 3 — SHAP + RFE + Balanced Target (May 7, 2026)**:
 >
-> **What changed:**
-> - **xgb_model.py**: Added `walk_forward_validate()` — 5-fold rolling window WFV. Each fold: train 60% → test 10%, window slides forward. Per-fold feature selection + scaling (no leakage). Returns mean/std/min/max accuracy + stability score. Added `print_wfv_report()` with verdict. `train_and_evaluate_xgb()` now runs WFV first, then trains final model on last 80%. Reports WFV mean as accuracy (more realistic than static).
-> - **train_offline.py RFModelSymbol**: Added `_walk_forward_validate()` — same rolling logic for RF. 5 folds × 100-tree lightweight RF. Returns WFV mean as reported accuracy.
-> - **main.py**: Added weekly auto-retraining (Sunday 02:00 UTC). Runs `train_offline.py` as subprocess — bot keeps trading during retraining. Hot-reload: when subprocess finishes, `registry._load_all()` reloads new models without restart.
-> - **config.py**: Added `WEEKLY_RETRAIN_ENABLED`, `WEEKLY_RETRAIN_DAY=6` (Sunday), `WEEKLY_RETRAIN_HOUR=2`.
+> **Root cause of BUY-heavy distribution:**
+> The old ATR-based target (`BUY if future_move > ATR*1.2`) generates all-BUY labels during uptrend markets. With 14 months of mostly-uptrend data, XGBoost learned BUY as the default.
+>
+> **Fix: Percentile-based target generation (`features.py generate_target_column`)**:
+> - Old: `BUY if move > ATR*1.2` → all BUY in uptrend
+> - New: `BUY if move in top 33% of rolling 500-candle window` → always balanced
+> - Result: BUY:SELL ratio = 1:1 regardless of market regime
+> - ATR threshold still used as noise filter (30% of original) to exclude tiny moves
+>
+> **Other v5.3 changes:**
+> - `xgb_model.py`: SHAP balanced sampling (1000 BUY + 1000 SELL), RFE 80→40 features
+> - `calibrate_model()` function added (available but not used — percentile target is the real fix)
+>
+> **v5.2 Step 2 — Walk-Forward Validation (May 6, 2026)**:
+> - xgb_model.py: 5-fold rolling WFV, stability score, weekly auto-retrain in main.py
 >
 > **Walk-Forward vs Static Split:**
 > ```

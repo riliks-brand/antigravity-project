@@ -1,4 +1,4 @@
-﻿"""
+"""
 Ensemble Engine â€” Elite v5.0
 ==============================
 XGBoost Edition â€” Ø§Ù„ØªØºÙŠÙŠØ±Ø§Øª Ø¹Ù† v4.2:
@@ -27,15 +27,8 @@ import datetime
 import logging
 from config import Config
 
-logger = logging.getLogger("Ensemble")
-logger.setLevel(logging.DEBUG)
-if not logger.handlers:
-    _fh = logging.FileHandler(Config.LOG_FILE, encoding="utf-8")
-    _fh.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
-    logger.addHandler(_fh)
-    _ch = logging.StreamHandler()
-    _ch.setFormatter(logging.Formatter("\033[92m%(asctime)s\033[0m [%(levelname)s] %(message)s"))
-    logger.addHandler(_ch)
+from logging_setup import setup_module_logger
+logger = setup_module_logger("Ensemble", Config.LOG_FILE, console_color="\033[92m")
 
 
 class EnsembleDecision:

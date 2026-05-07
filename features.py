@@ -27,15 +27,8 @@ from candles import add_candlestick_patterns
 from pattern_detector import add_chart_patterns
 from divergence import add_divergence_features
 
-logger = logging.getLogger("Features")
-logger.setLevel(logging.DEBUG)
-if not logger.handlers:
-    _fh = logging.FileHandler(Config.LOG_FILE, encoding="utf-8")
-    _fh.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
-    logger.addHandler(_fh)
-    _ch = logging.StreamHandler()
-    _ch.setFormatter(logging.Formatter("\033[95m%(asctime)s\033[0m [%(levelname)s] %(message)s"))
-    logger.addHandler(_ch)
+from logging_setup import setup_module_logger
+logger = setup_module_logger("Features", Config.LOG_FILE, console_color="\033[95m")
 
 
 # =========================================
@@ -443,28 +436,54 @@ def add_liquidity_features(df: pd.DataFrame) -> pd.DataFrame:
 
 def generate_target_column(df: pd.DataFrame, lookahead: int = 6, symbol: str = None) -> pd.DataFrame:
     """
-    Creates the Target column with strict ATR-based noise filtering.
-    BUY (1) if future move > ATR_LOOKAHEAD_MULT * ATR
-    SELL (0) if future move < -ATR_LOOKAHEAD_MULT * ATR
-    HOLD (NaN) otherwise.
+    Creates the Target column with balanced BUY/SELL/HOLD labels.
 
-    v5.1: Uses per-symbol ATR_LOOKAHEAD_MULT to match training targets exactly.
+    v5.3 fix: Percentile-based target generation.
+    المشكلة القديمة: ATR-based threshold → لو السوق في uptrend، كل الـ labels BUY
+    الحل الجديد: نقسم الـ future moves لـ 3 أقسام متساوية:
+      - Top 33%    → BUY  (1)
+      - Bottom 33% → SELL (0)
+      - Middle 33% → HOLD (NaN) — filtered out
+
+    ده بيضمن إن الـ training data دايماً balanced (33% BUY, 33% SELL)
+    بغض النظر عن الـ market regime.
+
+    Note: ATR_LOOKAHEAD_MULT still used as minimum threshold to filter noise.
     """
     df['future_close'] = df['close'].shift(-lookahead)
     future_move = df['future_close'] - df['close']
 
-    # v5.1: Use per-symbol multiplier if available, else fall back to global default
+    # Minimum ATR threshold to filter out noise (very small moves)
     per_symbol_mults = getattr(Config, 'ATR_LOOKAHEAD_MULT_PER_SYMBOL', {})
     if symbol and symbol in per_symbol_mults:
         atr_mult = per_symbol_mults[symbol]
     else:
         atr_mult = getattr(Config, 'ATR_LOOKAHEAD_MULT', 1.2)
 
-    threshold = df['ATR'] * atr_mult
+    min_threshold = df['ATR'] * atr_mult * 0.3  # 30% of ATR threshold = noise filter
 
-    # 1 = BUY, 0 = SELL, np.nan = HOLD (noise)
-    df['Target'] = np.where(future_move > threshold, 1,
-                            np.where(future_move < -threshold, 0, np.nan))
+    # Percentile-based labeling on non-noise moves only
+    # Calculate rolling percentiles to avoid lookahead bias
+    # Use expanding window: percentile calculated on all past data up to current point
+    valid_moves = future_move.abs() >= min_threshold
+
+    # For valid moves, assign BUY/SELL based on percentile within rolling window
+    # Rolling 500-candle window for percentile calculation (avoids lookahead)
+    roll_window = min(500, len(df) // 4)
+
+    buy_threshold  = future_move.rolling(roll_window, min_periods=50).quantile(0.67)
+    sell_threshold = future_move.rolling(roll_window, min_periods=50).quantile(0.33)
+
+    # Label: BUY if move > 67th percentile AND > min_threshold
+    #        SELL if move < 33rd percentile AND < -min_threshold
+    #        HOLD otherwise
+    df['Target'] = np.where(
+        valid_moves & (future_move >= buy_threshold),  1,   # BUY
+        np.where(
+            valid_moves & (future_move <= sell_threshold), 0,   # SELL
+            np.nan  # HOLD
+        )
+    )
 
     df.drop(['future_close'], axis=1, inplace=True)
     return df

@@ -43,15 +43,13 @@ from rf_model import RFModel
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # ─────────────────────────────────────────
-# LOGGING
+# LOGGING — Rotating (preserves all lines)
 # ─────────────────────────────────────────
-logging.basicConfig(
+from logging_setup import configure_root_logger
+configure_root_logger(
+    log_file="train_multisymbol.log",
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler("train_multisymbol.log", encoding="utf-8"),
-    ]
+    fmt="%(asctime)s [%(levelname)s] %(message)s",
 )
 logger = logging.getLogger("TrainMultiSymbol")
 
@@ -655,7 +653,12 @@ class ModelRegistry:
         if "universal" in model_dict:
             logger.debug("[Registry] %s not found, using universal fallback.", symbol)
             return "universal"
+        logger.warning("[Registry] No model found for %s and no universal fallback. Will return 0.5.", symbol)
         return None
+
+    def has_model(self, symbol: str) -> bool:
+        """Returns True if XGB model exists for this symbol (or universal fallback)."""
+        return self._resolve_sym(symbol, self.xgb_models) is not None
 
     def predict_xgb(self, symbol: str, df_processed) -> float:
         """

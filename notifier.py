@@ -19,12 +19,8 @@ import threading
 from collections import deque
 from config import Config
 
-logger = logging.getLogger("Notifier")
-logger.setLevel(logging.DEBUG)
-if not logger.handlers:
-    _fh = logging.FileHandler(Config.LOG_FILE, encoding="utf-8")
-    _fh.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
-    logger.addHandler(_fh)
+from logging_setup import setup_module_logger
+logger = setup_module_logger("Notifier", Config.LOG_FILE, console_color="\033[96m")
 
 
 # =========================================

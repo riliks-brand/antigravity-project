@@ -36,14 +36,12 @@ import datetime
 import logging
 from config import Config
 
-# ===== Setup Master Logger =====
-logging.basicConfig(
+# ===== Setup Master Logger (Rotating — preserves all lines) =====
+from logging_setup import configure_root_logger
+configure_root_logger(
+    log_file=Config.LOG_FILE,
     level=logging.INFO,
-    format="%(asctime)s [%(name)s] [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(Config.LOG_FILE, encoding="utf-8"),
-        logging.StreamHandler(),
-    ]
+    fmt="%(asctime)s [%(name)s] [%(levelname)s] %(message)s",
 )
 logger = logging.getLogger("Main")
 

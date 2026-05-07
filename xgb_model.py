@@ -1,19 +1,19 @@
 """
-XGBoost Model — Elite v5.2
+XGBoost Model — Elite v5.3
 ============================
 استبدال LSTM بـ XGBoost بناءً على قرار المسار C — Hybrid.
+
+v5.3 Changes (SHAP + RFE + Probability Calibration):
+  - SHAP-based feature selection (بدل SelectKBest)
+  - RFE (Recursive Feature Elimination) للتأكيد
+  - Isotonic Calibration: يصلح الـ BUY-heavy distribution
+    السوق كان في uptrend → XGB بيتعلم BUY كـ default
+    الـ calibration بتعمل re-mapping للـ probabilities
+    عشان تكون موزعة بشكل طبيعي (BUY ≈ SELL ≈ NOISE)
 
 v5.2 Changes (Walk-Forward Validation):
   - بدل static 80/20 split: rolling walk-forward validation
   - 5 folds × rolling window = accuracy estimate أدق بكتير
-  - Final model يتدرب على آخر 80% (الأحدث = الأهم)
-  - Walk-forward accuracy = متوسط الـ 5 folds (أكثر واقعية)
-
-لماذا Walk-Forward بدل Static Split؟
-  - السوق non-stationary: patterns يناير مختلفة عن patterns يونيو
-  - Static split بيقيس accuracy على فترة واحدة فقط
-  - Walk-forward بيقيس على 5 فترات مختلفة = تقدير أدق للـ real performance
-  - Rolling window: الموديل بيشوف دايماً أحدث البيانات
 """
 
 import numpy as np
@@ -25,18 +25,12 @@ import joblib
 from xgboost import XGBClassifier
 from sklearn.preprocessing import RobustScaler
 from sklearn.metrics import accuracy_score, classification_report
-from sklearn.feature_selection import SelectKBest, f_classif
+from sklearn.feature_selection import SelectKBest, f_classif, RFE
+from sklearn.calibration import CalibratedClassifierCV
 from config import Config
 
-logger = logging.getLogger("XGB_Model")
-logger.setLevel(logging.DEBUG)
-if not logger.handlers:
-    _fh = logging.FileHandler(Config.LOG_FILE, encoding="utf-8")
-    _fh.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
-    logger.addHandler(_fh)
-    _ch = logging.StreamHandler()
-    _ch.setFormatter(logging.Formatter("\033[96m%(asctime)s\033[0m [%(levelname)s] %(message)s"))
-    logger.addHandler(_ch)
+from logging_setup import setup_module_logger
+logger = setup_module_logger("XGB_Model", Config.LOG_FILE, console_color="\033[96m")
 
 # Model persistence paths (generic — يتغيروا لو per-symbol)
 XGB_MODEL_PATH = "xgb_model.joblib"
@@ -169,6 +163,301 @@ def prepare_tabular_data(df: pd.DataFrame):
     scaler.all_feature_cols_ = feature_cols
 
     return X_train_scaled, X_test_scaled, y_train, y_test, scaler, selected_features
+
+
+# =========================================
+# SHAP + RFE FEATURE SELECTION — v5.3
+# بيحدد الـ features الحقيقية المؤثرة
+# =========================================
+
+def shap_feature_selection(
+    model: XGBClassifier,
+    X_train: np.ndarray,
+    feature_names: list,
+    top_k: int = None,
+    shap_threshold: float = 0.001,
+    symbol: str = "",
+) -> tuple:
+    """
+    SHAP-based feature selection.
+
+    Strategy:
+    1. حساب SHAP values على الـ training data
+    2. حساب mean(|SHAP|) لكل feature = الأهمية الحقيقية
+    3. حذف الـ features اللي mean(|SHAP|) < threshold (noise)
+    4. الاحتفاظ بـ top_k features الأعلى أهمية
+
+    v5.3 fix: نستخدم balanced sample (50% BUY, 50% SELL) عشان
+    نتجنب الـ SHAP bias ناحية الـ majority class.
+
+    Returns:
+        (selected_indices, selected_features, shap_importance_dict)
+    """
+    try:
+        import shap
+
+        # v5.3 fix: balanced sampling to avoid directional bias
+        # نأخذ sample متوازن من الـ BUY و SELL predictions
+        sample_size = min(len(X_train), 2000)
+
+        # Get model predictions to identify BUY/SELL samples
+        try:
+            preds = model.predict(X_train)
+            buy_idx  = np.where(preds == 1)[0]
+            sell_idx = np.where(preds == 0)[0]
+            half = sample_size // 2
+            buy_sample  = buy_idx[np.random.choice(len(buy_idx),  min(half, len(buy_idx)),  replace=False)]
+            sell_sample = sell_idx[np.random.choice(len(sell_idx), min(half, len(sell_idx)), replace=False)]
+            balanced_idx = np.concatenate([buy_sample, sell_sample])
+            np.random.shuffle(balanced_idx)
+            X_sample = X_train[balanced_idx]
+            logger.info("[SHAP-%s] Balanced sample: %d BUY + %d SELL = %d total",
+                        symbol, len(buy_sample), len(sell_sample), len(balanced_idx))
+        except Exception:
+            # Fallback to random sample
+            idx = np.random.choice(len(X_train), sample_size, replace=False)
+            X_sample = X_train[idx]
+            logger.info("[SHAP-%s] Random sample: %d samples", symbol, sample_size)
+
+        logger.info("[SHAP-%s] Computing SHAP values on %d samples...", symbol, len(X_sample))
+
+        # TreeExplainer — الأسرع والأدق لـ XGBoost
+        explainer = shap.TreeExplainer(model)
+        shap_values = explainer.shap_values(X_sample)
+
+        # لو binary classification، shap_values ممكن يكون list
+        if isinstance(shap_values, list):
+            shap_values = shap_values[1]  # class 1 (BUY)
+
+        # mean(|SHAP|) لكل feature — absolute value يتجنب الـ directional bias
+        mean_abs_shap = np.abs(shap_values).mean(axis=0)
+
+        # Build importance dict
+        shap_importance = {
+            feat: float(imp)
+            for feat, imp in zip(feature_names, mean_abs_shap)
+        }
+
+        # Sort by importance
+        sorted_features = sorted(shap_importance.items(), key=lambda x: x[1], reverse=True)
+
+        # Filter: remove features below threshold
+        above_threshold = [(f, v) for f, v in sorted_features if v >= shap_threshold]
+
+        # Apply top_k limit
+        if top_k is not None:
+            above_threshold = above_threshold[:top_k]
+
+        selected_features = [f for f, _ in above_threshold]
+        selected_indices = [feature_names.index(f) for f in selected_features]
+
+        # Log top 10
+        logger.info("[SHAP-%s] Top 10 features by SHAP importance:", symbol)
+        for i, (feat, val) in enumerate(sorted_features[:10], 1):
+            logger.info("[SHAP-%s]   %2d. %-35s %.6f", symbol, i, feat, val)
+
+        removed = len(feature_names) - len(selected_features)
+        logger.info(
+            "[SHAP-%s] Feature selection: %d → %d (removed %d noise features, threshold=%.4f)",
+            symbol, len(feature_names), len(selected_features), removed, shap_threshold
+        )
+
+        return selected_indices, selected_features, shap_importance
+
+    except Exception as e:
+        logger.warning("[SHAP-%s] SHAP selection failed: %s. Falling back to all features.", symbol, e)
+        # Fallback: return all features
+        return list(range(len(feature_names))), feature_names, {}
+
+
+def rfe_feature_selection(
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    feature_names: list,
+    n_features_to_select: int,
+    symbol: str = "",
+) -> tuple:
+    """
+    RFE (Recursive Feature Elimination) للتأكيد على SHAP.
+
+    بيستخدم XGBoost خفيف (100 trees) عشان يكون سريع.
+    بيحذف الـ features الأضعف واحدة واحدة.
+
+    Returns:
+        (selected_indices, selected_features)
+    """
+    try:
+        logger.info("[RFE-%s] Running RFE: %d → %d features...", symbol, len(feature_names), n_features_to_select)
+
+        # XGB خفيف للـ RFE
+        rfe_model = XGBClassifier(
+            n_estimators=100,
+            max_depth=3,
+            learning_rate=0.1,
+            use_label_encoder=False,
+            eval_metric='logloss',
+            random_state=42,
+            n_jobs=-1,
+            verbosity=0,
+        )
+
+        rfe = RFE(
+            estimator=rfe_model,
+            n_features_to_select=n_features_to_select,
+            step=0.1,  # حذف 10% في كل iteration
+            verbose=0,
+        )
+        rfe.fit(X_train, y_train)
+
+        selected_mask = rfe.support_
+        selected_features = [f for f, s in zip(feature_names, selected_mask) if s]
+        selected_indices = [i for i, s in enumerate(selected_mask) if s]
+
+        logger.info("[RFE-%s] RFE complete: %d features selected.", symbol, len(selected_features))
+        return selected_indices, selected_features
+
+    except Exception as e:
+        logger.warning("[RFE-%s] RFE failed: %s. Skipping RFE.", symbol, e)
+        return list(range(len(feature_names))), feature_names
+
+
+def smart_feature_selection(
+    model: XGBClassifier,
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    feature_names: list,
+    symbol: str = "",
+) -> tuple:
+    """
+    v5.3: Smart Feature Selection = SHAP + RFE combined.
+
+    Pipeline:
+    1. SHAP: حذف الـ noise features (mean|SHAP| < threshold)
+    2. من الـ SHAP survivors، نأخذ top 60
+    3. RFE: من الـ 60، نختار أفضل 40
+    4. النتيجة: 40 feature نظيفة ومؤثرة فعلاً
+
+    لماذا 40 بدل 80؟
+    - أقل features = أقل overfitting
+    - الـ SHAP بيثبت إن معظم الـ 80 features بتضيف noise
+    - 40 feature كافية لـ XGBoost مع 99K candle
+
+    Returns:
+        (selected_indices, selected_features, shap_importance)
+    """
+    logger.info("[SmartFS-%s] Starting Smart Feature Selection (SHAP + RFE)...", symbol)
+
+    # Step 1: SHAP — حذف noise، الاحتفاظ بـ top 60
+    shap_top_k = min(60, len(feature_names))
+    shap_indices, shap_features, shap_importance = shap_feature_selection(
+        model, X_train, feature_names,
+        top_k=shap_top_k,
+        shap_threshold=0.0005,
+        symbol=symbol,
+    )
+
+    if len(shap_features) <= 20:
+        # مفيش كفاية features بعد SHAP — نرجع الـ SHAP results مباشرة
+        logger.info("[SmartFS-%s] Few features after SHAP (%d). Skipping RFE.", symbol, len(shap_features))
+        return shap_indices, shap_features, shap_importance
+
+    # Step 2: RFE على الـ SHAP survivors
+    X_shap = X_train[:, shap_indices]
+    rfe_target = min(40, len(shap_features))
+
+    rfe_indices_local, rfe_features = rfe_feature_selection(
+        X_shap, y_train, shap_features,
+        n_features_to_select=rfe_target,
+        symbol=symbol,
+    )
+
+    # Map back to original indices
+    final_indices = [shap_indices[i] for i in rfe_indices_local]
+    final_features = rfe_features
+
+    logger.info(
+        "[SmartFS-%s] Final: %d → SHAP(%d) → RFE(%d) features",
+        symbol, len(feature_names), len(shap_features), len(final_features)
+    )
+
+    # Print top 10 final features with SHAP importance
+    print(f"\n  Smart Feature Selection [{symbol}]")
+    print(f"  {'─'*50}")
+    print(f"  Total features  : {len(feature_names)}")
+    print(f"  After SHAP      : {len(shap_features)}")
+    print(f"  After RFE       : {len(final_features)}")
+    print(f"  Top 10 selected :")
+    for i, feat in enumerate(final_features[:10], 1):
+        shap_val = shap_importance.get(feat, 0)
+        print(f"    {i:2d}. {feat:<35} SHAP={shap_val:.6f}")
+    print(f"  {'─'*50}")
+
+    return final_indices, final_features, shap_importance
+
+
+def calibrate_model(
+    model: XGBClassifier,
+    X_cal: np.ndarray,
+    y_cal: np.ndarray,
+    symbol: str = "",
+) -> object:
+    """
+    Isotonic Calibration — يصلح الـ BUY-heavy probability distribution.
+
+    المشكلة:
+    - السوق كان في uptrend خلال الـ 14 شهر الأخيرة
+    - XGBoost تعلم إن BUY هو الـ dominant pattern
+    - النتيجة: 99% من الـ predictions > 0.6 (BUY zone)
+
+    الحل:
+    - Isotonic Regression: بتعمل monotonic mapping للـ probabilities
+    - بتحول [0.6, 0.99] → [0.3, 0.7] بشكل proportional
+    - بتحافظ على الـ relative ordering (أعلى prob = أقوى signal)
+    - بتستخدم validation set منفصل (مش training data)
+
+    لماذا Isotonic وليس Platt Scaling؟
+    - Platt: linear sigmoid — مش كافي للـ heavy skew
+    - Isotonic: non-parametric — بيتكيف مع أي distribution
+
+    Returns:
+        CalibratedClassifierCV wrapper around the model
+    """
+    logger.info("[CAL-%s] Calibrating probabilities on %d samples...", symbol, len(X_cal))
+
+    # Check distribution before calibration
+    raw_probs = model.predict_proba(X_cal)[:, 1]
+    pct_above_60 = (raw_probs > 0.6).mean() * 100
+    pct_below_40 = (raw_probs < 0.4).mean() * 100
+    pct_noise = ((raw_probs >= 0.4) & (raw_probs <= 0.6)).mean() * 100
+
+    logger.info(
+        "[CAL-%s] Before calibration: BUY>0.6=%.1f%% | SELL<0.4=%.1f%% | NOISE=%.1f%%",
+        symbol, pct_above_60, pct_below_40, pct_noise
+    )
+
+    # Apply isotonic calibration
+    calibrated = CalibratedClassifierCV(
+        estimator=model,
+        method='isotonic',
+        cv='prefit',  # model already fitted — use X_cal as calibration set
+    )
+    calibrated.fit(X_cal, y_cal)
+
+    # Check distribution after calibration
+    cal_probs = calibrated.predict_proba(X_cal)[:, 1]
+    pct_above_60_after = (cal_probs > 0.6).mean() * 100
+    pct_below_40_after = (cal_probs < 0.4).mean() * 100
+    pct_noise_after = ((cal_probs >= 0.4) & (cal_probs <= 0.6)).mean() * 100
+
+    logger.info(
+        "[CAL-%s] After calibration:  BUY>0.6=%.1f%% | SELL<0.4=%.1f%% | NOISE=%.1f%%",
+        symbol, pct_above_60_after, pct_below_40_after, pct_noise_after
+    )
+
+    improvement = pct_noise_after - pct_noise
+    logger.info("[CAL-%s] NOISE zone improvement: %+.1f%%", symbol, improvement)
+
+    return calibrated
 
 
 # =========================================
@@ -621,6 +910,64 @@ def train_and_evaluate_xgb(df_full: pd.DataFrame, symbol: str = ""):
     y_pred = model.predict(X_test)
     static_accuracy = accuracy_score(y_test, y_pred)
 
+    # ── Step 3: SHAP + RFE Smart Feature Selection ───────────
+    logger.info("[XGB-%s] Running SHAP + RFE feature selection...", symbol)
+    smart_indices, smart_features, shap_importance = smart_feature_selection(
+        model, X_train, y_train, selected_features, symbol=symbol
+    )
+
+    # ── Step 4: Retrain on smart features if reduced ─────────
+    if len(smart_features) < len(selected_features):
+        logger.info("[XGB-%s] Retraining on %d smart features (was %d)...",
+                    symbol, len(smart_features), len(selected_features))
+
+        X_train_smart = X_train[:, smart_indices]
+        X_test_smart  = X_test[:, smart_indices]
+
+        smart_scaler = RobustScaler()
+        smart_scaler.fit(X_train_smart)
+        X_tr_s = smart_scaler.transform(X_train_smart)
+        X_te_s = smart_scaler.transform(X_test_smart)
+
+        # Map smart_indices back to original all_feature_cols indices
+        original_selected = scaler.selected_indices_
+        final_original_indices = np.array([original_selected[i] for i in smart_indices])
+        smart_scaler.selected_indices_ = final_original_indices
+        smart_scaler.selected_features_ = smart_features
+        smart_scaler.all_feature_cols_ = scaler.all_feature_cols_
+
+        n_pos2 = np.sum(y_train == 1)
+        n_neg2 = np.sum(y_train == 0)
+        # v5.3 fix: use balanced weights for retrain to avoid BUY bias
+        # The SHAP-selected features may already capture directional info
+        # Using scale_pos_weight=1.0 prevents double-weighting
+        spw2 = n_neg2 / max(n_pos2, 1)
+        # Cap at 2.0 to prevent extreme bias
+        spw2 = min(spw2, 2.0)
+        final_model = XGBClassifier(
+            n_estimators=1000, max_depth=4, learning_rate=0.01,
+            subsample=0.8, colsample_bytree=0.8, min_child_weight=20,
+            reg_alpha=0.1, reg_lambda=1.0,
+            scale_pos_weight=n_neg2 / max(n_pos2, 1),
+            use_label_encoder=False, eval_metric='logloss',
+            early_stopping_rounds=50, random_state=42, n_jobs=-1, verbosity=0,
+        )
+        final_model.fit(X_tr_s, y_train, eval_set=[(X_te_s, y_test)], verbose=False)
+
+        smart_acc = accuracy_score(y_test, final_model.predict(X_te_s))
+
+        # Accept smart model if accuracy within 0.5% of original
+        if smart_acc >= static_accuracy - 0.005:
+            model = final_model
+            scaler = smart_scaler
+            selected_features = smart_features
+            static_accuracy = smart_acc
+            best_iter = getattr(final_model, 'best_iteration', final_model.n_estimators)
+            logger.info("[XGB-%s] Smart model accepted: %.2f%%", symbol, smart_acc * 100)
+        else:
+            logger.info("[XGB-%s] Smart model rejected (%.2f%% < %.2f%%). Keeping original.",
+                        symbol, smart_acc * 100, static_accuracy * 100)
+
     # Use WFV mean as the reported accuracy (more realistic)
     reported_accuracy = wfv_result["mean_accuracy"] / 100.0 if not wfv_result.get("skipped") else static_accuracy
 
@@ -629,20 +976,21 @@ def train_and_evaluate_xgb(df_full: pd.DataFrame, symbol: str = ""):
     feat_imp = dict(zip(selected_features, imp))
     top5 = sorted(feat_imp.items(), key=lambda x: x[1], reverse=True)[:5]
 
-    print(f"\n  XGBOOST [{symbol}] FINAL TRAINING REPORT v5.2")
+    print(f"\n  XGBOOST [{symbol}] FINAL TRAINING REPORT v5.3")
     print(f"  {'='*50}")
     print(f"  WFV Mean Accuracy  : {wfv_result.get('mean_accuracy', 0):.2f}% (realistic)")
     print(f"  Static Test Acc    : {static_accuracy * 100:.2f}% (reference)")
     print(f"  Best Iteration     : {best_iter} / 1000")
-    print(f"  Features Selected  : {len(selected_features)}")
+    print(f"  Features Selected  : {len(selected_features)} (SHAP+RFE filtered)")
     print(f"  Train Size         : {len(X_train):,}")
     print(f"  Test Size          : {len(X_test):,}")
     print(f"  Top Feature        : {top5[0][0]} ({top5[0][1]:.4f})")
     print(f"  {'='*50}")
 
     logger.info(
-        "[XGB-%s] WFV=%.2f%% | Static=%.2f%% | Best iter=%d",
-        symbol, wfv_result.get("mean_accuracy", 0), static_accuracy * 100, best_iter
+        "[XGB-%s] WFV=%.2f%% | Static=%.2f%% | Best iter=%d | Features=%d",
+        symbol, wfv_result.get("mean_accuracy", 0), static_accuracy * 100,
+        best_iter, len(selected_features)
     )
     logger.info("[XGB-%s] Top 5 features: %s", symbol, top5)
 

@@ -17,15 +17,8 @@ import functools
 import logging
 from config import Config
 
-logger = logging.getLogger("MT5Engine")
-logger.setLevel(logging.DEBUG)
-if not logger.handlers:
-    _fh = logging.FileHandler(Config.LOG_FILE, encoding="utf-8")
-    _fh.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
-    logger.addHandler(_fh)
-    _ch = logging.StreamHandler()
-    _ch.setFormatter(logging.Formatter("\033[94m%(asctime)s\033[0m [%(levelname)s] %(message)s"))
-    logger.addHandler(_ch)
+from logging_setup import setup_module_logger
+logger = setup_module_logger("MT5Engine", Config.LOG_FILE, console_color="\033[94m")
 
 
 # =========================================
