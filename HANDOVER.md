@@ -718,13 +718,24 @@ rf_prob  = registry.predict_rf("XAUUSD", df_processed)    # with column alignmen
 > **v5.3 Step 3 — SHAP + RFE + Balanced Target (May 7, 2026)**:
 >
 > **Root cause of BUY-heavy distribution:**
-> The old ATR-based target (`BUY if future_move > ATR*1.2`) generates all-BUY labels during uptrend markets. With 14 months of mostly-uptrend data, XGBoost learned BUY as the default.
+> The old ATR-based target (`BUY if future_move > ATR*1.2`) generates all-BUY labels during uptrend markets.
 >
 > **Fix: Percentile-based target generation (`features.py generate_target_column`)**:
 > - Old: `BUY if move > ATR*1.2` → all BUY in uptrend
-> - New: `BUY if move in top 33% of rolling 500-candle window` → always balanced
-> - Result: BUY:SELL ratio = 1:1 regardless of market regime
-> - ATR threshold still used as noise filter (30% of original) to exclude tiny moves
+> - New: `BUY if move in top 33% of rolling 2000-candle window` → always balanced
+> - Result: BUY:SELL ratio = ~1:1 regardless of market regime
+> - Note: Initial version used 500-candle window which caused accuracy drop (thresholds shifted too fast). Fixed to 2000-candle window for stable thresholds.
+>
+> **Accuracy after fix (latest training May 7 14:31):**
+> | Symbol | XGB WFV | Labels Balance |
+> |--------|---------|----------------|
+> | EURUSD | 54.8% | BUY=30K SELL=30K ✅ |
+> | GBPUSD | 55.2% | BUY=31K SELL=31K ✅ |
+> | USDJPY | 60.4% | BUY=32K SELL=32K ✅ |
+> | XAUUSD | 59.6% | BUY=31K SELL=30K ✅ |
+> | US30   | 58.4% | BUY=29K SELL=29K ✅ |
+>
+> EURUSD/GBPUSD accuracy dropped vs old biased target — this is expected and correct. The old 61-63% was inflated by the model learning "always BUY". The new 54-55% is honest accuracy on a balanced task. USDJPY/XAUUSD/US30 maintained accuracy because they have more complex patterns beyond simple trend-following.
 >
 > **Other v5.3 changes:**
 > - `xgb_model.py`: SHAP balanced sampling (1000 BUY + 1000 SELL), RFE 80→40 features

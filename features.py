@@ -468,11 +468,12 @@ def generate_target_column(df: pd.DataFrame, lookahead: int = 6, symbol: str = N
     valid_moves = future_move.abs() >= min_threshold
 
     # For valid moves, assign BUY/SELL based on percentile within rolling window
-    # Rolling 500-candle window for percentile calculation (avoids lookahead)
-    roll_window = min(500, len(df) // 4)
+    # v5.3 fix: use 2000-candle window (~1 week of M5) for stable thresholds
+    # 500 was too small — thresholds shifted too fast causing accuracy drop
+    roll_window = min(2000, len(df) // 8)
 
-    buy_threshold  = future_move.rolling(roll_window, min_periods=50).quantile(0.67)
-    sell_threshold = future_move.rolling(roll_window, min_periods=50).quantile(0.33)
+    buy_threshold  = future_move.rolling(roll_window, min_periods=200).quantile(0.67)
+    sell_threshold = future_move.rolling(roll_window, min_periods=200).quantile(0.33)
 
     # Label: BUY if move > 67th percentile AND > min_threshold
     #        SELL if move < 33rd percentile AND < -min_threshold
