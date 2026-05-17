@@ -345,12 +345,12 @@ class RFModelSymbol:
             # Lightweight RF for validation (fewer trees)
             fold_rf = RandomForestClassifier(
                 n_estimators=100,
-                max_depth=Config.RF_MAX_DEPTH,
-                min_samples_split=20,
-                min_samples_leaf=10,
-                max_features='sqrt',
-                class_weight='balanced',
+                max_depth=6,                # v6.0: match final model
+                min_samples_split=50,       # v6.0: match final model
+                min_samples_leaf=25,        # v6.0: match final model
+                max_features='log2',           # v6.0: match final model
                 random_state=42 + fold,
+                class_weght='balanced_subsample', # v6.0
                 n_jobs=-1,
             )
             fold_rf.fit(X_tr_s, y_tr)
@@ -412,11 +412,11 @@ class RFModelSymbol:
 
         self.model = RandomForestClassifier(
             n_estimators=500,
-            max_depth=Config.RF_MAX_DEPTH,
-            min_samples_split=20,
-            min_samples_leaf=10,
-            max_features='sqrt',
-            class_weight='balanced',
+            max_depth=6,                    # v6.0: shallower trees reduce noise memorization
+            min_samples_split=50,           # v6.0: raised from 20
+            min_samples_leaf=25,            # v6.0: raised from 10
+            max_features='log2',            # v6.0: more feature diversity
+            class_weight='balanced_subsample', # v6.0: per-tree balancing
             random_state=42,
             n_jobs=-1,
         )
@@ -819,3 +819,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
+

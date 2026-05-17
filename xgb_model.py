@@ -552,7 +552,7 @@ def walk_forward_validate(
         # Train a lightweight XGB for validation (fewer trees = faster)
         n_pos = np.sum(y_train == 1)
         n_neg = np.sum(y_train == 0)
-        spw = n_neg / max(n_pos, 1)
+        spw = min(n_neg / max(n_pos, 1), 1.5)  # v6.0: cap at 1.5 to prevent extreme BUY bias
 
         fold_model = XGBClassifier(
             n_estimators=300,          # أقل من الـ final model — للسرعة
@@ -560,7 +560,7 @@ def walk_forward_validate(
             learning_rate=0.02,
             subsample=0.8,
             colsample_bytree=0.8,
-            min_child_weight=20,
+            min_child_weight=30,          # v6.0: raised from 20 - more regularization
             reg_alpha=0.1,
             reg_lambda=1.0,
             scale_pos_weight=spw,
@@ -877,18 +877,18 @@ def train_and_evaluate_xgb(df_full: pd.DataFrame, symbol: str = ""):
 
     n_pos = np.sum(y_train == 1)
     n_neg = np.sum(y_train == 0)
-    scale_pos_weight = n_neg / max(n_pos, 1)
+    scale_pos_weight = min(n_neg / max(n_pos, 1), 1.5)  # v6.0: cap at 1.5
 
-    # v5.1: Optimized hyperparameters for large dataset (99K candles)
+    # v6.0: Optimized hyperparameters + increased regularization to reduce BUY bias
     model = XGBClassifier(
         n_estimators=1000,
         max_depth=4,
         learning_rate=0.01,
         subsample=0.8,
         colsample_bytree=0.8,
-        min_child_weight=20,
-        reg_alpha=0.1,
-        reg_lambda=1.0,
+        min_child_weight=30,       # v6.0: raised from 20 - more regularization
+        reg_alpha=0.3,             # v6.0: raised from 0.1 - stronger L1
+        reg_lambda=2.0,            # v6.0: raised from 1.0 - stronger L2
         scale_pos_weight=scale_pos_weight,
         use_label_encoder=False,
         eval_metric='logloss',
@@ -897,6 +897,7 @@ def train_and_evaluate_xgb(df_full: pd.DataFrame, symbol: str = ""):
         n_jobs=-1,
         verbosity=0,
     )
+
 
     model.fit(
         X_train, y_train,
@@ -938,20 +939,16 @@ def train_and_evaluate_xgb(df_full: pd.DataFrame, symbol: str = ""):
 
         n_pos2 = np.sum(y_train == 1)
         n_neg2 = np.sum(y_train == 0)
-        # v5.3 fix: use balanced weights for retrain to avoid BUY bias
-        # The SHAP-selected features may already capture directional info
-        # Using scale_pos_weight=1.0 prevents double-weighting
-        spw2 = n_neg2 / max(n_pos2, 1)
-        # Cap at 2.0 to prevent extreme bias
-        spw2 = min(spw2, 2.0)
+        spw2 = min(n_neg2 / max(n_pos2, 1), 1.5)  # v6.0: cap at 1.5
         final_model = XGBClassifier(
             n_estimators=1000, max_depth=4, learning_rate=0.01,
-            subsample=0.8, colsample_bytree=0.8, min_child_weight=20,
-            reg_alpha=0.1, reg_lambda=1.0,
-            scale_pos_weight=n_neg2 / max(n_pos2, 1),
+            subsample=0.8, colsample_bytree=0.8, min_child_weight=30,
+            reg_alpha=0.3, reg_lambda=2.0,
+            scale_pos_weight=spw2,
             use_label_encoder=False, eval_metric='logloss',
             early_stopping_rounds=50, random_state=42, n_jobs=-1, verbosity=0,
         )
+        
         final_model.fit(X_tr_s, y_train, eval_set=[(X_te_s, y_test)], verbose=False)
 
         smart_acc = accuracy_score(y_test, final_model.predict(X_te_s))
@@ -994,4 +991,27 @@ def train_and_evaluate_xgb(df_full: pd.DataFrame, symbol: str = ""):
     )
     logger.info("[XGB-%s] Top 5 features: %s", symbol, top5)
 
+
+
+    # v6.0 FIX: Isotonic calibration to fix BUY-heavy distribution
+    try:
+        cal_model = calibrate_model(model, X_test, y_test, symbol=symbol)
+        cal_probs = cal_model.predict_proba(X_test)[:, 1]
+        pct_buy   = float((cal_probs > 0.6).mean() * 100)
+        pct_sell  = float((cal_probs < 0.4).mean() * 100)
+        pct_noise = float(((cal_probs >= 0.4) & (cal_probs <= 0.6)).mean() * 100)
+        logger.info("[XGB-"+pct+s+"] Post-cal BUY="+pct+".1f"+pct+pct+" SELL="+pct+".1f"+pct+pct+" NOISE="+pct+".1f"+pct+pct, symbol, pct_buy, pct_sell, pct_noise)
+        if pct_noise > 20.0:
+            model = cal_model
+            logger.info("[XGB-"+pct+s+"] Calibration ACCEPTED noise="+pct+".1f"+pct+pct, symbol, pct_noise)
+        else:
+            logger.warning("[XGB-"+pct+s+"] Cal skipped noise="+pct+".1f"+pct+pct, symbol, pct_noise)
+    except Exception as cal_err:
+        logger.warning("[XGB-"+pct+s+"] Cal failed: "+pct+s, symbol, cal_err)
+
+
     return model, scaler, reported_accuracy, selected_features
+
+
+
+
