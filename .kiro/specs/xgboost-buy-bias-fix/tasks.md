@@ -10,7 +10,7 @@ This implementation plan follows the bugfix workflow using the bug condition met
 
 ## Tasks
 
-- [ ] 1. Write bug condition exploration test
+- [x] 1. Write bug condition exploration test
   - **Property 1: Bug Condition** - XGBoost 95%+ BUY Bias Detection
   - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bug exists
   - **DO NOT attempt to fix the test or the code when it fails**
@@ -28,7 +28,7 @@ This implementation plan follows the bugfix workflow using the bug condition met
   - Mark task complete when test is written, run, and failure is documented
   - _Requirements: 1.1, 1.2, 1.7, 1.8, 1.9_
 
-- [ ] 2. Write preservation property tests (BEFORE implementing fix)
+- [x] 2. Write preservation property tests (BEFORE implementing fix)
   - **Property 2: Preservation** - Training Pipeline Functionality Preservation
   - **IMPORTANT**: Follow observation-first methodology
   - Observe behavior on UNFIXED code for non-buggy operations:
@@ -51,9 +51,9 @@ This implementation plan follows the bugfix workflow using the bug condition met
   - Mark task complete when tests are written, run, and passing on unfixed code
   - _Requirements: 3.1, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 3.10, 3.11, 3.12, 3.14, 3.15, 3.16_
 
-- [ ] 3. Fix for XGBoost 95%+ BUY Bias
+- [x] 3. Fix for XGBoost 95%+ BUY Bias
 
-  - [ ] 3.1 Implement isotonic calibration in xgb_model.py
+  - [x] 3.1 Implement isotonic calibration in xgb_model.py
     - Modify the `train()` method in `XGBModel` class
     - After `self.model.fit()` completes, split training data: 80% for model training, 20% for calibration
     - Use `cal_split = int(len(X_train) * 0.8)` to get 80/20 split
@@ -67,7 +67,7 @@ This implementation plan follows the bugfix workflow using the bug condition met
     - _Preservation: Training pipeline, feature engineering, model persistence unchanged_
     - _Requirements: 2.1, 2.2, 2.5, 2.6_
 
-  - [ ] 3.2 Align hyperparameters with Walk-Forward Validation
+  - [x] 3.2 Align hyperparameters with Walk-Forward Validation
     - In `xgb_model.py` line ~680, change `n_estimators=500` to `n_estimators=300`
     - This matches the Walk-Forward Validation configuration
     - Ensures validation results accurately reflect final model performance
@@ -76,7 +76,7 @@ This implementation plan follows the bugfix workflow using the bug condition met
     - _Preservation: All other hyperparameters and training logic unchanged_
     - _Requirements: 1.3, 2.3_
 
-  - [ ] 3.3 Strengthen regularization parameters
+  - [x] 3.3 Strengthen regularization parameters
     - In `xgb_model.py` line ~684, change `min_child_weight=20` to `min_child_weight=30`
     - In `xgb_model.py` line ~686, ensure `reg_lambda=1.5` (increase from 1.0)
     - In `xgb_model.py` line ~688, ensure `max_delta_step=1` is present
@@ -87,7 +87,7 @@ This implementation plan follows the bugfix workflow using the bug condition met
     - _Preservation: Training pipeline and feature engineering unchanged_
     - _Requirements: 2.13_
 
-  - [ ] 3.4 Cap scale_pos_weight to prevent extreme bias
+  - [x] 3.4 Cap scale_pos_weight to prevent extreme bias
     - In `xgb_model.py`, after calculating `scale_pos_weight = n_neg / n_pos`
     - Apply cap: `scale_pos_weight = min(scale_pos_weight, 1.2)`
     - Log when capping occurs to track its effect
@@ -97,7 +97,7 @@ This implementation plan follows the bugfix workflow using the bug condition met
     - _Preservation: Training pipeline unchanged_
     - _Requirements: 1.4, 2.4_
 
-  - [ ] 3.5 Fix EURUSD data volume consistency
+  - [x] 3.5 Fix EURUSD data volume consistency
     - In `data_loader.py` line ~40, modify `fetch_mt5_ohlc()` function
     - Ensure minimum 99,000 candles for all symbols
     - Change: `count = max(count if count else Config.DATA_POINTS, 99000)`
@@ -107,7 +107,7 @@ This implementation plan follows the bugfix workflow using the bug condition met
     - _Preservation: Data loading logic for other symbols unchanged_
     - _Requirements: 1.11, 2.11_
 
-  - [ ] 3.6 Verify SHAP balanced sampling is working
+  - [x] 3.6 Verify SHAP balanced sampling is working
     - In `xgb_model.py`, verify `shap_feature_selection()` function (lines 234-247)
     - Confirm balanced sampling (50% BUY, 50% SELL) when computing SHAP values
     - Ensure this logic is not being bypassed
@@ -117,7 +117,7 @@ This implementation plan follows the bugfix workflow using the bug condition met
     - _Preservation: SHAP feature selection logic unchanged_
     - _Requirements: 2.14_
 
-  - [ ] 3.7 Verify bug condition exploration test now passes
+  - [x] 3.7 Verify bug condition exploration test now passes
     - **Property 1: Expected Behavior** - Balanced Prediction Distribution
     - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
     - The test from task 1 encodes the expected behavior
@@ -127,7 +127,7 @@ This implementation plan follows the bugfix workflow using the bug condition met
     - **EXPECTED OUTCOME**: Test PASSES (confirms bug is fixed)
     - _Requirements: 2.1, 2.2, 2.7, 2.8, 2.9_
 
-  - [ ] 3.8 Verify preservation tests still pass
+  - [x] 3.8 Verify preservation tests still pass
     - **Property 2: Preservation** - Training Pipeline Functionality Preservation
     - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
     - Run preservation property tests from step 2
@@ -136,30 +136,30 @@ This implementation plan follows the bugfix workflow using the bug condition met
     - Confirm all tests still pass after fix (no regressions)
     - _Requirements: 3.1, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 3.10, 3.11, 3.12, 3.14, 3.15, 3.16_
 
-- [ ] 4. Additional validation tests
+- [x] 4. Additional validation tests
 
-  - [ ] 4.1 Test calibration improvement
+  - [x] 4.1 Test calibration improvement
     - Compute calibration curve (predicted probability vs actual frequency) on test data
     - Verify calibrated probabilities match actual frequencies (well-calibrated)
     - Compare calibration curve before and after fix
     - Expected: Calibration error reduced from >0.2 to <0.1
     - _Requirements: 2.5_
 
-  - [ ] 4.2 Test Walk-Forward Validation stability
+  - [x] 4.2 Test Walk-Forward Validation stability
     - Run WFV on USDJPY with fixed model
     - Verify all fold accuracies within 3-5% of mean
     - Compare with unfixed model (Fold 3 at 53%, high variance)
     - Expected: All folds between 55-62%, std < 3%
     - _Requirements: 1.12, 2.12_
 
-  - [ ] 4.3 Test ensemble integration
+  - [x] 4.3 Test ensemble integration
     - Load calibrated XGBoost model in ensemble engine
     - Verify predictions integrate correctly with Random Forest predictions
     - Test that ensemble decision logic works with calibrated probabilities
     - Verify prediction interface returns probability 0.0-1.0 for BUY class
     - _Requirements: 3.13_
 
-- [ ] 5. Checkpoint - Ensure all tests pass
+- [x] 5. Checkpoint - Ensure all tests pass
   - Run all bug condition exploration tests (task 1) - should now PASS
   - Run all preservation tests (task 2) - should still PASS
   - Run all additional validation tests (task 4) - should PASS

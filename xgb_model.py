@@ -671,7 +671,7 @@ class XGBModel:
     XGBoost model wrapper — بديل LSTM في الـ ensemble.
     
     Hyperparameters مُضبوطة لـ financial time series:
-    - n_estimators=500: trees كافية بدون overfitting
+    - n_estimators=300: aligned with Walk-Forward Validation (v6.1: changed from 500)
     - max_depth=4: shallow trees = generalization أحسن
     - learning_rate=0.02: بطيء = learning أدق
     - subsample=0.8: row sampling = variance reduction
@@ -925,9 +925,10 @@ def train_and_evaluate_xgb(df_full: pd.DataFrame, symbol: str = ""):
     Interface بديل لـ train_and_evaluate من lstm_model.py.
     يُستدعى من train_offline.py بنفس الطريقة.
 
+    v6.1: Updated for 3-way split (train/cal/test)
     v5.2: Walk-Forward Validation قبل الـ final training.
     الـ WFV بيدي accuracy estimate أدق من الـ static split.
-    الـ final model بيتدرب على آخر 80% (الأحدث).
+    الـ final model بيتدرب على 60% train + 20% calibration.
 
     Returns:
         (model, scaler, accuracy, selected_features)
@@ -941,36 +942,35 @@ def train_and_evaluate_xgb(df_full: pd.DataFrame, symbol: str = ""):
     print_wfv_report(wfv_result, symbol)
 
     # ── Step 2: Final Model Training ─────────────────────────
-    # بيتدرب على آخر 80% من البيانات (الأحدث = الأهم للـ live trading)
+    # v6.1: بيتدرب على 60% train + 20% calibration (unseen) + 20% test
     try:
-        X_train, X_test, y_train, y_test, scaler, selected_features = prepare_tabular_data(df_full)
+        X_train, X_cal, X_test, y_train, y_cal, y_test, scaler, selected_features = prepare_tabular_data(df_full)
     except ValueError as e:
         logger.error("[XGB-%s] %s", symbol, e)
         return None, None, 0.0, []
 
     n_pos = np.sum(y_train == 1)
     n_neg = np.sum(y_train == 0)
-    scale_pos_weight = min(n_neg / max(n_pos, 1), 1.5)  # v6.0: cap at 1.5
+    scale_pos_weight = min(n_neg / max(n_pos, 1), 1.2)  # v6.1: cap at 1.2 (tighter than WFV)
 
-    # v6.0: Optimized hyperparameters + increased regularization to reduce BUY bias
+    # v6.1: Aligned hyperparameters with XGBModel.train() for consistency
     model = XGBClassifier(
-        n_estimators=1000,
+        n_estimators=300,          # v6.1: Changed from 1000 to match XGBModel.train()
         max_depth=4,
-        learning_rate=0.01,
+        learning_rate=0.02,        # v6.1: Changed from 0.01 to match XGBModel.train()
         subsample=0.8,
         colsample_bytree=0.8,
         min_child_weight=30,       # v6.0: raised from 20 - more regularization
-        reg_alpha=0.3,             # v6.0: raised from 0.1 - stronger L1
-        reg_lambda=2.0,            # v6.0: raised from 1.0 - stronger L2
+        reg_alpha=0.2,             # v6.1: Changed from 0.3 to match XGBModel.train()
+        reg_lambda=1.5,            # v6.1: Changed from 2.0 to match XGBModel.train()
         scale_pos_weight=scale_pos_weight,
+        max_delta_step=1,          # v6.0: NEW — limits extreme predictions
         use_label_encoder=False,
         eval_metric='logloss',
-        early_stopping_rounds=50,
         random_state=42,
         n_jobs=-1,
         verbosity=0,
     )
-
 
     model.fit(
         X_train, y_train,
@@ -978,7 +978,12 @@ def train_and_evaluate_xgb(df_full: pd.DataFrame, symbol: str = ""):
         verbose=False,
     )
 
-    best_iter = getattr(model, 'best_iteration', model.n_estimators)
+    # v6.1: Apply isotonic calibration using separate calibration set
+    logger.info("[XGB-%s] Applying Isotonic Calibration on %d UNSEEN samples...", symbol, len(X_cal))
+    model = calibrate_model(model, X_cal, y_cal, symbol=symbol)
+
+    best_iter = getattr(model.calibrated_classifiers_[0].estimator if hasattr(model, 'calibrated_classifiers_') else model, 
+                       'best_iteration', 300)
 
     # Static test accuracy (for reference)
     y_pred = model.predict(X_test)
@@ -986,8 +991,10 @@ def train_and_evaluate_xgb(df_full: pd.DataFrame, symbol: str = ""):
 
     # ── Step 3: SHAP + RFE Smart Feature Selection ───────────
     logger.info("[XGB-%s] Running SHAP + RFE feature selection...", symbol)
+    # Extract base model for SHAP (before calibration wrapper)
+    base_model = model.calibrated_classifiers_[0].estimator if hasattr(model, 'calibrated_classifiers_') else model
     smart_indices, smart_features, shap_importance = smart_feature_selection(
-        model, X_train, y_train, selected_features, symbol=symbol
+        base_model, X_train, y_train, selected_features, symbol=symbol
     )
 
     # ── Step 4: Retrain on smart features if reduced ─────────
@@ -996,11 +1003,13 @@ def train_and_evaluate_xgb(df_full: pd.DataFrame, symbol: str = ""):
                     symbol, len(smart_features), len(selected_features))
 
         X_train_smart = X_train[:, smart_indices]
+        X_cal_smart = X_cal[:, smart_indices]
         X_test_smart  = X_test[:, smart_indices]
 
         smart_scaler = RobustScaler()
         smart_scaler.fit(X_train_smart)
         X_tr_s = smart_scaler.transform(X_train_smart)
+        X_cal_s = smart_scaler.transform(X_cal_smart)
         X_te_s = smart_scaler.transform(X_test_smart)
 
         # Map smart_indices back to original all_feature_cols indices
@@ -1012,17 +1021,21 @@ def train_and_evaluate_xgb(df_full: pd.DataFrame, symbol: str = ""):
 
         n_pos2 = np.sum(y_train == 1)
         n_neg2 = np.sum(y_train == 0)
-        spw2 = min(n_neg2 / max(n_pos2, 1), 1.5)  # v6.0: cap at 1.5
+        spw2 = min(n_neg2 / max(n_pos2, 1), 1.2)  # v6.1: cap at 1.2
         final_model = XGBClassifier(
-            n_estimators=1000, max_depth=4, learning_rate=0.01,
+            n_estimators=300, max_depth=4, learning_rate=0.02,
             subsample=0.8, colsample_bytree=0.8, min_child_weight=30,
-            reg_alpha=0.3, reg_lambda=2.0,
+            reg_alpha=0.2, reg_lambda=1.5, max_delta_step=1,
             scale_pos_weight=spw2,
             use_label_encoder=False, eval_metric='logloss',
-            early_stopping_rounds=50, random_state=42, n_jobs=-1, verbosity=0,
+            random_state=42, n_jobs=-1, verbosity=0,
         )
         
         final_model.fit(X_tr_s, y_train, eval_set=[(X_te_s, y_test)], verbose=False)
+        
+        # v6.1: Apply calibration to smart model too
+        logger.info("[XGB-%s] Calibrating smart model...", symbol)
+        final_model = calibrate_model(final_model, X_cal_s, y_cal, symbol=f"{symbol}-SMART")
 
         smart_acc = accuracy_score(y_test, final_model.predict(X_te_s))
 
@@ -1032,7 +1045,8 @@ def train_and_evaluate_xgb(df_full: pd.DataFrame, symbol: str = ""):
             scaler = smart_scaler
             selected_features = smart_features
             static_accuracy = smart_acc
-            best_iter = getattr(final_model, 'best_iteration', final_model.n_estimators)
+            base_model_for_iter = final_model.calibrated_classifiers_[0].estimator if hasattr(final_model, 'calibrated_classifiers_') else final_model
+            best_iter = getattr(base_model_for_iter, 'best_iteration', 300)
             logger.info("[XGB-%s] Smart model accepted: %.2f%%", symbol, smart_acc * 100)
         else:
             logger.info("[XGB-%s] Smart model rejected (%.2f%% < %.2f%%). Keeping original.",
@@ -1041,12 +1055,13 @@ def train_and_evaluate_xgb(df_full: pd.DataFrame, symbol: str = ""):
     # Use WFV mean as the reported accuracy (more realistic)
     reported_accuracy = wfv_result["mean_accuracy"] / 100.0 if not wfv_result.get("skipped") else static_accuracy
 
-    # Feature importance
-    imp = model.feature_importances_
+    # Feature importance (extract from base model)
+    base_model_final = model.calibrated_classifiers_[0].estimator if hasattr(model, 'calibrated_classifiers_') else model
+    imp = base_model_final.feature_importances_
     feat_imp = dict(zip(selected_features, imp))
     top5 = sorted(feat_imp.items(), key=lambda x: x[1], reverse=True)[:5]
 
-    print(f"\n  XGBOOST [{symbol}] FINAL TRAINING REPORT v5.3")
+    print(f"\n  XGBOOST [{symbol}] FINAL TRAINING REPORT v6.1")
     print(f"  {'='*50}")
     print(f"  WFV Mean Accuracy  : {wfv_result.get('mean_accuracy', 0):.2f}% (realistic)")
     print(f"  Static Test Acc    : {static_accuracy * 100:.2f}% (reference)")
@@ -1064,24 +1079,15 @@ def train_and_evaluate_xgb(df_full: pd.DataFrame, symbol: str = ""):
     )
     logger.info("[XGB-%s] Top 5 features: %s", symbol, top5)
 
-
-
-    # v6.0 FIX: Isotonic calibration to fix BUY-heavy distribution
-    try:
-        cal_model = calibrate_model(model, X_test, y_test, symbol=symbol)
-        cal_probs = cal_model.predict_proba(X_test)[:, 1]
-        pct_buy   = float((cal_probs > 0.6).mean() * 100)
-        pct_sell  = float((cal_probs < 0.4).mean() * 100)
-        pct_noise = float(((cal_probs >= 0.4) & (cal_probs <= 0.6)).mean() * 100)
-        logger.info("[XGB-"+pct+s+"] Post-cal BUY="+pct+".1f"+pct+pct+" SELL="+pct+".1f"+pct+pct+" NOISE="+pct+".1f"+pct+pct, symbol, pct_buy, pct_sell, pct_noise)
-        if pct_noise > 20.0:
-            model = cal_model
-            logger.info("[XGB-"+pct+s+"] Calibration ACCEPTED noise="+pct+".1f"+pct+pct, symbol, pct_noise)
-        else:
-            logger.warning("[XGB-"+pct+s+"] Cal skipped noise="+pct+".1f"+pct+pct, symbol, pct_noise)
-    except Exception as cal_err:
-        logger.warning("[XGB-"+pct+s+"] Cal failed: "+pct+s, symbol, cal_err)
-
+    # v6.1: Log final prediction distribution on test set (calibration already applied above)
+    final_probs = model.predict_proba(X_test)[:, 1]
+    pct_buy_final   = float((final_probs > 0.6).mean() * 100)
+    pct_sell_final  = float((final_probs < 0.4).mean() * 100)
+    pct_noise_final = float(((final_probs >= 0.4) & (final_probs <= 0.6)).mean() * 100)
+    logger.info(
+        "[XGB-%s] Final distribution (test set): BUY=%.1f%% SELL=%.1f%% NOISE=%.1f%%",
+        symbol, pct_buy_final, pct_sell_final, pct_noise_final
+    )
 
     return model, scaler, reported_accuracy, selected_features
 
