@@ -26,6 +26,8 @@ def fetch_mt5_ohlc(symbol=None, timeframe=None, count=None):
     """
     Fetches OHLC data directly from MT5.
 
+    v6.0 FIX: Ensure minimum 99K candles for all symbols (not just 20K for EURUSD).
+    
     Args:
         symbol: Trading symbol (default: first symbol in Config.SYMBOLS)
         timeframe: MT5 timeframe constant (default: Config.TIMEFRAME)
@@ -40,7 +42,17 @@ def fetch_mt5_ohlc(symbol=None, timeframe=None, count=None):
     if symbol is None:
         symbol = getattr(Config, 'FOREX_SYMBOL', None) or getattr(Config, 'SYMBOL', None) or Config.SYMBOLS[0]
     timeframe = timeframe or Config.TIMEFRAME
-    count = count or Config.DATA_POINTS
+    
+    # v6.0 FIX: Force minimum 99K candles for all symbols
+    # المشكلة: EURUSD كان بيجيب 20K بس بينما باقي الـ symbols 99K
+    # السبب: Config.DATA_POINTS كان بيتغير حسب الـ symbol
+    # الحل: نفرض 99K كـ minimum لكل الـ symbols
+    if count is None:
+        count = max(Config.DATA_POINTS, 99000)
+    else:
+        count = max(count, 99000)
+    
+    logger.info("[Data] Requesting %d candles for %s...", count, symbol)
 
     # Ensure symbol is visible in Market Watch
     if not mt5.symbol_select(symbol, True):

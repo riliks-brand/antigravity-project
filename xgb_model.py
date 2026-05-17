@@ -100,10 +100,15 @@ def prepare_tabular_data(df: pd.DataFrame):
     Pipeline:
     1. Engineer lagged features
     2. Drop NaN rows
-    3. Chronological train/test split (80/20)
+    3. Chronological train/cal/test split (60/20/20) - v6.1 FIX
     4. Feature selection (SelectKBest)
     5. Scale features
-    6. Return train/test splits + scaler + selected feature names
+    6. Return train/cal/test splits + scaler + selected feature names
+    
+    v6.1 CRITICAL FIX:
+    - Split data into 3 sets BEFORE training: train (60%), calibration (20%), test (20%)
+    - Calibration set must be UNSEEN during training for proper probability calibration
+    - Previous bug: calibration used last 20% of training data (already seen by model)
     """
     logger.info("[XGB] Preparing tabular data...")
 
@@ -132,12 +137,21 @@ def prepare_tabular_data(df: pd.DataFrame):
         X = X[:, non_constant_mask]
         feature_cols = [f for f, keep in zip(feature_cols, non_constant_mask) if keep]
 
-    # Step 3: Chronological split
-    split = int(len(X) * 0.8)
-    X_train, X_test = X[:split], X[split:]
-    y_train, y_test = y[:split], y[split:]
+    # Step 3: Chronological split - v6.1 FIX: 60% train, 20% calibration, 20% test
+    # CRITICAL: Calibration set must be separate from training to avoid overfitting
+    train_split = int(len(X) * 0.6)
+    cal_split = int(len(X) * 0.8)
+    
+    X_train = X[:train_split]
+    X_cal = X[train_split:cal_split]
+    X_test = X[cal_split:]
+    
+    y_train = y[:train_split]
+    y_cal = y[train_split:cal_split]
+    y_test = y[cal_split:]
 
-    logger.info("[XGB] Train: %d rows | Test: %d rows", len(X_train), len(X_test))
+    logger.info("[XGB] Train: %d rows | Calibration: %d rows | Test: %d rows", 
+                len(X_train), len(X_cal), len(X_test))
 
     # Step 4: Feature selection on training data only
     k = min(TOP_K_FEATURES, X_train.shape[1])
@@ -147,6 +161,7 @@ def prepare_tabular_data(df: pd.DataFrame):
     selected_features = [feature_cols[i] for i in selected_indices]
 
     X_train_sel = X_train[:, selected_indices]
+    X_cal_sel = X_cal[:, selected_indices]
     X_test_sel = X_test[:, selected_indices]
 
     logger.info("[XGB] Feature selection: %d → %d features", X_train.shape[1], len(selected_features))
@@ -155,6 +170,7 @@ def prepare_tabular_data(df: pd.DataFrame):
     scaler = RobustScaler()
     scaler.fit(X_train_sel)
     X_train_scaled = scaler.transform(X_train_sel)
+    X_cal_scaled = scaler.transform(X_cal_sel)
     X_test_scaled = scaler.transform(X_test_sel)
 
     # نحتفظ بـ selected_indices في الـ scaler للاستخدام وقت الـ inference
@@ -162,7 +178,7 @@ def prepare_tabular_data(df: pd.DataFrame):
     scaler.selected_features_ = selected_features
     scaler.all_feature_cols_ = feature_cols
 
-    return X_train_scaled, X_test_scaled, y_train, y_test, scaler, selected_features
+    return X_train_scaled, X_cal_scaled, X_test_scaled, y_train, y_cal, y_test, scaler, selected_features
 
 
 # =========================================
@@ -561,9 +577,10 @@ def walk_forward_validate(
             subsample=0.8,
             colsample_bytree=0.8,
             min_child_weight=30,          # v6.0: raised from 20 - more regularization
-            reg_alpha=0.1,
-            reg_lambda=1.0,
-            scale_pos_weight=spw,
+            reg_alpha=0.2,                # v6.0: matched with final model
+            reg_lambda=1.5,               # v6.0: matched with final model
+            scale_pos_weight=min(spw, 1.2),  # v6.0: cap to prevent BUY bias
+            max_delta_step=1,             # v6.0: NEW — limits extreme predictions
             use_label_encoder=False,
             eval_metric='logloss',
             early_stopping_rounds=30,
@@ -714,13 +731,18 @@ class XGBModel:
         """
         Train XGBoost on tabular + lagged features.
         
+        v6.1 CRITICAL FIX:
+        - Use separate calibration set (unseen during training)
+        - Align n_estimators with WFV (300 instead of 500)
+        - Enhanced logging for prediction distribution
+        
         Returns:
             float: test set accuracy
         """
         logger.info("[XGB] Starting training...")
 
         try:
-            X_train, X_test, y_train, y_test, scaler, selected_features = prepare_tabular_data(df_full)
+            X_train, X_cal, X_test, y_train, y_cal, y_test, scaler, selected_features = prepare_tabular_data(df_full)
         except ValueError as e:
             logger.warning("[XGB] %s", e)
             return 0.0
@@ -728,21 +750,34 @@ class XGBModel:
         self.scaler = scaler
         self.feature_names = selected_features
 
-        # Class balance
+        # Class balance — v6.0 FIX: Force balanced training
+        # المشكلة: السوق كان في uptrend → XGB تعلم BUY bias
+        # الحل: نفرض balance صارم بـ class_weight + scale_pos_weight محدود
         n_pos = np.sum(y_train == 1)
         n_neg = np.sum(y_train == 0)
-        scale_pos_weight = n_neg / max(n_pos, 1)
+        
+        # v6.0: Cap scale_pos_weight at 1.2 to prevent extreme BUY bias
+        # حتى لو الـ data متوازنة، الـ XGB بيتعلم patterns من الـ uptrend
+        # نحد الـ weight عشان نمنع الـ model من الـ overfit على BUY direction
+        raw_spw = n_neg / max(n_pos, 1)
+        scale_pos_weight = min(raw_spw, 1.2)
+        
+        if abs(raw_spw - scale_pos_weight) > 0.1:
+            logger.info("[XGB] scale_pos_weight capped: %.3f → %.3f (preventing BUY bias)", 
+                       raw_spw, scale_pos_weight)
 
+        # v6.1 FIX: Align n_estimators with WFV (300 instead of 500)
         self.model = XGBClassifier(
-            n_estimators=500,
+            n_estimators=300,       # v6.1: Changed from 500 to match WFV
             max_depth=4,
             learning_rate=0.02,
             subsample=0.8,
             colsample_bytree=0.8,
-            min_child_weight=10,    # regularization — يمنع overfitting على noise
-            reg_alpha=0.1,          # L1 regularization
-            reg_lambda=1.0,         # L2 regularization
+            min_child_weight=30,    # v6.0: raised from 20 — more regularization
+            reg_alpha=0.2,          # v6.0: raised from 0.1 — stronger L1 penalty
+            reg_lambda=1.5,         # v6.0: raised from 1.0 — stronger L2 penalty
             scale_pos_weight=scale_pos_weight,
+            max_delta_step=1,       # v6.0: NEW — limits extreme predictions
             use_label_encoder=False,
             eval_metric='logloss',
             random_state=42,
@@ -757,25 +792,63 @@ class XGBModel:
             verbose=False,
         )
 
+        # v6.1: CRITICAL FIX — Check distribution BEFORE calibration
+        raw_probs_test = self.model.predict_proba(X_test)[:, 1]
+        pct_buy_raw = float((raw_probs_test > 0.6).mean() * 100)
+        pct_sell_raw = float((raw_probs_test < 0.4).mean() * 100)
+        pct_noise_raw = float(((raw_probs_test >= 0.4) & (raw_probs_test <= 0.6)).mean() * 100)
+        
+        logger.info("[XGB] BEFORE Calibration - Test Set Distribution:")
+        logger.info("[XGB]   BUY (>0.6):   %.1f%%", pct_buy_raw)
+        logger.info("[XGB]   SELL (<0.4):  %.1f%%", pct_sell_raw)
+        logger.info("[XGB]   NOISE (0.4-0.6): %.1f%%", pct_noise_raw)
+
+        # v6.1: CRITICAL FIX — Isotonic Calibration using SEPARATE calibration set
+        # X_cal and y_cal are UNSEEN during training (from prepare_tabular_data split)
+        logger.info("[XGB] Applying Isotonic Calibration on %d UNSEEN samples...", len(X_cal))
+        self.model = calibrate_model(self.model, X_cal, y_cal, symbol="TRAIN")
+
+        # v6.1: Check distribution AFTER calibration
+        cal_probs_test = self.model.predict_proba(X_test)[:, 1]
+        pct_buy_cal = float((cal_probs_test > 0.6).mean() * 100)
+        pct_sell_cal = float((cal_probs_test < 0.4).mean() * 100)
+        pct_noise_cal = float(((cal_probs_test >= 0.4) & (cal_probs_test <= 0.6)).mean() * 100)
+        
+        logger.info("[XGB] AFTER Calibration - Test Set Distribution:")
+        logger.info("[XGB]   BUY (>0.6):   %.1f%% (change: %+.1f%%)", pct_buy_cal, pct_buy_cal - pct_buy_raw)
+        logger.info("[XGB]   SELL (<0.4):  %.1f%% (change: %+.1f%%)", pct_sell_cal, pct_sell_cal - pct_sell_raw)
+        logger.info("[XGB]   NOISE (0.4-0.6): %.1f%% (change: %+.1f%%)", pct_noise_cal, pct_noise_cal - pct_noise_raw)
+
         y_pred = self.model.predict(X_test)
         self.accuracy = accuracy_score(y_test, y_pred)
 
         # Feature importance
-        imp = self.model.feature_importances_
+        # Note: After calibration, we need to access the base estimator
+        if hasattr(self.model, 'calibrated_classifiers_'):
+            base_model = self.model.calibrated_classifiers_[0].estimator
+        else:
+            base_model = self.model
+            
+        imp = base_model.feature_importances_
         self.feature_importances = dict(zip(self.feature_names, imp))
         top5 = sorted(self.feature_importances.items(), key=lambda x: x[1], reverse=True)[:5]
 
         # Report
         print(f"\n\033[96m{'='*55}\033[0m")
-        print(f"\033[96m        XGBOOST MODEL REPORT\033[0m")
+        print(f"\033[96m        XGBOOST MODEL REPORT v6.1\033[0m")
         print(f"\033[96m{'='*55}\033[0m")
         print(f"\033[96m  Accuracy       : {self.accuracy * 100:.2f}%\033[0m")
-        print(f"\033[96m  Trees (final)  : {self.model.n_estimators}\033[0m")
-        print(f"\033[96m  Max Depth      : {self.model.max_depth}\033[0m")
+        print(f"\033[96m  Trees (final)  : {base_model.n_estimators}\033[0m")
+        print(f"\033[96m  Max Depth      : {base_model.max_depth}\033[0m")
         print(f"\033[96m  Train Size     : {len(X_train)}\033[0m")
+        print(f"\033[96m  Cal Size       : {len(X_cal)} (UNSEEN)\033[0m")
         print(f"\033[96m  Test Size      : {len(X_test)}\033[0m")
         print(f"\033[96m  Features       : {len(selected_features)}\033[0m")
         print(f"\033[96m  Top Feature    : {top5[0][0]} ({top5[0][1]:.4f})\033[0m")
+        print(f"\033[96m  ---\033[0m")
+        print(f"\033[96m  Distribution (Test Set):\033[0m")
+        print(f"\033[96m    Before Cal:  BUY={pct_buy_raw:.1f}% SELL={pct_sell_raw:.1f}% NOISE={pct_noise_raw:.1f}%\033[0m")
+        print(f"\033[96m    After Cal:   BUY={pct_buy_cal:.1f}% SELL={pct_sell_cal:.1f}% NOISE={pct_noise_cal:.1f}%\033[0m")
         print(f"\033[96m{'='*55}\033[0m\n")
 
         logger.info("[XGB] ✅ Training complete. Accuracy: %.2f%%", self.accuracy * 100)

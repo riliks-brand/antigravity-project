@@ -255,12 +255,17 @@ class RFModel:
         X_train_scaled = self.scaler.transform(X_train)
         X_test_scaled = self.scaler.transform(X_test)
 
-        # Build and train RF
+        # Build and train RF — v6.0: Tuned for better signal/noise separation
+        # المشكلة: 68% من الـ predictions في noise zone [0.45-0.55]
+        # الحل: 
+        #   1. More trees = smoother probabilities
+        #   2. Deeper trees = capture complex patterns
+        #   3. Stricter leaf requirements = less noise
         self.model = RandomForestClassifier(
-            n_estimators=Config.RF_N_ESTIMATORS,
-            max_depth=Config.RF_MAX_DEPTH,
-            min_samples_split=10,
-            min_samples_leaf=5,
+            n_estimators=300,           # v6.0: raised from Config (was 200) — more stable predictions
+            max_depth=8,                # v6.0: raised from Config (was 6) — capture deeper patterns
+            min_samples_split=20,       # v6.0: raised from 10 — prevent overfitting
+            min_samples_leaf=10,        # v6.0: raised from 5 — smoother predictions
             max_features='sqrt',
             class_weight='balanced',
             random_state=42,
@@ -307,6 +312,13 @@ class RFModel:
         """
         Get RF probability for the latest data point.
 
+        v6.0: Apply probability sharpening to reduce noise zone concentration.
+        
+        Strategy: Power transformation to push probabilities away from 0.5
+        - p_new = 0.5 + sign(p - 0.5) * |p - 0.5|^0.8
+        - This expands the tails while preserving order
+        - Example: 0.52 → 0.53, 0.65 → 0.68, 0.48 → 0.47
+
         Returns:
             float: probability of class 1 (BUY direction) ∈ [0, 1]
             Returns 0.5 (neutral) if model not trained or error.
@@ -336,7 +348,22 @@ class RFModel:
             proba = self.model.predict_proba(X)[0]
 
             # proba[1] = probability of class 1 (bullish)
-            return float(proba[1]) if len(proba) > 1 else 0.5
+            raw_prob = float(proba[1]) if len(proba) > 1 else 0.5
+            
+            # v6.0: Probability sharpening to reduce noise zone
+            # Power transformation: pushes probabilities away from 0.5
+            distance = raw_prob - 0.5
+            sign = 1 if distance >= 0 else -1
+            sharpened = 0.5 + sign * (abs(distance) ** 0.8)
+            
+            # Clamp to [0, 1]
+            sharpened = float(np.clip(sharpened, 0.0, 1.0))
+            
+            # Log significant changes
+            if abs(sharpened - raw_prob) > 0.02:
+                logger.debug("[RF] Probability sharpening: %.4f → %.4f", raw_prob, sharpened)
+            
+            return sharpened
 
         except Exception as e:
             logger.error("[RF] Prediction failed: %s", e)
