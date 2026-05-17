@@ -881,24 +881,12 @@ class XGBModel:
             # Use latest row
             latest = df_lagged.iloc[-1:].copy().fillna(0)
 
-            # Align to training features via stored indices
-            # نحتاج كل الـ feature columns الأصلية أولاً
-            all_cols = getattr(self.scaler, 'all_feature_cols_', self.feature_names)
-            for col in all_cols:
+            # self.feature_names = the exact 40 smart features the scaler was fitted on
+            # Use them directly — no index slicing needed
+            for col in self.feature_names:
                 if col not in latest.columns:
                     latest[col] = 0.0
-
-            # Apply feature selection
-            selected_indices = getattr(self.scaler, 'selected_indices_', None)
-            if selected_indices is not None:
-                X_full = latest[all_cols].values
-                X_sel = X_full[:, selected_indices]
-            else:
-                # Fallback: use feature_names directly
-                for col in self.feature_names:
-                    if col not in latest.columns:
-                        latest[col] = 0.0
-                X_sel = latest[self.feature_names].values
+            X_sel = latest[self.feature_names].values
 
             X_scaled = self.scaler.transform(X_sel)
             proba = self.model.predict_proba(X_scaled)[0]
@@ -998,6 +986,7 @@ def train_and_evaluate_xgb(df_full: pd.DataFrame, symbol: str = ""):
     )
 
     # ── Step 4: Retrain on smart features if reduced ─────────
+    X_test_for_eval = X_test  # default: use original X_test for final distribution logging
     if len(smart_features) < len(selected_features):
         logger.info("[XGB-%s] Retraining on %d smart features (was %d)...",
                     symbol, len(smart_features), len(selected_features))
@@ -1045,6 +1034,7 @@ def train_and_evaluate_xgb(df_full: pd.DataFrame, symbol: str = ""):
             scaler = smart_scaler
             selected_features = smart_features
             static_accuracy = smart_acc
+            X_test_for_eval = X_te_s   # track correct test set for final eval
             base_model_for_iter = final_model.calibrated_classifiers_[0].estimator if hasattr(final_model, 'calibrated_classifiers_') else final_model
             best_iter = getattr(base_model_for_iter, 'best_iteration', 300)
             logger.info("[XGB-%s] Smart model accepted: %.2f%%", symbol, smart_acc * 100)
@@ -1079,8 +1069,9 @@ def train_and_evaluate_xgb(df_full: pd.DataFrame, symbol: str = ""):
     )
     logger.info("[XGB-%s] Top 5 features: %s", symbol, top5)
 
-    # v6.1: Log final prediction distribution on test set (calibration already applied above)
-    final_probs = model.predict_proba(X_test)[:, 1]
+    # v6.1: Log final prediction distribution on test set
+    # X_test_for_eval tracks the correct feature-aligned test set
+    final_probs = model.predict_proba(X_test_for_eval)[:, 1]
     pct_buy_final   = float((final_probs > 0.6).mean() * 100)
     pct_sell_final  = float((final_probs < 0.4).mean() * 100)
     pct_noise_final = float(((final_probs >= 0.4) & (final_probs <= 0.6)).mean() * 100)

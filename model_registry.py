@@ -96,25 +96,18 @@ class ModelRegistry:
             from xgb_model import engineer_lagged_features
             model    = self.xgb_models[key]
             scaler   = self.xgb_scalers[key]
-            features = self.xgb_features[key]
+            features = self.xgb_features[key]  # the 40 smart features
 
             df_lagged = engineer_lagged_features(df_processed)
             df_lagged = df_lagged.drop("Target", axis=1, errors="ignore")
             latest = df_lagged.iloc[-1:].fillna(0)
 
-            all_cols = getattr(scaler, "all_feature_cols_", features)
-            for col in all_cols:
+            # Use features list directly — it contains exactly the columns
+            # the scaler was fitted on (40 smart features after SHAP+RFE)
+            for col in features:
                 if col not in latest.columns:
                     latest[col] = 0.0
-
-            selected_indices = getattr(scaler, "selected_indices_", None)
-            if selected_indices is not None:
-                X = latest[all_cols].values[:, selected_indices]
-            else:
-                for col in features:
-                    if col not in latest.columns:
-                        latest[col] = 0.0
-                X = latest[features].values
+            X = latest[features].values
 
             X_scaled = scaler.transform(X)
             proba = model.predict_proba(X_scaled)[0]

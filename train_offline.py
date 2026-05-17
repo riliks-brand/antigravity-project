@@ -234,20 +234,19 @@ def train_symbol(symbol: str, sym_cfg: dict) -> dict:
         jdump(xgb_features,   xgb_features_path(symbol))
         logger.info("[%s] XGB saved (acc: %.2f%% WFV, time: %.1fs)", symbol, xgb_acc * 100, time.time() - t2)
 
-        # XGBoost prediction distribution
+        # XGBoost prediction distribution — use selected features directly
         from xgb_model import engineer_lagged_features
         df_lagged = engineer_lagged_features(df_processed).drop('Target', axis=1, errors='ignore')
         split_idx = int(len(df_lagged) * 0.8)
         df_test_xgb = df_lagged.iloc[split_idx:].fillna(0)
-        xgb_selected = getattr(xgb_scaler, 'selected_indices_', None)
-        all_cols = getattr(xgb_scaler, 'all_feature_cols_', xgb_features)
-        for col in all_cols:
+
+        # xgb_features = the 40 smart features saved by train_and_evaluate_xgb
+        # xgb_scaler   = the smart scaler fitted on those 40 features
+        # Use xgb_features directly — no index slicing needed
+        for col in xgb_features:
             if col not in df_test_xgb.columns:
                 df_test_xgb[col] = 0.0
-        if xgb_selected is not None:
-            X_xgb_test = df_test_xgb[all_cols].values[:, xgb_selected]
-        else:
-            X_xgb_test = df_test_xgb[xgb_features].values
+        X_xgb_test = df_test_xgb[xgb_features].values
         X_xgb_test_s = xgb_scaler.transform(X_xgb_test)
         xgb_preds = xgb_model_obj.predict_proba(X_xgb_test_s)[:, 1]
         visualize_predictions(xgb_preds, "XGBoost", symbol)
@@ -350,7 +349,7 @@ class RFModelSymbol:
                 min_samples_leaf=25,        # v6.0: match final model
                 max_features='log2',           # v6.0: match final model
                 random_state=42 + fold,
-                class_weght='balanced_subsample', # v6.0
+                class_weight='balanced_subsample', # v6.0
                 n_jobs=-1,
             )
             fold_rf.fit(X_tr_s, y_tr)
