@@ -228,6 +228,8 @@ def main():
     last_weekly_retrain_date = None   # v5.2: weekly walk-forward retraining
     last_eval_time = 0
     symbol_states = {}
+    symbol_last_eval_candle = {}  # v6.0: per-symbol eval dedup
+    symbol_last_exec_candle = {}  # v6.0: per-symbol exec dedup
 
     print("\n\033[92m[STARTUP] âœ… All systems online. Entering main loop.\033[0m\n")
 
@@ -379,24 +381,13 @@ def main():
                 if not current_price: continue
                 
                 state = symbol_states.get(symbol, {})
-                force_eval = is_candle_close
-                
-                if not force_eval and state.get("last_close"):
-                    if abs(current_price - state["last_close"]) > 0.5 * state.get("atr", 0.001):
-                        force_eval = True
-                    elif state.get("ob_bull") and abs(current_price - state["ob_bull"]) < 0.5 * state.get("atr", 0.001):
-                        force_eval = True
-                    elif state.get("ob_bear") and abs(current_price - state["ob_bear"]) < 0.5 * state.get("atr", 0.001):
-                        force_eval = True
-                    elif state.get("fvg") and abs(current_price - state["fvg"]) < 0.2 * state.get("atr", 0.001):
-                        force_eval = True
-                    elif state.get("past_max") and current_price > state["past_max"]:
-                        force_eval = True
-                    elif state.get("past_min") and current_price < state["past_min"]:
-                        force_eval = True
-                        
+                # v6.0 FIX: Only evaluate on candle close, once per symbol per candle
+                # This prevents duplicate evaluations causing duplicate trades
+                already_evaled = (symbol_last_eval_candle.get(symbol, -999) == candle_index)
+                force_eval = is_candle_close and not already_evaled
                 if not force_eval:
                     continue
+                symbol_last_eval_candle[symbol] = candle_index
 
                 # ===== FETCH MULTI-TIMEFRAME DATA =====
                 mtf_data = fetch_mtf_data(symbol)
@@ -614,6 +605,9 @@ def main():
                 atr = opp["current_atr"]
                 is_near_miss = opp.get("confidence_level") == "LOW"
                 
+                # v6.0: Hard exec dedup
+                if symbol_last_exec_candle.get(sym) == candle_index:
+                    continue
                 # 1. Global Trade Guard
                 can_trade, guard_reason = manager.can_trade(sym, dir_, candle_index, is_near_miss=is_near_miss)
                 if not can_trade:
@@ -721,6 +715,7 @@ def main():
                         market_context=opp.get("market_context", {})
                     )
                     manager.update_signal_tracker(sym, dir_, candle_index)
+                    symbol_last_exec_candle[sym] = candle_index  # v6.0
                     executed_this_cycle += 1
                     
                     # Print Status

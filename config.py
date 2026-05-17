@@ -1,5 +1,5 @@
-# config.py
-# Professional MT5 Trading Bot — Elite Configuration v3.1
+﻿# config.py
+# Professional MT5 Trading Bot â€” Elite Configuration v3.1
 # Ensemble Edition (LSTM + Random Forest + Dynamic Voting)
 
 import MetaTrader5 as mt5
@@ -40,24 +40,24 @@ class Config:
     DATA_POINTS = 2000                   # Candles to fetch per timeframe
 
     # =========================================
-    # LSTM Model Settings (Legacy — kept for backward compatibility only)
+    # LSTM Model Settings (Legacy â€” kept for backward compatibility only)
     # v5.0: XGBoost replaced LSTM as primary model
     # =========================================
-    SEQUENCE_LENGTH = 60  # Legacy LSTM param — not used in v5.0
+    SEQUENCE_LENGTH = 60  # Legacy LSTM param â€” not used in v5.0
     PREDICT_LOOKAHEAD = 5
     
     # Phase 1 Diagnostic Mode
     DIAGNOSTIC_MODE = False
 
-    # Decision Thresholds (v5.1 — calibrated from ensemble_decisions.csv analysis)
+    # Decision Thresholds (v5.1 â€” calibrated from ensemble_decisions.csv analysis)
     # XGB typically outputs 0.55-0.62, after weighting final_score ~0.52-0.58
     # Thresholds adjusted down by 0.04 to capture real signals
-    PROB_THRESHOLD_BUY = 0.56   # was 0.70 (LSTM era) → now matches ensemble_engine v5.1
+    PROB_THRESHOLD_BUY = 0.56   # was 0.70 (LSTM era) â†’ now matches ensemble_engine v5.1
     PROB_THRESHOLD_SELL = 0.44  # was 0.30
     ADAPTIVE_THRESHOLD_ENABLED = True    # If True, thresholds shift with volatility
 
     # =========================================
-    # Ensemble Engine (XGBoost + Random Forest) — v5.0
+    # Ensemble Engine (XGBoost + Random Forest) â€” v5.0
     # =========================================
     ENSEMBLE_ENABLED = True
 
@@ -75,13 +75,13 @@ class Config:
     ENSEMBLE_RF_WEIGHT_RANGING_LEGACY = 0.45
 
     # Conflict Handling
-    ENSEMBLE_CONFLICT_THRESHOLD = 0.50     # If |XGB - RF| > this → SKIP trade
+    ENSEMBLE_CONFLICT_THRESHOLD = 0.50     # If |XGB - RF| > this â†’ SKIP trade
     ENSEMBLE_DISAGREEMENT_PENALTY = 0.30   # Penalty factor: final -= |XGB-RF| * penalty
 
     # RF Retraining Schedule
     RF_RETRAIN_EVERY_HOURS = 24            # Retrain RF every N hours
     RF_RETRAIN_EVERY_CANDLES = 288         # OR every N candles evaluated (288 = 24h of M5)
-    RF_N_ESTIMATORS = 500                  # v5.1: 200 → 500 (more trees for large dataset)
+    RF_N_ESTIMATORS = 500                  # v5.1: 200 â†’ 500 (more trees for large dataset)
     RF_MAX_DEPTH = 10                      # Max tree depth (prevent overfitting)
 
     # Ensemble Logging
@@ -90,7 +90,7 @@ class Config:
     # =========================================
     # Portfolio Smart Execution & Context Ranking
     # =========================================
-    MIN_GLOBAL_SCORE = 0.35              # كان 0.05 — ده كان بيمرر signals ضعيفة جداً
+    MIN_GLOBAL_SCORE = 0.55              # v6.0
     
     # Priority Context Boosts ( added to raw prediction )
     BOOST_STRONG_TREND = 0.02
@@ -121,28 +121,27 @@ class Config:
     # Micro Account Overrides (applied when MICRO_ACCOUNT_MODE = True)
     MICRO_RISK_TIER_STRONG = 2.0         # 2% of $10 = $0.20 risk per trade
     MICRO_RISK_TIER_WEAK = 1.0           # 1% of $10 = $0.10 risk per trade
-    MICRO_MAX_CONCURRENT_TRADES = 3      # Allow same number as normal mode (lot is already 0.01)
+    MICRO_MAX_CONCURRENT_TRADES = 2      # v6.0: max 2 concurrent micro trades
     MICRO_MAX_GLOBAL_RISK_PCT = 3.0      # Max 3% of balance at risk
-    MICRO_SL_ATR_MULT = 2.0              # Wider SL to survive noise (was 1.0 = too tight)
-    MICRO_TP1_ATR_MULT = 3.0             # كان 1.5 → RR كان 0.75 (خسارة مضمونة). الجديد RR = 1.5 على الأقل
-    MICRO_TP2_ATR_MULT = 4.0             # كان 2.5 → الجديد يدي مجال أكبر للربح
+    MICRO_SL_ATR_MULT = 3.0              # v6.0: widened
+    MICRO_TP1_ATR_MULT = 4.5             # v6.0: RR=1.5
+    MICRO_TP2_ATR_MULT = 6.0             # v6.0: wider TP2
     MICRO_FORCE_MIN_LOT = True           # Always use broker minimum lot (0.01)
     
     # Per-Symbol ATR Multiplier Overrides
     # Gold (XAUUSD) needs much wider SL/TP because it moves $5-15 per candle
     SYMBOL_ATR_OVERRIDES = {
-        "XAUUSD": {"sl_mult": 3.0, "tp1_mult": 3.0, "tp2_mult": 4.5},
-        "US30":   {"sl_mult": 2.5, "tp1_mult": 2.5, "tp2_mult": 3.5},
-        # Forex pairs use default multipliers (no override needed)
+        "XAUUSD": {"sl_mult": 4.0, "tp1_mult": 5.0, "tp2_mult": 7.0},
+        "US30":   {"sl_mult": 3.5, "tp1_mult": 4.0, "tp2_mult": 5.5},
     }
     
     MAX_DAILY_LOSS_PCT = 5.0             # Kill switch: stop ALL trading if daily loss > X%
-    MAX_CONCURRENT_TRADES = 3            # Overall portfolio max open positions
+    MAX_CONCURRENT_TRADES = 2            # v6.0: reduced from 3
     
     # Session Limits
     SESSION_MAX_TRADES = 10              # Max number of successful executions per session
     SESSION_MAX_NEAR_MISS = 5            # Max number of near-miss activations per session
-    NEAR_MISS_RISK_REDUCTION = 0.25      # كان 0.50 hardcoded — Near-miss بياخد 25% من الـ risk بس
+    NEAR_MISS_RISK_REDUCTION = 0.25      # ÙƒØ§Ù† 0.50 hardcoded â€” Near-miss Ø¨ÙŠØ§Ø®Ø¯ 25% Ù…Ù† Ø§Ù„Ù€ risk Ø¨Ø³
 
     # Cooldown: pause after N consecutive losses
     COOLDOWN_AFTER_LOSSES = 3
@@ -153,9 +152,9 @@ class Config:
     # AI-Driven Dynamic Exits using reversal patterns
     # =========================================
     SMART_EXIT_ENABLED = True
-    SMART_EXIT_DANGER_THRESHOLD = 4.0    # v5.1: Raised from 3.0 — was closing trades too early before TP
-    SMART_EXIT_TIGHTEN_THRESHOLD = 2.5   # v5.1: Raised from 2.0 — tighten SL only on stronger signals
-    SMART_EXIT_MIN_CANDLES_OPEN = 5      # v5.1: Raised from 3 — give trade more time to develop
+    SMART_EXIT_DANGER_THRESHOLD = 4.0    # v5.1: Raised from 3.0 â€” was closing trades too early before TP
+    SMART_EXIT_TIGHTEN_THRESHOLD = 2.5   # v5.1: Raised from 2.0 â€” tighten SL only on stronger signals
+    SMART_EXIT_MIN_CANDLES_OPEN = 5      # v5.1: Raised from 3 â€” give trade more time to develop
     SMART_EXIT_ONLY_IN_PROFIT = True     # Only early-close if trade is in profit
     SMART_EXIT_TIGHTEN_ATR_MULT = 0.5    # Tighter trailing stop multiplier when danger detected
 
@@ -217,18 +216,18 @@ class Config:
     # Feature Engineering
     # =========================================
     ATR_THRESHOLD = 0.0002               # Filter for low liquidity periods
-    ATR_LOOKAHEAD_MULT = 1.2             # Default target threshold — overridden per-symbol below
-    # v5.1: Per-symbol ATR lookahead multipliers — MUST match train_offline.py values exactly
+    ATR_LOOKAHEAD_MULT = 1.2             # Default target threshold â€” overridden per-symbol below
+    # v5.1: Per-symbol ATR lookahead multipliers â€” MUST match train_offline.py values exactly
     # These affect Target generation in generate_target_column() during live feature pipeline
     ATR_LOOKAHEAD_MULT_PER_SYMBOL = {
         "EURUSD": 1.2,
         "GBPUSD": 1.2,
         "USDJPY": 1.2,
-        "XAUUSD": 1.5,   # Gold moves $5-15/candle — needs wider target threshold
+        "XAUUSD": 1.5,   # Gold moves $5-15/candle â€” needs wider target threshold
         "US30":   1.5,   # Index moves 50-150pts/candle
         "BTCUSD": 1.8,   # Crypto high volatility
     }
-    ADX_RANGING_THRESHOLD = 15           # v5.1: Lowered from 20 — H1 ADX 15-20 is weak trend not pure ranging
+    ADX_RANGING_THRESHOLD = 15           # v5.1: Lowered from 20 â€” H1 ADX 15-20 is weak trend not pure ranging
                                          # Combined with H1_ADX usage in filter, this is more accurate
     DXY_TICKER = "DX-Y.NYB"
 
@@ -241,7 +240,7 @@ class Config:
     # Memory Similarity (Probability Modifier)
     # =========================================
     # Memory now heavily MODIFIES probability to fully learn from losses
-    MEMORY_BIAS_SCALE = 0.50             # Max probability adjustment (±50% penalty for bad setups)
+    MEMORY_BIAS_SCALE = 0.50             # Max probability adjustment (Â±50% penalty for bad setups)
     MEMORY_SIMILARITY_THRESHOLD = 50     # Apply bias if similarity > 50%
     MEMORY_HARD_BLOCK_THRESHOLD = 90     # If similarity > 90%, block the trade completely
 
@@ -281,3 +280,4 @@ class Config:
     FOREX_RISK_PER_TRADE = 10.0
     OTC_CANDLE_INTERVAL = 60
     OTC_CDP_PORT = 9225
+
