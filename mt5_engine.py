@@ -241,6 +241,16 @@ def calculate_lot_size(symbol, sl_points, risk_multiplier=1.0):
 
     lot_size = round(float(lot_size), digits)
 
+    # Apply Pacific session position size modifier (reduced liquidity)
+    from trade_manager import TradeManager
+    session = TradeManager.get_active_session()
+    if session == "Pacific":
+        size_modifier = getattr(Config, "PACIFIC_POSITION_SIZE_MODIFIER", 0.5)
+        lot_size = lot_size * size_modifier
+        lot_size = round(float(lot_size), digits)
+        logger.info("[LotSize] Pacific session modifier applied (x%.2f) → Lot: %.2f",
+                    size_modifier, lot_size)
+
     logger.info("[LotSize] Balance: %.2f | Risk: %.2f$ (x%.1f) | SL: %d pts | Lot: %.2f",
                 balance, risk_amount, risk_multiplier, sl_points, lot_size)
     return lot_size

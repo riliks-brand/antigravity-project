@@ -37,7 +37,9 @@ class Config:
     TIMEFRAME = mt5.TIMEFRAME_M5        # Primary execution timeframe
     TIMEFRAME_CONFIRM = mt5.TIMEFRAME_M15  # Confirmation timeframe
     TIMEFRAME_TREND = mt5.TIMEFRAME_H1     # Trend timeframe
-    DATA_POINTS = 2000                   # Candles to fetch per timeframe
+    DATA_POINTS = 2000  # Live trading candle window (M5/M15/H1 signal generation).
+                        # NOT a historical backfill size. Increase only if indicators
+                        # require a longer lookback (e.g. 200-period MA on H1).
 
     # =========================================
     # LSTM Model Settings (Legacy â€” kept for backward compatibility only)
@@ -281,3 +283,32 @@ class Config:
     OTC_CANDLE_INTERVAL = 60
     OTC_CDP_PORT = 9225
 
+
+    # =========================================
+    # Fix 2 — Counter-trend softening
+    # Replaces the hard COUNTER_TREND_H1 block with a soft block:
+    # high-confidence signals pass through; low-confidence signals receive a penalty.
+    # =========================================
+    COUNTER_TREND_XGB_OVERRIDE_THRESHOLD = 0.75   # xgb_prob >= this → allow counter-trend signal through
+    COUNTER_TREND_PENALTY = -0.04                  # Score penalty applied when xgb_prob < override threshold
+
+    # =========================================
+    # Fix 3 — Pacific session (UTC 22–23)
+    # Covers the gap between New York session end and Asia session start.
+    # =========================================
+    SESSION_PACIFIC = (22, 24)               # UTC hour range (24 wraps to midnight = Asia boundary)
+    TRADE_SESSION_PACIFIC = True             # Enable trading during Pacific session
+    PACIFIC_POSITION_SIZE_MODIFIER = 0.5     # 50% of normal size — reduced liquidity
+
+    # =========================================
+    # Fix 4 — Recalibrated thresholds (post-isotonic-calibration)
+    # Isotonic calibration compresses XGB outputs toward 0.5; old thresholds (0.62–0.64)
+    # are now unreachable. New values reflect the calibrated probability range (~0.52–0.60).
+    # =========================================
+    PROB_THRESHOLD_BUY_RANGING       = 0.58  # trend_strength <= 0.25  (was 0.64)
+    PROB_THRESHOLD_BUY_TRANSITIONING = 0.57  # 0.25 < trend_strength <= 0.35  (was 0.63)
+    PROB_THRESHOLD_BUY_TRENDING      = 0.56  # trend_strength > 0.35  (was 0.62)
+
+    PROB_THRESHOLD_SELL_RANGING       = 0.42  # trend_strength <= 0.25  (was 0.36)
+    PROB_THRESHOLD_SELL_TRANSITIONING = 0.43  # 0.25 < trend_strength <= 0.35  (was 0.37)
+    PROB_THRESHOLD_SELL_TRENDING      = 0.44  # trend_strength > 0.35  (was 0.38)

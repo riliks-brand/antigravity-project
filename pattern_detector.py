@@ -14,12 +14,33 @@ All patterns use swing-point detection and linear regression
 on rolling windows, producing binary flags and continuous measures.
 """
 
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 import logging
 from scipy.signal import argrelextrema
 
 logger = logging.getLogger("PatternDetector")
+
+# =========================================
+# MODULE-LEVEL CACHE AND CONSTANTS (Fix 1)
+# =========================================
+
+# Per-symbol cache dict — persists across calls within the same process.
+# Structure: { symbol: { "last_row_count": int, "last_index": Any, "columns": dict[str, np.ndarray] } }
+_pattern_cache: dict[str, dict] = {}
+
+# All 15 output columns produced by add_chart_patterns()
+OUTPUT_COLUMNS = [
+    "DoubleTop_Flag", "DoubleBottom_Flag", "TripleTop_Flag", "TripleBottom_Flag",
+    "HS_Flag", "InvHS_Flag", "AscTriangle_Flag", "DescTriangle_Flag",
+    "SymTriangle_Flag", "RisingWedge_Flag", "FallingWedge_Flag",
+    "BullFlag_Flag", "BearFlag_Flag", "Volatility_Compress", "pattern_bias_score"
+]
+
+# Maximum number of rows to reprocess on an incremental cache update
+CACHE_LOOKBACK = 1000
 
 
 # =========================================
@@ -55,13 +76,16 @@ def _linear_slope(values: np.ndarray) -> float:
 # MAIN API: add_chart_patterns()
 # =========================================
 
-def add_chart_patterns(df: pd.DataFrame) -> pd.DataFrame:
+def _run_rolling_window_logic(df: pd.DataFrame, start_offset: int = 0) -> dict:
     """
-    Adds chart pattern flags to the DataFrame using rolling window analysis.
-    Requires: open, high, low, close, ATR columns.
+    Core rolling-window pattern detection logic.
 
-    Returns:
-        DataFrame with new binary and continuous columns for each pattern.
+    Runs the pattern detection loop over df, starting from index `start_offset`
+    (relative to df). Returns a dict mapping each output column name to its
+    computed numpy array (length == len(df)).
+
+    When called for an incremental update, `df` is the slice `full_df[start_idx:]`
+    and `start_offset` is 0 (we always process the full slice).
     """
     epsilon = 1e-8
     n = len(df)
@@ -84,7 +108,6 @@ def add_chart_patterns(df: pd.DataFrame) -> pd.DataFrame:
     falling_wedge = np.zeros(n, dtype=int)
     bull_flag = np.zeros(n, dtype=int)
     bear_flag = np.zeros(n, dtype=int)
-    vol_compress = np.zeros(n, dtype=int)
 
     # =========================================
     # Rolling window analysis
@@ -206,25 +229,33 @@ def add_chart_patterns(df: pd.DataFrame) -> pd.DataFrame:
     atr_rolling_pctile = atr_series.rolling(50).apply(
         lambda x: pd.Series(x).rank(pct=True).iloc[-1], raw=False
     )
-    vol_compress = np.where(atr_rolling_pctile < 0.2, 1, 0)
+    vol_compress_arr = np.where(atr_rolling_pctile < 0.2, 1, 0)
 
-    # =========================================
-    # Assign all to DataFrame
-    # =========================================
-    df['DoubleTop_Flag'] = double_top
-    df['DoubleBottom_Flag'] = double_bottom
-    df['TripleTop_Flag'] = triple_top
-    df['TripleBottom_Flag'] = triple_bottom
-    df['HS_Flag'] = hs_flag
-    df['InvHS_Flag'] = inv_hs_flag
-    df['AscTriangle_Flag'] = asc_triangle
-    df['DescTriangle_Flag'] = desc_triangle
-    df['SymTriangle_Flag'] = sym_triangle
-    df['RisingWedge_Flag'] = rising_wedge
-    df['FallingWedge_Flag'] = falling_wedge
-    df['BullFlag_Flag'] = bull_flag
-    df['BearFlag_Flag'] = bear_flag
-    df['Volatility_Compress'] = vol_compress
+    return {
+        "DoubleTop_Flag": double_top,
+        "DoubleBottom_Flag": double_bottom,
+        "TripleTop_Flag": triple_top,
+        "TripleBottom_Flag": triple_bottom,
+        "HS_Flag": hs_flag,
+        "InvHS_Flag": inv_hs_flag,
+        "AscTriangle_Flag": asc_triangle,
+        "DescTriangle_Flag": desc_triangle,
+        "SymTriangle_Flag": sym_triangle,
+        "RisingWedge_Flag": rising_wedge,
+        "FallingWedge_Flag": falling_wedge,
+        "BullFlag_Flag": bull_flag,
+        "BearFlag_Flag": bear_flag,
+        "Volatility_Compress": vol_compress_arr,
+    }
+
+
+def _assign_arrays_to_df(df: pd.DataFrame, arrays: dict) -> pd.DataFrame:
+    """
+    Assigns the pattern arrays to df and computes the composite pattern_bias_score.
+    `arrays` must contain all 14 flag columns (keys matching OUTPUT_COLUMNS[:-1]).
+    """
+    for col, arr in arrays.items():
+        df[col] = arr
 
     # =========================================
     # COMPOSITE: Pattern Bias Score (continuous)
@@ -239,6 +270,100 @@ def add_chart_patterns(df: pd.DataFrame) -> pd.DataFrame:
         df['DescTriangle_Flag'] + df['RisingWedge_Flag'] + df['BearFlag_Flag']
     )
     df['pattern_bias_score'] = (bull_patterns - bear_patterns).clip(-3, 3)
+    return df
+
+
+def add_chart_patterns(df: pd.DataFrame, symbol: str = "UNKNOWN") -> pd.DataFrame:
+    """
+    Adds chart pattern flags to the DataFrame using rolling window analysis.
+    Requires: open, high, low, close, ATR columns.
+
+    Uses a per-symbol in-memory cache to avoid reprocessing unchanged rows:
+      - Cache hit (same row count + same last index): returns cached columns immediately.
+      - Incremental update (new rows appended): recomputes only the last CACHE_LOOKBACK rows.
+      - Full computation (no cache or row count shrank): runs the full rolling-window logic.
+
+    Args:
+        df:     Primary OHLC DataFrame with an ATR column.
+        symbol: Cache key — pass the trading symbol name (e.g. "XAUUSD").
+
+    Returns:
+        DataFrame with new binary and continuous columns for each pattern.
+    """
+    global _pattern_cache
+    n = len(df)
+    cached = _pattern_cache.get(symbol)
+
+    # =========================================
+    # Branch 1 — Cache hit: same row count AND same last index
+    # =========================================
+    if (cached is not None
+            and cached["last_row_count"] == n
+            and df.index[-1] == cached["last_index"]):
+        logger.info(
+            "[Patterns][%s] Cache hit — %d rows, 0 new rows processed.", symbol, n
+        )
+        for col, arr in cached["columns"].items():
+            df[col] = arr
+        return df
+
+    # =========================================
+    # Branch 2 — Incremental update: new rows appended
+    # (also handles the case where row count is equal but last_index differs —
+    #  that falls through to Branch 3 / full computation below)
+    # =========================================
+    if cached is not None and n > cached["last_row_count"]:
+        new_rows = n - cached["last_row_count"]
+        start_idx = max(0, n - CACHE_LOOKBACK)
+
+        # Run the existing rolling-window logic on the slice only
+        df_slice = df.iloc[start_idx:].copy()
+        slice_arrays = _run_rolling_window_logic(df_slice)
+
+        # Build full-length arrays: use cached values for rows before start_idx,
+        # then overwrite with freshly computed values from start_idx onward.
+        merged_arrays = {}
+        for col in OUTPUT_COLUMNS[:-1]:  # all flag columns except pattern_bias_score
+            full_arr = cached["columns"][col].copy() if col in cached["columns"] else np.zeros(n, dtype=int)
+            # Resize cached array if it is shorter than start_idx (safety guard)
+            if len(full_arr) < start_idx:
+                padded = np.zeros(n, dtype=full_arr.dtype)
+                padded[:len(full_arr)] = full_arr
+                full_arr = padded
+            # Combine: keep cached prefix, overwrite suffix with fresh computation
+            combined = np.empty(n, dtype=full_arr.dtype)
+            combined[:start_idx] = full_arr[:start_idx]
+            combined[start_idx:] = slice_arrays[col]
+            merged_arrays[col] = combined
+
+        # Assign merged arrays to df and compute composite score
+        df = _assign_arrays_to_df(df, merged_arrays)
+
+        logger.info(
+            "[Patterns][%s] Incremental — %d new rows processed (lookback=%d).",
+            symbol, new_rows, n - start_idx,
+        )
+
+    else:
+        # =========================================
+        # Branch 3 — Full computation:
+        #   • First call for this symbol (no cache), OR
+        #   • Row count shrank (data reload / reset), OR
+        #   • Same row count but last_index differs (data replaced — cache invalidation)
+        # =========================================
+        logger.info("[Patterns][%s] Full computation — %d rows.", symbol, n)
+
+        full_arrays = _run_rolling_window_logic(df)
+        df = _assign_arrays_to_df(df, full_arrays)
+
+    # =========================================
+    # Store result in cache (after any computation path)
+    # =========================================
+    _pattern_cache[symbol] = {
+        "last_row_count": n,
+        "last_index": df.index[-1],
+        "columns": {col: df[col].values.copy() for col in OUTPUT_COLUMNS},
+    }
 
     logger.info(
         "[Patterns] Added 14 chart pattern flags + composite bias score + volatility compression."

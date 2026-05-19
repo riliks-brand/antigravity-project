@@ -142,6 +142,8 @@ def _compute_session_bonus(session, trend_strength):
             raw_bonus = 0.01
         else:
             raw_bonus = -0.01
+    elif session == "Pacific":
+        raw_bonus = 0.0  # neutral — no bonus, no penalty
     return float(np.clip(raw_bonus, -0.03, 0.03))
 
 
@@ -433,21 +435,27 @@ def ensemble_predict(
     else:
         actual_event_boost = 0.0
 
-    # v6.0: H1 counter-trend HARD BLOCK
-    # Analysis: counter-trend trades had ~80% loss rate
-    against_h1 = (decision.side == "BUY" and h1_trend == -1) or (decision.side == "SELL" and h1_trend == 1)
+    # v6.1: H1 counter-trend SOFT BLOCK (replaces v6.0 hard block)
+    against_h1 = (decision.side == "BUY" and h1_trend == -1) or \
+                 (decision.side == "SELL" and h1_trend == 1)
+    override_threshold = getattr(Config, "COUNTER_TREND_XGB_OVERRIDE_THRESHOLD", 0.75)
+    ct_penalty = getattr(Config, "COUNTER_TREND_PENALTY", -0.04)
+
     if against_h1 and h1_trend != 0:
-        decision.direction = None
-        decision.decision_reason = "COUNTER_TREND_H1"
-        decision.stage_reached = "CONFLICT"
-        decision.confidence_level = "LOW"
-        decision.skip_reason = f"H1_COUNTER_TREND: {decision.side} vs h1={h1_trend}"
-        logger.warning("[Ensemble v6.0] COUNTER_TREND BLOCK: %s vs H1=%d -> HOLD", decision.side, h1_trend)
-        _log_decision(decision, current_adx, current_atr)
-        return decision
-    # MTF penalty
-    against_h1 = (decision.side == "BUY" and h1_trend == -1) or (decision.side == "SELL" and h1_trend == 1)
-    mtf_penalty = -0.03 if against_h1 else 0.0
+        if xgb_prob >= override_threshold:
+            logger.info(
+                "[Ensemble v6.1] COUNTER_TREND OVERRIDE: %s vs H1=%d, xgb=%.4f >= %.2f -> PASS",
+                decision.side, h1_trend, xgb_prob, override_threshold
+            )
+            mtf_penalty = 0.0
+        else:
+            logger.info(
+                "[Ensemble v6.1] COUNTER_TREND PENALTY: %s vs H1=%d, xgb=%.4f < %.2f -> penalty=%.4f",
+                decision.side, h1_trend, xgb_prob, override_threshold, ct_penalty
+            )
+            mtf_penalty = ct_penalty
+    else:
+        mtf_penalty = 0.0
 
     # DXY influence
     dxy_influence = 0.0
@@ -486,19 +494,20 @@ def ensemble_predict(
     # v5.1: Ø®ÙØ¶Ù†Ø§ Ø§Ù„Ù€ threshold Ø¨Ù†Ø§Ø¡Ù‹ Ø¹Ù„Ù‰ Ø§Ù„ØªØ­Ù„ÙŠÙ„ Ø§Ù„ÙØ¹Ù„ÙŠ Ù„Ù„Ù€ ensemble_decisions.csv
     #       Ù…ØªÙˆØ³Ø· final_score Ù„Ù„Ù€ THRESHOLD_CHECK = 0.52ØŒ Ø§Ù„Ù€ gap = 0.11
     #       Ø§Ù„Ø­Ù„: Ù†Ø®ÙØ¶ Ø§Ù„Ù€ threshold Ø¨Ù€ 0.05 Ø¹Ø´Ø§Ù† Ù†Ù…Ø³Ùƒ Ø§Ù„Ù€ signals Ø§Ù„Ø­Ù‚ÙŠÙ‚ÙŠØ©
+    # Step 13: Recalibrated thresholds (v6.1 — post-isotonic-calibration)
     if diagnostic:
-        buy_threshold  = 0.62
+        buy_threshold  = 0.62   # unchanged for diagnostic mode comparisons
         sell_threshold = 0.38
     else:
         if trend_strength > 0.35:
-            buy_threshold  = 0.62   # v6.0: raised   # ÙƒØ§Ù† 0.60 â€” Ø®ÙØ¶Ù†Ø§ 0.04
-            sell_threshold = 0.38   # v6.0: lowered   # ÙƒØ§Ù† 0.40
+            buy_threshold  = getattr(Config, "PROB_THRESHOLD_BUY_TRENDING", 0.56)
+            sell_threshold = getattr(Config, "PROB_THRESHOLD_SELL_TRENDING", 0.44)
         elif trend_strength > 0.25:
-            buy_threshold  = 0.63   # v6.0: raised   # ÙƒØ§Ù† 0.61
-            sell_threshold = 0.37   # v6.0: lowered   # ÙƒØ§Ù† 0.39
+            buy_threshold  = getattr(Config, "PROB_THRESHOLD_BUY_TRANSITIONING", 0.57)
+            sell_threshold = getattr(Config, "PROB_THRESHOLD_SELL_TRANSITIONING", 0.43)
         else:
-            buy_threshold  = 0.64   # v6.0: raised   # ÙƒØ§Ù† 0.62
-            sell_threshold = 0.36   # v6.0: lowered   # ÙƒØ§Ù† 0.38
+            buy_threshold  = getattr(Config, "PROB_THRESHOLD_BUY_RANGING", 0.58)
+            sell_threshold = getattr(Config, "PROB_THRESHOLD_SELL_RANGING", 0.42)
 
     decision.buy_threshold  = buy_threshold
     decision.sell_threshold = sell_threshold

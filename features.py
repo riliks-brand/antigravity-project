@@ -527,7 +527,7 @@ def feature_engineering_pipeline(df: pd.DataFrame, df_confirm=None, df_trend=Non
     # Phase 1: PDF Vision Layer — Advanced Detectors
     logger.info("Applying PDF Vision Layer detectors...")
     df = add_candlestick_patterns(df)     # 16 candle patterns + composite
-    df = add_chart_patterns(df)            # 14 chart patterns + composite + vol squeeze
+    df = add_chart_patterns(df, symbol=symbol)  # 14 chart patterns + composite + vol squeeze
     df = add_divergence_features(df)       # 4 divergence types + composite
     logger.info("PDF Vision Layer complete. +36 new features added.")
 

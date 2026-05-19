@@ -1025,6 +1025,10 @@ class TradeManager:
             return "New York"
         if Config.SESSION_ASIA[0] <= hour < Config.SESSION_ASIA[1]:
             return "Asia"
+        # NEW: Pacific session covers UTC 22-23 (hour 24 wraps to 0 = Asia)
+        pacific_start, pacific_end = getattr(Config, "SESSION_PACIFIC", (22, 24))
+        if pacific_start <= hour or hour < (pacific_end % 24):
+            return "Pacific"
 
         return "UNKNOWN"
 
@@ -1061,6 +1065,16 @@ class TradeManager:
         if london or ny or asia:
             session_name = "London" if london else ("New York" if ny else "Asia")
             return False, f"In {session_name} session, but trading is disabled for this session (UTC Hour: {hour})"
+
+        # Pacific session (UTC 22–23): covers the gap between NY close and Asia open
+        pacific = getattr(Config, "SESSION_PACIFIC", (22, 24))
+        pacific_start, pacific_end = pacific
+        in_pacific = pacific_start <= hour or hour < (pacific_end % 24)
+
+        if in_pacific and getattr(Config, "TRADE_SESSION_PACIFIC", True):
+            return True, f"In Pacific session (UTC Hour: {hour})"
+        if in_pacific and not getattr(Config, "TRADE_SESSION_PACIFIC", True):
+            return False, f"In Pacific session, but trading is disabled for this session (UTC Hour: {hour})"
 
         return False, f"Outside all sessions (UTC Hour: {hour})"
 
